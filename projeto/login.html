@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Gold Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<canvas id="particles"></canvas>
+
+<div class="card">
+  <span class="corner tr"></span>
+  <span class="corner bl"></span>
+
+  <div class="logo-wrap">
+    <div class="logo-icon">💈</div>
+    <div class="logo-main">GOLD LINE</div>
+    <div class="logo-sub">Área administrativa</div>
+  </div>
+
+  <div class="divider"><span>Acesso restrito</span></div>
+
+  <div class="field">
+    <label>Usuário</label>
+    <input id="username" type="text" placeholder=  "     Usuário" autocomplete="username">
+  </div>
+
+  <div class="field">
+    <label>Senha</label>
+    <input id="password" type="password" placeholder="     Senha" autocomplete="current-password">
+  </div>
+
+  <button class="btn-login" id="btnLogin" onclick="login()">
+    <span class="btn-text">Entrar</span>
+    <svg class="btn-text" width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M2 7.5h11M9 3l4 4.5L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="spinner"></div>
+  </button>
+
+  <div class="msg" id="msg"></div>
+
+  <a href="index.html" class="back">← Voltar ao site</a>
+</div>
+<script src="login.js"></script>
+</body>
+</html>

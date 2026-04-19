@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corte — Gold Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cortes.css">
+</head>
+<body>
+
+
+<!-- PARTÍCULAS -->
+<canvas id="particles"></canvas>
+
+<!-- HEADER -->
+<header>
+  <a href="index.html" class="logo">
+    <span class="logo-main">GOLD LINE   </span>
+    <span class="logo-sub">· Pernambuco</span>
+  </a>
+  <div class="header-right">
+    <div class="step-tag">
+      <div class="step-dot"></div>
+      Passo 1 de 2 — Escolha o serviço
+    </div>
+  </div>
+</header>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Serviços disponíveis</div>
+    <h1 class="page-title">Qual vai<br><em>ser hoje?</em></h1>
+    <p class="page-sub">Selecione o serviço e escolha seu horário.</p>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="cortes-wrap">
+  <div class="cortes-grid">
+
+    <a href="index2.html" class="corte-link" onclick="selecionarServico(30,'Social')">
+      <div class="corte-img-wrap">
+        <img src="https://images.pexels.com/photos/1570807/pexels-photo-1570807.jpeg" alt="Social">
+        <div class="select-label"><span>Selecionar</span></div>
+      </div>
+      <div class="corte-info">
+        <div class="corte-nome">Social</div>
+        <div class="corte-price">
+          <span class="price-from">a partir de</span>
+          <span class="price-val">R$30</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="index2.html" class="corte-link" onclick="selecionarServico(30,'Degradê')">
+      <div class="corte-img-wrap">
+        <img src="https://images.pexels.com/photos/1453005/pexels-photo-1453005.jpeg" alt="Degradê">
+        <div class="select-label"><span>Selecionar</span></div>
+      </div>
+      <div class="corte-info">
+        <div class="corte-nome">Degradê</div>
+        <div class="corte-price">
+          <span class="price-from">a partir de</span>
+          <span class="price-val">R$30</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="index2.html" class="corte-link" onclick="selecionarServico(50,'Degradê e Barba')">
+      <div class="corte-img-wrap">
+        <img src="https://images.pexels.com/photos/2521978/pexels-photo-2521978.jpeg" alt="Degradê e Barba">
+        <div class="select-label"><span>Selecionar</span></div>
+      </div>
+      <div class="corte-info">
+        <div class="corte-nome">Degradê e Barba</div>
+        <div class="corte-price">
+          <span class="price-from">a partir de</span>
+          <span class="price-val">R$50</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="index2.html" class="corte-link" onclick="selecionarServico(20,'Barba')">
+      <div class="corte-img-wrap">
+        <img src="https://images.pexels.com/photos/3998424/pexels-photo-3998424.jpeg" alt="Barba">
+        <div class="select-label"><span>Selecionar</span></div>
+      </div>
+      <div class="corte-info">
+        <div class="corte-nome">Barba</div>
+        <div class="corte-price">
+          <span class="price-from">a partir de</span>
+          <span class="price-val">R$20</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="index2.html" class="corte-link" onclick="selecionarServico(20,'Infantil')">
+      <div class="corte-img-wrap">
+        <img src="https://images.pexels.com/photos/1805600/pexels-photo-1805600.jpeg" alt="Infantil">
+        <div class="select-label"><span>Selecionar</span></div>
+      </div>
+      <div class="corte-info">
+        <div class="corte-nome">Infantil</div>
+        <div class="corte-price">
+          <span class="price-from">a partir de</span>
+          <span class="price-val">R$20</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>&copy; 2026 Italo Farias — Italo Barber</span>
+  <a href="index.html">← Voltar ao início</a>
+</footer>
+
+<script>
+/* SALVAR SERVIÇO */
+function selecionarServico(valor, nome) {
+  localStorage.setItem('valorServico', valor);
+  if (nome) localStorage.setItem('nomeServico', nome);
+}
+
+/* CANVAS PARTÍCULAS */
+(function(){
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W, H, pts = [];
+
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function rand(a,b){ return a + Math.random()*(b-a); }
+
+  for(let i=0;i<50;i++){
+    pts.push({
+      x:rand(0,1), y:rand(0,1),
+      size:rand(.5,1.8),
+      speed:rand(.00008,.00022),
+      alpha:rand(.12,.45),
+      drift:rand(-.0001,.0001)
+    });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.y -= p.speed;
+      p.x += p.drift;
+      if(p.y < 0){ p.y=1; p.x=rand(0,1); }
+      if(p.x < 0 || p.x > 1){ p.x=rand(0,1); }
+      ctx.beginPath();
+      ctx.arc(p.x*W, p.y*H, p.size, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(201,168,76,${p.alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

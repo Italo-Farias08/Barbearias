@@ -1,0 +1,165 @@
+(function(){
+  const canvas=document.getElementById('particles');
+  const ctx=canvas.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  function rand(a,b){return a+Math.random()*(b-a);}
+  for(let i=0;i<45;i++) pts.push({x:rand(0,1),y:rand(0,1),size:rand(.4,1.6),speed:rand(.00006,.0002),alpha:rand(.1,.38),drift:rand(-.0001,.0001)});
+  (function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.y-=p.speed; p.x+=p.drift;
+      if(p.y<0){p.y=1;p.x=rand(0,1);}
+      if(p.x<0||p.x>1){p.x=rand(0,1);}
+      ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(201,168,76,${p.alpha})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })();
+})();
+
+/* TOAST */
+function toast(texto, cor){
+  cor = cor||'#c9a84c';
+  const el=document.createElement('div');
+  el.className='toast'; el.textContent=texto; el.style.background=cor;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),500); },2800);
+}
+
+/* API */
+const API =
+  window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'
+    ? 'http://127.0.0.1:3000'
+    : 'https://barber-7p3h.onrender.com';
+
+const lista = document.getElementById('lista');
+
+/* FORMATA DATA */
+function formatarData(dataStr){
+  const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const [y,m,d]=dataStr.split('-');
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+}
+
+/* STATS */
+function atualizarStats(pendentes){
+  const totalValor = pendentes.reduce((s,a)=>s+(Number(a.valor)||0),0);
+  document.getElementById('statTotal').textContent = pendentes.length;
+  document.getElementById('statValor').textContent = 'R$'+totalValor;
+}
+
+/* CARREGAR */
+async function carregarAgendamentos(){
+  lista.innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
+
+  try {
+    const res  = await fetch(`${API}/agendamentos`);
+    const dados = await res.json();
+
+    lista.innerHTML='';
+
+    const pendentes = dados.filter(a=>(a.status||'pendente')==='pendente');
+
+    atualizarStats(pendentes);
+
+    if(pendentes.length===0){
+      lista.innerHTML=`
+        <div class="empty">
+          <div class="empty-icon">📋</div>
+          <div class="empty-txt">Nenhum agendamento pendente</div>
+        </div>`;
+      return;
+    }
+
+    pendentes.forEach((item,i)=>{
+      const card = document.createElement('div');
+      card.classList.add('card');
+      card.style.animationDelay = (i*0.06)+'s';
+
+      const horario = (item.horario||'').toString().substring(0,5);
+      const dataFmt = item.data ? formatarData(item.data) : '—';
+
+      const info = document.createElement('div');
+      info.classList.add('info');
+      info.innerHTML = `
+        <div class="info-item">
+          <span class="info-label">Cliente</span>
+          <span class="info-val"><strong>${item.nome||'—'}</strong></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Data</span>
+          <span class="info-val">${dataFmt}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Horário</span>
+          <span class="info-val">${horario||'—'}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Status</span>
+          <span class="info-val">
+            <span class="status-tag pendente">Pendente</span>
+          </span>
+        </div>
+      `;
+
+      const valor = document.createElement('div');
+      valor.className='valor-tag';
+      valor.textContent = 'R$'+(item.valor||0);
+
+      /* BOTÕES */
+      const actions = document.createElement('div');
+      actions.className='card-actions';
+
+      const btnC = document.createElement('button');
+      btnC.className='btn-concluir';
+      btnC.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Concluir';
+
+      btnC.addEventListener('click', async()=>{
+        btnC.disabled=true; btnX.disabled=true;
+        try {
+          const r=await fetch(`${API}/agendamentos/concluir/${item.id}`,{method:'PUT'});
+          if(!r.ok) throw new Error();
+          toast('✓ Agendamento concluído!');
+          carregarAgendamentos();
+        } catch {
+          toast('Erro ao concluir','#e05050');
+          btnC.disabled=false; btnX.disabled=false;
+        }
+      });
+
+      const btnX = document.createElement('button');
+      btnX.className='btn-cancelar';
+      btnX.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Cancelar';
+
+      btnX.addEventListener('click', async()=>{
+        btnC.disabled=true; btnX.disabled=true;
+        try {
+          const r=await fetch(`${API}/agendamentos/${item.id}`,{method:'DELETE'});
+          if(!r.ok) throw new Error();
+          toast('Agendamento cancelado','#e05050');
+          carregarAgendamentos();
+        } catch {
+          toast('Erro ao cancelar','#e05050');
+          btnC.disabled=false; btnX.disabled=false;
+        }
+      });
+
+      actions.appendChild(btnC);
+      actions.appendChild(btnX);
+
+      card.appendChild(info);
+      card.appendChild(valor);
+      card.appendChild(actions);
+      lista.appendChild(card);
+    });
+
+  } catch(err){
+    console.error('Erro geral:',err);
+    lista.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar agendamentos</div></div>`;
+  }
+}
+
+carregarAgendamentos();
