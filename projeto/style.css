@@ -11,6 +11,7 @@
 *,*::before,*::after{margin:0;
   padding:0;
   box-sizing:border-box;
+  max-width: 100%;
 }
 
 html{scroll-behavior:smooth;
@@ -200,6 +201,7 @@ nav a:hover::after{transform:scaleX(1);}
 }
 html, body {
   overflow-x: hidden;
+  width: 100%;
 }
 .slide.active .slide-title{opacity:1;transform:translateY(0);}
 .slide-title em{font-style:italic;
