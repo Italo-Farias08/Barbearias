@@ -1,0 +1,269 @@
+@charset "UTF-8";
+
+body {
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #141414, #070707);
+  color: white;
+  margin: 0;
+}
+html{
+    min-height: 100vh;
+    background-color: #111;
+}
+
+/* HEADER */
+header {
+  text-align: center;
+  padding: 35px 10px;
+  background: linear-gradient(90deg, #0a0a0a, #111);
+  border-bottom: 1px solid rgba(245, 196, 0, 0.25);
+}
+
+header h1 {
+  font-size: 1.8em;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-weight: normal;
+  color: #f5c400;
+  text-transform: uppercase;
+}
+
+
+
+/* SECTION */
+section {
+    min-height: 100vh;
+
+}
+
+/* CONTAINER */
+.container {
+  max-width: 400px;
+  margin: 40px auto;
+  text-align: center;
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #121212, #0b0b0b);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* TÍTULO */
+h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  color: #eaeaea;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+/* DIAS */
+.dias {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding: 10px 5px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.dias::-webkit-scrollbar {
+  display: none;
+  background: rgba(245, 196, 0, 0.3);
+}
+
+.dia {
+  min-width: 70px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #1c1c1c;
+  border: 1px solid #2a2a2a;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.dia:hover {
+  transform: translateY(-3px);
+  border-color: #c59d5f;
+}
+
+.dia.selecionado {
+  background: #f5c400e0;
+  color: black;
+  transform: scale(1.05);
+}
+.horarios {
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 por linha */
+  gap: 10px;
+}
+.horarios h3 {
+  grid-column: 1 / -1;
+  margin-bottom: 5px;
+}
+.horario.ocupado {
+  background: #444;
+  opacity: 0;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  background: #161616;
+  padding: 20px;
+  border-radius: 12px;
+  width: 300px;
+  text-align: center;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+}
+
+.horario {
+  padding: 12px;
+  background: #1c1c1c;
+  border: 1px solid #2a2a2a;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.95em;
+  transition: all 0.2s ease;
+
+  width: 100%;
+  box-sizing: border-box; /* resolve o bug de estourar */
+}
+
+.horario:hover {
+  border-color: #f5c400e0;
+  transform: scale(1.02);
+}
+
+.horario.selecionado {
+   background: #f5c400e0;
+  color: black;
+}
+
+
+/* BOTÃO */
+.btn-confirmar {
+  width: 100%;
+  margin-top: 25px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffcc00, #aa8801);
+  color: #000000;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+  letter-spacing: 1px;
+}
+.btn-confirmar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0px 20px rgba(245,196,0,0.2);
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  width: 80%;
+  max-width: 300px;
+  background: #0b0b0b;
+  border: 1px solid rgba(255, 209, 6, 0.2);
+  padding: 25px;
+  border-radius: 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+input{
+   font-size: 16px;
+}
+.modal-box h3 {
+  color: #ffffff;
+  margin-bottom: 18px;
+}
+.modal-box input {
+  width: 100%;
+  padding: 12px 14px;
+
+  border-radius: 10px;
+  border: 1px solid #2a2a2a;
+
+  background: #0d0d0d;
+  color: #c59d5f; /* <- texto dourado ao digitar */
+
+  font-size: 1em;
+
+  outline: none;
+  transition: 0.2s ease;
+}
+
+/* garante que no foco NÃO muda cor */
+.modal-box input:focus {
+  color: #ffffff;
+  border-color: #f5c4008c;
+  box-shadow: 0 0 0 2px rgba(197, 157, 95, 0.15);
+}
+
+/* 🔥 CORREÇÃO DO AUTOFILL DO CHROME (principal problema) */
+.modal-box input:-webkit-autofill,
+.modal-box input:-webkit-autofill:hover,
+.modal-box input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0px 1000px #0d0d0d inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.modal-box input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #050505;
+  color: #fff;
+  margin-bottom: 15px;
+  outline: none;
+}
+
+.modal-box button {
+  width: 80%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #f5c400;
+  color: #111;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: bold;
+}
+button:hover{
+   transform: translateY(-2px);
+   box-shadow: 0 0px 20px rgba(245,196,0,0.2);
+   transition-duration: .5s;
+}
