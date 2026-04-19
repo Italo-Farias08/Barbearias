@@ -185,6 +185,142 @@
     <span>&copy; 2026 Italo Farias — Todos os direitos reservados</span>
   </div>
 </footer>
-<script src="front.js"></script>
+<script >
+  /* HEADER SCROLL */
+const header = document.getElementById('header');
+window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>60));
+
+/* SLIDER */
+const track = document.getElementById('slidesTrack');
+const slides = document.querySelectorAll('.slide');
+const dotsWrap = document.getElementById('heroDots');
+const progress = document.getElementById('slideProgress');
+const DURATION = 5000;
+let idx=0, autoTimer;
+
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='hdot'+(i===0?' active':'');
+  d.addEventListener('click',()=>goTo(i));
+  dotsWrap.appendChild(d);
+});
+
+function goTo(n){
+  slides[idx].classList.remove('active');
+  idx=(n+slides.length)%slides.length;
+  slides[idx].classList.add('active');
+  track.style.transform=`translateX(-${idx*100}%)`;
+  document.querySelectorAll('.hdot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  resetProgress();
+}
+
+function resetProgress(){
+  progress.style.transition='none';
+  progress.style.width='0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    progress.style.transition=`width ${DURATION}ms linear`;
+    progress.style.width='100%';
+  }));
+}
+
+function startAuto(){
+  clearInterval(autoTimer);
+  autoTimer=setInterval(()=>goTo(idx+1),DURATION);
+}
+
+document.getElementById('nextBtn').addEventListener('click',()=>{ goTo(idx+1); startAuto(); });
+document.getElementById('prevBtn').addEventListener('click',()=>{ goTo(idx-1); startAuto(); });
+
+let sx=0;
+track.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+track.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-sx;
+  if(Math.abs(dx)>50){ goTo(dx<0?idx+1:idx-1); startAuto(); }
+});
+
+resetProgress(); startAuto();
+
+/* TICKER */
+const words=['Corte Masculino','Barba','Degradê','Nevou','Infantil','Agendamento Online','Vitória de Santo Antão','Italo Barber'];
+const tt=document.getElementById('tickerTrack');
+[...words,...words,...words,...words].forEach(w=>{
+  const s=document.createElement('span');
+  s.className='ticker-item'; s.textContent=w;
+  tt.appendChild(s);
+});
+
+/* SCROLL REVEAL */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+/* COUNTER ANIMATION */
+const counterObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting) return;
+    const el = e.target;
+    const target = +el.dataset.count;
+    const isDecimal = el.dataset.decimal;
+    const suffix = el.dataset.suffix || '+';
+    const duration = 1800;
+    const start = performance.now();
+    function tick(now){
+      const p = Math.min((now-start)/duration, 1);
+      const ease = 1-Math.pow(1-p,3);
+      const val = target * ease;
+      el.textContent = isDecimal
+        ? (val/10).toFixed(1) + suffix
+        : Math.round(val) + suffix;
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    counterObs.unobserve(el);
+  });
+},{threshold:.5});
+document.querySelectorAll('.astat-num[data-count]').forEach(el=>counterObs.observe(el));
+
+/* CANVAS PARTÍCULAS */
+(function(){
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles=[];
+
+  function resize(){
+    W=canvas.width=canvas.offsetWidth;
+    H=canvas.height=canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function rand(a,b){return a+Math.random()*(b-a);}
+
+  for(let i=0;i<55;i++){
+    particles.push({
+      x:rand(0,1), y:rand(0,1),
+      size:rand(.6,1.8),
+      speed:rand(.00008,.00022),
+      alpha:rand(.15,.5),
+      drift:rand(-.0001,.0001)
+    });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.y -= p.speed;
+      p.x += p.drift;
+      if(p.y<0){p.y=1;p.x=rand(0,1);}
+      if(p.x<0||p.x>1){p.x=rand(0,1);}
+      ctx.beginPath();
+      ctx.arc(p.x*W, p.y*H, p.size, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(201,168,76,${p.alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
 </body>
 </html>
