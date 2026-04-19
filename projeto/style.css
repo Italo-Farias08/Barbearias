@@ -198,6 +198,9 @@ nav a:hover::after{transform:scaleX(1);}
   opacity:0;transform:translateY(36px);
   transition:opacity .8s .35s,transform .8s .35s;
 }
+html, body {
+  overflow-x: hidden;
+}
 .slide.active .slide-title{opacity:1;transform:translateY(0);}
 .slide-title em{font-style:italic;
   color:var(--gold);
