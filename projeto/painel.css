@@ -293,6 +293,11 @@ header{
     padding: 40px 20px;
   }
 }
+@media (max-width: 768px){
+  .page-intro::after{
+    display: none;
+  }
+}
 .menu-btn::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
   transform:scaleX(0);transform-origin:left;transition:transform .4s;
