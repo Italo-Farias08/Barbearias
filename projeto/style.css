@@ -52,6 +52,9 @@ body::after{
   transform:translate(-50%,-50%);
   transition:width .35s,height .35s;
 }
+.nav-cta{
+  white-space: nowrap;   /* evita quebrar linha */
+}
 
 header{
   position:fixed;
