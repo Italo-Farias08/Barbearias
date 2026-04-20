@@ -711,4 +711,9 @@ footer{padding:64px 96px 36px;
   .footer-copy{flex-direction:column;
     gap:8px;
   }
+  .nav-cta{
+  padding:8px 12px;      /* diminui o botão */
+  font-size:13px;        /* fonte menor */
+  letter-spacing:.15em;  /* menos espaçamento */
+}
 }
