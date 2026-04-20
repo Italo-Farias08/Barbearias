@@ -165,10 +165,6 @@ app.get("/gastos", async (req, res) => {
     res.json([]);
   }
 });
-
-// =========================
-// GASTOS — DELETAR
-// =========================
 app.delete("/gastos/:id", async (req, res) => {
   try {
     await db.query(

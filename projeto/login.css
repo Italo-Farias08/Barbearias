@@ -200,6 +200,7 @@ body::after{
   transition:background .3s,gap .3s;
   position:relative;
   overflow:hidden;
+  font-size: 14px;
 }
 .btn-login::before{
   content:'';position:absolute;inset:0;
