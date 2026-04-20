@@ -180,10 +180,6 @@ app.delete("/gastos/:id", async (req, res) => {
     res.json({ erro: "Erro ao deletar" });
   }
 });
-
-// =========================
-// LUCRO REAL
-// =========================
 app.get("/lucro-real", async (req, res) => {
   try {
     const ganhos = await db.query(
@@ -192,10 +188,8 @@ app.get("/lucro-real", async (req, res) => {
     const gastos = await db.query(
       `SELECT SUM(valor) as total FROM gastos`
     );
-
     const totalGanhos = Number(ganhos.rows[0].total) || 0;
     const totalGastos = Number(gastos.rows[0].total) || 0;
-
     res.json({
       ganhos: totalGanhos,
       gastos: totalGastos,
@@ -206,17 +200,10 @@ app.get("/lucro-real", async (req, res) => {
     res.json({ ganhos: 0, gastos: 0, lucro: 0 });
   }
 });
-
-// =========================
-// CONECTA BANCO
-// =========================
 db.query("SELECT NOW()")
   .then(res => console.log("✅ Banco conectado:", res.rows))
   .catch(err => console.log("❌ Erro conexão:", err));
 
-// =========================
-// START SERVER
-// =========================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
