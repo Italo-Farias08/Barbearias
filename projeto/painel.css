@@ -202,16 +202,33 @@ header{
 .card-actions{display:flex;gap:8px;}
 
 .btn-concluir,.btn-cancelar{
-  display:flex;align-items:center;gap:8px;
-  border:none;font-family:'Barlow',sans-serif;
-  font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
-  padding:12px 20px;cursor:pointer;transition:all .3s;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:none;
+  font-family:'Barlow',sans-serif;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  padding:12px 20px;
+  cursor:pointer;
+  transition:all .3s;
 }
 
-.btn-concluir{background:transparent;color:var(--green);border:1px solid rgba(76,175,122,.35);}
-.btn-concluir:hover{background:var(--green);color:var(--dark);border-color:var(--green);}
+.btn-concluir{background:transparent;
+  color:var(--green);
+  border:1px solid rgba(76,175,122,.35);}
 
-.btn-cancelar{background:transparent;color:var(--red);border:1px solid rgba(224,80,80,.35);}
+.btn-concluir:hover{
+  background:var(--green);
+  color:var(--dark);
+  border-color:var(--green);}
+
+.btn-cancelar{
+  background:transparent;color:var(--red);
+  border:1px solid rgba(224,80,80,.35);}
+
 .btn-cancelar:hover{background:var(--red);color:#fff;border-color:var(--red);}
 
 .btn-concluir:disabled,.btn-cancelar:disabled{opacity:.3;cursor:not-allowed;}
@@ -306,6 +323,20 @@ header{
   transition:opacity .4s,transform .4s;white-space:nowrap;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.btn-lembrete{background:transparent;
+  color: #ffc926;
+  border:1px solid #ffc92659;
+  padding: 10px;
+  text-align: center;
+  font-family:'Barlow',sans-serif;
+  cursor: pointer;
+}
+.btn-lembrete:hover{
+  background:var(--gold);
+  color:var(--dark);
+  border-color:var(--gold);
+}
 
 /* RESPONSIVE */
 @media(max-width:1000px){

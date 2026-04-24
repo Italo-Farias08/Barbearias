@@ -29,11 +29,6 @@ function toast(texto, cor){
   setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),500); },2800);
 }
 
-/* API */
-const API =
-  window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://barber-7p3h.onrender.com';
 
 const lista = document.getElementById('lista');
 
@@ -56,7 +51,12 @@ async function carregarAgendamentos(){
   lista.innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
 
   try {
-    const res  = await fetch(`${API}/agendamentos`);
+    const slug = localStorage.getItem("slug");
+
+if (!slug) {
+  window.location.href = "/login.html";
+}
+    const res = await fetch(`${API}/agendamentos`)
     const dados = await res.json();
 
     lista.innerHTML='';

@@ -46,10 +46,7 @@ function animarValor(el, destino, duracao){
 }
 
 /* API */
-const API =
-  window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://barber-7p3h.onrender.com';
+
 
 const ganhosEl  = document.getElementById('ganhos');
 const gastosEl  = document.getElementById('gastos');

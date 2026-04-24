@@ -3,22 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Corte — Gold Line</title>
+<title>Corte</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="cortes.css">
 </head>
 <body>
-
-
-<!-- PARTÍCULAS -->
 <canvas id="particles"></canvas>
-
-<!-- HEADER -->
 <header>
   <a href="index.html" class="logo">
-    <span class="logo-main">GOLD LINE   </span>
-    <span class="logo-sub">· Pernambuco</span>
+    <span class="logo-main" data-barber="nome">GOLD LINE</span>
+    <span class="logo-sub"  data-barber="cidade">· Pernambuco</span>
   </a>
   <div class="header-right">
     <div class="step-tag">
@@ -28,7 +23,6 @@
   </div>
 </header>
 
-<!-- PAGE HERO -->
 <div class="page-hero">
   <div class="hero-inner">
     <div class="eyebrow">Serviços disponíveis</div>
@@ -37,9 +31,8 @@
   </div>
 </div>
 
-<!-- GRID -->
 <div class="cortes-wrap">
-  <div class="cortes-grid">
+  <div class="cortes-grid" id="listaServicos">
 
     <a href="index2.html" class="corte-link" onclick="selecionarServico(30,'Social')">
       <div class="corte-img-wrap">
@@ -48,10 +41,7 @@
       </div>
       <div class="corte-info">
         <div class="corte-nome">Social</div>
-        <div class="corte-price">
-          <span class="price-from">a partir de</span>
-          <span class="price-val">R$30</span>
-        </div>
+        <div class="corte-price"><span class="price-from">a partir de</span><span class="price-val">R$30</span></div>
       </div>
     </a>
 
@@ -62,10 +52,7 @@
       </div>
       <div class="corte-info">
         <div class="corte-nome">Degradê</div>
-        <div class="corte-price">
-          <span class="price-from">a partir de</span>
-          <span class="price-val">R$30</span>
-        </div>
+        <div class="corte-price"><span class="price-from">a partir de</span><span class="price-val">R$30</span></div>
       </div>
     </a>
 
@@ -76,10 +63,7 @@
       </div>
       <div class="corte-info">
         <div class="corte-nome">Degradê e Barba</div>
-        <div class="corte-price">
-          <span class="price-from">a partir de</span>
-          <span class="price-val">R$50</span>
-        </div>
+        <div class="corte-price"><span class="price-from">a partir de</span><span class="price-val">R$50</span></div>
       </div>
     </a>
 
@@ -90,10 +74,7 @@
       </div>
       <div class="corte-info">
         <div class="corte-nome">Barba</div>
-        <div class="corte-price">
-          <span class="price-from">a partir de</span>
-          <span class="price-val">R$20</span>
-        </div>
+        <div class="corte-price"><span class="price-from">a partir de</span><span class="price-val">R$20</span></div>
       </div>
     </a>
 
@@ -104,73 +85,96 @@
       </div>
       <div class="corte-info">
         <div class="corte-nome">Infantil</div>
-        <div class="corte-price">
-          <span class="price-from">a partir de</span>
-          <span class="price-val">R$20</span>
-        </div>
+        <div class="corte-price"><span class="price-from">a partir de</span><span class="price-val">R$20</span></div>
       </div>
     </a>
 
   </div>
 </div>
 
-  </div>
-</div>
-
-<!-- FOOTER -->
 <footer>
-  <span>&copy; 2026 Desenvolvedor— Italo Farias</span>
+  <span>&copy; 2026 Italo Farias</span>
   <a href="index.html">← Voltar ao início</a>
 </footer>
 
+<script src="saas.js"></script>
+
 <script>
-/* SALVAR SERVIÇO */
 function selecionarServico(valor, nome) {
   localStorage.setItem('valorServico', valor);
   if (nome) localStorage.setItem('nomeServico', nome);
 }
 
-/* CANVAS PARTÍCULAS */
-(function(){
+(function () {
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
   let W, H, pts = [];
-
-  function resize(){
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  function rand(a,b){ return a + Math.random()*(b-a); }
-
-  for(let i=0;i<50;i++){
-    pts.push({
-      x:rand(0,1), y:rand(0,1),
-      size:rand(.5,1.8),
-      speed:rand(.00008,.00022),
-      alpha:rand(.12,.45),
-      drift:rand(-.0001,.0001)
-    });
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    pts.forEach(p=>{
-      p.y -= p.speed;
-      p.x += p.drift;
-      if(p.y < 0){ p.y=1; p.x=rand(0,1); }
-      if(p.x < 0 || p.x > 1){ p.x=rand(0,1); }
-      ctx.beginPath();
-      ctx.arc(p.x*W, p.y*H, p.size, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(201,168,76,${p.alpha})`;
-      ctx.fill();
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  for (let i = 0; i < 50; i++) pts.push({ x: rand(0, 1), y: rand(0, 1), size: rand(.5, 1.8), speed: rand(.00008, .00022), alpha: rand(.12, .45), drift: rand(-.0001, .0001) });
+  (function draw() {
+    ctx.clearRect(0, 0, W, H);
+    pts.forEach(p => {
+      p.y -= p.speed; p.x += p.drift;
+      if (p.y < 0) { p.y = 1; p.x = rand(0, 1); }
+      if (p.x < 0 || p.x > 1) { p.x = rand(0, 1); }
+      ctx.beginPath(); ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,168,76,${p.alpha})`; ctx.fill();
     });
     requestAnimationFrame(draw);
-  }
-  draw();
+  })();
 })();
+
+async function carregarServicos() {
+  try {
+    const res = await fetch(`${API}/servicos`);
+    const servicos = await res.json();
+
+    const grid = document.getElementById('listaServicos');
+    grid.innerHTML = '';
+
+    servicos.forEach(s => {
+      const el = document.createElement('a');
+     el.onclick = (e) => {
+  e.preventDefault();
+
+  selecionarServico(s.preco, s.nome);
+
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('b');
+
+  let url = "index2.html";
+  if (slug) url += `?b=${slug}`;
+
+  window.location.href = url;
+};
+      el.className = "corte-link";
+     
+
+      el.innerHTML = `
+        <div class="corte-img-wrap">
+          <img src="${s.imagem}" alt="${s.nome}">
+          <div class="select-label"><span>Selecionar</span></div>
+        </div>
+        <div class="corte-info">
+          <div class="corte-nome">${s.nome}</div>
+          <div class="corte-price">
+            <span class="price-from">a partir de</span>
+            <span class="price-val">R$${s.preco}</span>
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(el);
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar serviços");
+  }
+}
+
+carregarServicos();
 </script>
 </body>
 </html>

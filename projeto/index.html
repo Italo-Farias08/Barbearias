@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barbearia de Italo</title>
+<title>Barbearia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-
 </head>
 <body>
+<canvas id="particles"></canvas>
 <header id="header">
   <a href="#" class="logo">
-    <span class="logo-main">GOLD LINE</span>
-    <span class="logo-sub">· Pernambuco</span>
+    <span class="logo-main" data-barber="nome">GOLD LINE</span>
+    <span class="logo-sub"  data-barber="cidade">· Pernambuco</span>
   </a>
   <nav>
     <a href="#servicos">Serviços</a>
@@ -23,126 +23,68 @@
   </nav>
 </header>
 
-<!-- HERO SLIDER -->
 <div class="hero" id="hero">
   <div class="slides-track" id="slidesTrack">
-
     <div class="slide active">
       <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1621607512022-6aecc4fed814?auto=format&fit=crop&w=1400&q=80')"></div>
       <div class="slide-content">
         <h1 class="slide-title">Corte<br><em>de respeito</em></h1>
         <p class="slide-desc">Profissionalismo e estilo em cada detalhe. Sua imagem nas mãos certas.</p>
-        <a href="corte.html" class="slide-btn">
-          Agendar agora
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
+        <a href="corte.html" class="slide-btn">Agendar agora<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </div>
-
     <div class="slide">
       <div class="slide-bg" style="background-image:url('https://images.pexels.com/photos/3998424/pexels-photo-3998424.jpeg')"></div>
       <div class="slide-content">
         <h1 class="slide-title">Barba<br><em>perfeita</em></h1>
         <p class="slide-desc">Acabamento premium com técnicas modernas e produtos de qualidade.</p>
-        <a href="corte.html" class="slide-btn">
-          Agendamentos
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
+        <a href="corte.html" class="slide-btn">Agendamentos<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </div>
-
     <div class="slide">
       <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&w=1400&q=80')"></div>
       <div class="slide-content">
         <h1 class="slide-title">Seu estilo<br><em>começa aqui</em></h1>
         <p class="slide-desc">Escolha seu visual com quem entende de verdade. Arte em cada corte.</p>
-        <a href="corte.html" class="slide-btn">
-          Começar
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
+        <a href="corte.html" class="slide-btn">Começar<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </div>
-
   </div>
 
   <div class="hero-dots" id="heroDots"></div>
-
   <div class="hero-controls">
-    <button class="hero-arrow" id="prevBtn" aria-label="Anterior">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button class="hero-arrow" id="nextBtn" aria-label="Próximo">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <button class="hero-arrow" id="prevBtn" aria-label="Anterior"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="hero-arrow" id="nextBtn" aria-label="Próximo"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
-
   <div class="slide-progress" id="slideProgress"></div>
 </div>
 
-<!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-track" id="tickerTrack"></div>
-</div>
+<div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
 
-<!-- SERVICES -->
 <section class="services reveal" id="servicos">
   <div class="sec-eyebrow">O que oferecemos</div>
   <h2 class="sec-title">Nossos <em>serviços</em></h2>
   <div class="srv-grid">
-    <div class="srv-card">
-      <div class="srv-num">01</div>
-      <h3 class="srv-name">Corte Masculino</h3>
-      <p class="srv-desc">Tesoura ou máquina. O corte certo para o seu estilo e formato de rosto.</p>
-      <div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$30</span></div>
-    </div>
-    <div class="srv-card">
-      <div class="srv-num">02</div>
-      <h3 class="srv-name">Barba Completa</h3>
-      <p class="srv-desc">Modelagem, navalha quente e finalização com produtos premium.</p>
-      <div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$20</span></div>
-    </div>
-    <div class="srv-card">
-      <div class="srv-num">03</div>
-      <h3 class="srv-name">Degradê</h3>
-      <p class="srv-desc">Transição perfeita, acabamento limpo. Do skin fade ao low fade.</p>
-      <div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$30</span></div>
-    </div>
-    <div class="srv-card">
-      <div class="srv-num">04</div>
-      <h3 class="srv-name">Degradê + Barba</h3>
-      <p class="srv-desc">O combo completo. Sai renovado da cabeça ao queixo.</p>
-      <div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$50</span></div>
-    </div>
-
-    <div class="srv-card">
-      
-      <div class="srv-num">06</div>
-      <h3 class="srv-name">Infantil</h3>
-      <p class="srv-desc">Cuidado e carinho para os pequenos desde cedo.</p>
-      <div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$20</span></div>
-    </div>
+    <div class="srv-card"><div class="srv-num">01</div><h3 class="srv-name">Corte Masculino</h3><p class="srv-desc">Tesoura ou máquina. O corte certo para o seu estilo e formato de rosto.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$30</span></div></div>
+    <div class="srv-card"><div class="srv-num">02</div><h3 class="srv-name">Barba Completa</h3><p class="srv-desc">Modelagem, navalha quente e finalização com produtos premium.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$20</span></div></div>
+    <div class="srv-card"><div class="srv-num">03</div><h3 class="srv-name">Degradê</h3><p class="srv-desc">Transição perfeita, acabamento limpo. Do skin fade ao low fade.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$30</span></div></div>
+    <div class="srv-card"><div class="srv-num">04</div><h3 class="srv-name">Degradê + Barba</h3><p class="srv-desc">O combo completo. Sai renovado da cabeça ao queixo.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$50</span></div></div>
+    <div class="srv-card"><div class="srv-num">05</div><h3 class="srv-name">Infantil</h3><p class="srv-desc">Cuidado e carinho para os pequenos desde cedo.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$20</span></div></div>
   </div>
 </section>
 
-<!-- SOBRE -->
 <section class="about reveal" id="sobre">
   <div class="about-img">
-    <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=900&q=80" alt="Barbearia Italo">
+    <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=900&q=80" alt="Barbearia">
   </div>
   <div class="about-txt">
     <div class="sec-eyebrow">Nossa história</div>
     <h2 class="sec-title" style="font-size:clamp(30px,3.5vw,48px);margin-bottom:0;">Mais que um corte,<br><em>uma experiência</em></h2>
-    <p>A Gold Line nasceu da paixão pelo ofício e pelo cuidado com o cliente. Aqui cada detalhe importa — da música ambiente ao produto no cabelo. Você sai não só bem cortado, mas bem tratado.</p>
+    <!--
+      data-barber="sobre" → texto da seção "sobre" vem do banco
+      Se a barbearia não tiver "sobre" cadastrado, mantém o texto padrão abaixo
+    -->
+    <p data-barber="sobre">A Gold Line nasceu da paixão pelo ofício e pelo cuidado com o cliente. Aqui cada detalhe importa — da música ambiente ao produto no cabelo. Você sai não só bem cortado, mas bem tratado.</p>
     <div class="about-stats">
       <div><div class="astat-num">200+</div><div class="astat-lbl">Clientes</div></div>
       <div><div class="astat-num">4+</div><div class="astat-lbl">Anos</div></div>
@@ -151,28 +93,21 @@
   </div>
 </section>
 
-<!-- CTA -->
 <section class="booking reveal">
   <div class="sec-eyebrow" style="justify-content:center;display:flex;">Pronto?</div>
   <h2>Agende <em>hoje</em></h2>
   <p>Sem fila, sem espera. Escolha seu horário em segundos.</p>
-  <a href="corte.html" class="btn-gold">
-    Garantir meu horário
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </a>
+  <a href="corte.html" class="btn-gold">Garantir meu horário<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 </section>
 
-<!-- FOOTER -->
 <footer>
   <div class="footer-top">
     <div>
-      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--gold);letter-spacing:.18em;">GOLD LINE  </div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--gold);letter-spacing:.18em;" data-barber="nome">GOLD LINE</div>
       <div class="footer-info">
-        Vitória de Santo Antão — PE<br>
-        Seg a Sáb · 9h às 20h<br>
-        (81) 9 9120-4180
+        <span data-barber="cidade">Vitória de Santo Antão — PE</span><br>
+        <span data-barber="horario">Seg a Sáb · 9h às 20h</span><br>
+        <span data-barber="whatsapp">(81) 9 9120-4180</span>
       </div>
     </div>
     <div class="footer-links">
@@ -186,142 +121,99 @@
     <span>&copy; 2026 Italo Farias — Todos os direitos reservados</span>
   </div>
 </footer>
-<script >
-  /* HEADER SCROLL */
+
+<!--
+  saas.js VEM ANTES do script da página.
+  Ele define a variável global  API  que o script abaixo usa.
+-->
+<script src="saas.js"></script>
+
+<script>
+/* HEADER SCROLL */
 const header = document.getElementById('header');
-window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>60));
+window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 60));
 
 /* SLIDER */
-const track = document.getElementById('slidesTrack');
-const slides = document.querySelectorAll('.slide');
+const track    = document.getElementById('slidesTrack');
+const slides   = document.querySelectorAll('.slide');
 const dotsWrap = document.getElementById('heroDots');
 const progress = document.getElementById('slideProgress');
 const DURATION = 5000;
-let idx=0, autoTimer;
+let idx = 0, autoTimer;
 
-slides.forEach((_,i)=>{
-  const d=document.createElement('div');
-  d.className='hdot'+(i===0?' active':'');
-  d.addEventListener('click',()=>goTo(i));
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'hdot' + (i === 0 ? ' active' : '');
+  d.addEventListener('click', () => goTo(i));
   dotsWrap.appendChild(d);
 });
 
-function goTo(n){
+function goTo(n) {
   slides[idx].classList.remove('active');
-  idx=(n+slides.length)%slides.length;
+  idx = (n + slides.length) % slides.length;
   slides[idx].classList.add('active');
-  track.style.transform=`translateX(-${idx*100}%)`;
-  document.querySelectorAll('.hdot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  track.style.transform = `translateX(-${idx * 100}%)`;
+  document.querySelectorAll('.hdot').forEach((d, i) => d.classList.toggle('active', i === idx));
   resetProgress();
 }
-
-function resetProgress(){
-  progress.style.transition='none';
-  progress.style.width='0%';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    progress.style.transition=`width ${DURATION}ms linear`;
-    progress.style.width='100%';
+function resetProgress() {
+  progress.style.transition = 'none';
+  progress.style.width = '0%';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    progress.style.transition = `width ${DURATION}ms linear`;
+    progress.style.width = '100%';
   }));
 }
+function startAuto() { clearInterval(autoTimer); autoTimer = setInterval(() => goTo(idx + 1), DURATION); }
 
-function startAuto(){
-  clearInterval(autoTimer);
-  autoTimer=setInterval(()=>goTo(idx+1),DURATION);
-}
+document.getElementById('nextBtn').addEventListener('click', () => { goTo(idx + 1); startAuto(); });
+document.getElementById('prevBtn').addEventListener('click', () => { goTo(idx - 1); startAuto(); });
 
-document.getElementById('nextBtn').addEventListener('click',()=>{ goTo(idx+1); startAuto(); });
-document.getElementById('prevBtn').addEventListener('click',()=>{ goTo(idx-1); startAuto(); });
-
-let sx=0;
-track.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
-track.addEventListener('touchend',e=>{
-  const dx=e.changedTouches[0].clientX-sx;
-  if(Math.abs(dx)>50){ goTo(dx<0?idx+1:idx-1); startAuto(); }
+let sx = 0;
+track.addEventListener('touchstart', e => sx = e.touches[0].clientX, { passive: true });
+track.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - sx;
+  if (Math.abs(dx) > 50) { goTo(dx < 0 ? idx + 1 : idx - 1); startAuto(); }
 });
-
 resetProgress(); startAuto();
 
 /* TICKER */
-const words=['Corte Masculino','Barba','Degradê','Nevou','Infantil','Agendamento Online','Vitória de Santo Antão','Italo Barber'];
-const tt=document.getElementById('tickerTrack');
-[...words,...words,...words,...words].forEach(w=>{
-  const s=document.createElement('span');
-  s.className='ticker-item'; s.textContent=w;
+const words = ['Corte Masculino', 'Barba', 'Degradê', 'Nevou', 'Infantil', 'Agendamento Online'];
+const tt = document.getElementById('tickerTrack');
+[...words, ...words, ...words, ...words].forEach(w => {
+  const s = document.createElement('span');
+  s.className = 'ticker-item'; s.textContent = w;
   tt.appendChild(s);
 });
 
 /* SCROLL REVEAL */
-const obs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
-},{threshold:.1});
-document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: .1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-/* COUNTER ANIMATION */
-const counterObs = new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(!e.isIntersecting) return;
-    const el = e.target;
-    const target = +el.dataset.count;
-    const isDecimal = el.dataset.decimal;
-    const suffix = el.dataset.suffix || '+';
-    const duration = 1800;
-    const start = performance.now();
-    function tick(now){
-      const p = Math.min((now-start)/duration, 1);
-      const ease = 1-Math.pow(1-p,3);
-      const val = target * ease;
-      el.textContent = isDecimal
-        ? (val/10).toFixed(1) + suffix
-        : Math.round(val) + suffix;
-      if(p<1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-    counterObs.unobserve(el);
-  });
-},{threshold:.5});
-document.querySelectorAll('.astat-num[data-count]').forEach(el=>counterObs.observe(el));
-
-/* CANVAS PARTÍCULAS */
-(function(){
+/* PARTÍCULAS */
+(function () {
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
-  let W, H, particles=[];
-
-  function resize(){
-    W=canvas.width=canvas.offsetWidth;
-    H=canvas.height=canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  function rand(a,b){return a+Math.random()*(b-a);}
-
-  for(let i=0;i<55;i++){
-    particles.push({
-      x:rand(0,1), y:rand(0,1),
-      size:rand(.6,1.8),
-      speed:rand(.00008,.00022),
-      alpha:rand(.15,.5),
-      drift:rand(-.0001,.0001)
-    });
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    particles.forEach(p=>{
-      p.y -= p.speed;
-      p.x += p.drift;
-      if(p.y<0){p.y=1;p.x=rand(0,1);}
-      if(p.x<0||p.x>1){p.x=rand(0,1);}
-      ctx.beginPath();
-      ctx.arc(p.x*W, p.y*H, p.size, 0, Math.PI*2);
-      ctx.fillStyle=`rgba(201,168,76,${p.alpha})`;
-      ctx.fill();
+  let W, H, particles = [];
+  function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
+  resize(); window.addEventListener('resize', resize);
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  for (let i = 0; i < 55; i++) particles.push({ x: rand(0, 1), y: rand(0, 1), size: rand(.6, 1.8), speed: rand(.00008, .00022), alpha: rand(.15, .5), drift: rand(-.0001, .0001) });
+  (function draw() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.y -= p.speed; p.x += p.drift;
+      if (p.y < 0) { p.y = 1; p.x = rand(0, 1); }
+      if (p.x < 0 || p.x > 1) { p.x = rand(0, 1); }
+      ctx.beginPath(); ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,168,76,${p.alpha})`; ctx.fill();
     });
     requestAnimationFrame(draw);
-  }
-  draw();
+  })();
 })();
 </script>
+
 </body>
 </html>

@@ -29,11 +29,6 @@ function toast(texto, cor){
   setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),500); },2800);
 }
 
-/* API */
-const API =
-  window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://barber-7p3h.onrender.com';
 
 const lista = document.getElementById('lista');
 let concluidos = []; // cache local
@@ -66,7 +61,9 @@ function carregarConcluidos(){
     .then(dados=>{
       lista.innerHTML='';
 
-      concluidos = dados.filter(a=>(a.status||'').toLowerCase().trim()==='concluido');
+      concluidos = dados.filter(a =>
+  (a.status || '').toLowerCase().includes('conclu')
+);
 
       atualizarStats(concluidos);
 
