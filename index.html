@@ -7,11 +7,12 @@
 <body>
 
 <script>
- const params = window.location.search;
-window.location.href = 'projeto/index.html' + params;
+  // pega TODOS os parâmetros da URL (?b=italo etc)
+  const params = window.location.search;
+
+  // redireciona mantendo os parâmetros
+  window.location.replace('projeto/index.html' + params);
 </script>
-
-
 
 </body>
 </html>

@@ -1,113 +1,71 @@
-// ============================================================
-// saas.js — Carrega os dados da barbearia e aplica na página
-// ============================================================
-// COMO FUNCIONA:
-//   1. Lê o slug da URL  →  seusite.com/?b=goldline  →  slug = "goldline"
-//   2. Busca as configs no servidor:  GET /api/goldline/config
-//   3. Substitui o texto de todos os elementos com data-barber="..."
-//   4. Aplica a cor da barbearia no CSS
-//   5. Disponibiliza a variável global  API  pros outros scripts
-//
-// COMO USAR NOS HTMLS:
-//   Qualquer texto que muda por barbearia, adicione data-barber="chave":
-//
-//   <span data-barber="nome">GOLD LINE</span>       ← nome da barbearia
-//   <span data-barber="cidade">· Pernambuco</span>  ← cidade
-//   <span data-barber="horario">Seg-Sáb 9h às 20h</span>
-//   <span data-barber="whatsapp">(81) 9...</span>
-//   <p data-barber="sobre">Texto da seção sobre...</p>
-//
-// COMO CRIAR LINK PRA NOVA BARBEARIA:
-//   Não precisa de nenhum arquivo novo! Só faça um INSERT no banco:
-//
-//   INSERT INTO barbearias (slug, nome, username, password, telefone, whatsapp, cidade, cor_primaria)
-//   VALUES ('joao', 'Barbearia do João', 'joao', 'senha123', '5581999999999', '5581999999999', 'Recife — PE', '#e63946');
-//
-//   Aí o link do João fica:  seusite.com/?b=joao
-//   Ele vê os dados dele, cor dele, agendamentos dele.
-//   Você não toca em nenhum arquivo HTML.
-// ============================================================
-
+// ================================
+// CONFIG BASE
+// ================================
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
     : 'https://barbearias-muti-tenant.onrender.com';
 
-// Lê o slug da URL — aceita ?b=goldline ou /goldline/pagina.html
-function lerSlug() {
+// ================================
+// SLUG
+// ================================
+function getSlug() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('b')) return params.get('b');
-
-  const partes = window.location.pathname.split('/').filter(Boolean);
-  if (partes.length > 0 && !partes[0].includes('.')) return partes[0];
-
-  return 'goldline'; // fallback padrão
+  return params.get('b') || 'goldline';
 }
 
-const BARBER_SLUG =
-  new URLSearchParams(window.location.search).get('b') ||
-  'goldline';
+const BARBER_SLUG = getSlug();
+const API = `${BASE_URL}/api/${BARBER_SLUG}`;
 
-// API global — usada em TODOS os outros scripts da página
-// Ex: fetch(`${API}/agendamentos/data/2026-04-21`)
-const API = `${BASE_URL}/api/${BARBER_SLUG || 'goldline'}`;
-
-// Busca as configs e aplica na página
+// ================================
+// CONFIG DA BARBEARIA
+// ================================
 async function aplicarConfig() {
   try {
-    const res    = await fetch(`${API}/config`);
+    const res = await fetch(`${API}/config`);
     const config = await res.json();
 
     if (!config || !config.nome) return;
 
-    // Aplica a cor primária da barbearia no CSS inteiro
     const cor = config.cor_primaria || '#c9a84c';
-    document.documentElement.style.setProperty('--gold',  cor);
+
+    document.documentElement.style.setProperty('--gold', cor);
     document.documentElement.style.setProperty('--gold2', cor);
 
-    // Título da aba do navegador
     document.title = config.nome;
 
-    // Substitui todos os elementos marcados com data-barber="..."
-    const substituir = {
-      nome:    config.nome,
-      cidade:  config.cidade ? '· ' + config.cidade : '',
+    const dados = {
+      nome: config.nome,
+      cidade: config.cidade ? '· ' + config.cidade : '',
       horario: config.horario_func || 'Seg a Sáb · 9h às 20h',
-      whatsapp:config.whatsapp || '',
-      sobre:   config.sobre || ''
+      whatsapp: config.whatsapp || '',
+      sobre: config.sobre || ''
     };
 
-    Object.entries(substituir).forEach(([chave, valor]) => {
+    Object.entries(dados).forEach(([chave, valor]) => {
       if (!valor) return;
+
       document.querySelectorAll(`[data-barber="${chave}"]`).forEach(el => {
         el.textContent = valor;
       });
     });
 
-    // Logo com imagem (opcional — se a barbearia tiver logo_url no banco)
     if (config.logo_url) {
       document.querySelectorAll('[data-barber="logo"]').forEach(el => {
-        el.innerHTML = `<img src="${config.logo_url}" alt="${config.nome}" style="height:36px;object-fit:contain;">`;
+        el.innerHTML = `<img src="${config.logo_url}" style="height:36px;">`;
       });
     }
 
-    // Salva no localStorage pra outros scripts usarem
-    localStorage.setItem('barber_slug', BARBER_SLUG);
-    localStorage.setItem('barber_nome', config.nome);
-    localStorage.setItem('barber_wa',   config.whatsapp || '');
-    localStorage.setItem('barber_cor',  cor);
-
   } catch (err) {
-    // Se der erro (ex: servidor offline), mantém os textos padrão do HTML
-    console.warn('saas.js: config não carregada.', err.message);
+    console.error('Erro ao carregar config:', err);
   }
 }
 
-
+// ================================
+// PRESERVAR SLUG NOS LINKS
+// ================================
 function aplicarSlugNosLinks() {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get('b');
-
+  const slug = getSlug();
   if (!slug) return;
 
   document.querySelectorAll('a').forEach(link => {
@@ -117,14 +75,18 @@ function aplicarSlugNosLinks() {
 
     const url = new URL(href, window.location.origin);
 
-    // adiciona ou substitui o parâmetro b
     url.searchParams.set('b', slug);
 
     link.setAttribute('href', url.pathname + url.search);
   });
 }
 
+// ================================
+// INICIALIZAÇÃO
+// ================================
 window.addEventListener('load', () => {
+  console.log('URL FINAL:', window.location.href);
+
   aplicarConfig();
   aplicarSlugNosLinks();
 });
