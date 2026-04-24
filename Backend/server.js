@@ -35,19 +35,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// 🔥 BLOQUEIO AQUI
-app.use((req, res, next) => {
-  if (
-    req.path.startsWith("/api") ||
-    req.path === "/teste" ||
-    req.path === "/whatsapp-status"
-  ) {
-    return next();
-  }
 
-  console.log("⚠️ Tentativa:", req.path);
-  return res.status(403).json({ erro: "Acesso bloqueado" });
-});
 
 // ============================================================
 // WHATSAPP COM BAILEYS
