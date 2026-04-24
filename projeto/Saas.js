@@ -44,11 +44,13 @@ function lerSlug() {
   return 'goldline'; // fallback padrão
 }
 
-const BARBER_SLUG = lerSlug();
+const BARBER_SLUG =
+  new URLSearchParams(window.location.search).get('b') ||
+  'goldline';
 
 // API global — usada em TODOS os outros scripts da página
 // Ex: fetch(`${API}/agendamentos/data/2026-04-21`)
-const API = `${BASE_URL}/api/${BARBER_SLUG}`;
+const API = `${BASE_URL}/api/${BARBER_SLUG || 'goldline'}`;
 
 // Busca as configs e aplica na página
 async function aplicarConfig() {
@@ -102,11 +104,8 @@ async function aplicarConfig() {
 }
 
 // Roda quando o DOM estiver pronto
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', aplicarConfig);
-} else {
-  aplicarConfig();
-}
+window.addEventListener('load', aplicarConfig);
+
 function aplicarSlugNosLinks() {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get('b');
