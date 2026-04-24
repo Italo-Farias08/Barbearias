@@ -103,8 +103,6 @@ async function aplicarConfig() {
   }
 }
 
-// Roda quando o DOM estiver pronto
-window.addEventListener('load', aplicarConfig);
 
 function aplicarSlugNosLinks() {
   const params = new URLSearchParams(window.location.search);
@@ -115,10 +113,18 @@ function aplicarSlugNosLinks() {
   document.querySelectorAll('a').forEach(link => {
     const href = link.getAttribute('href');
 
-    if (!href || href.startsWith('http') || href.includes('?')) return;
+    if (!href || href.startsWith('http')) return;
 
-    link.setAttribute('href', `${href}?b=${slug}`);
+    const url = new URL(href, window.location.origin);
+
+    // adiciona ou substitui o parâmetro b
+    url.searchParams.set('b', slug);
+
+    link.setAttribute('href', url.pathname + url.search);
   });
 }
 
-aplicarSlugNosLinks();
+window.addEventListener('load', () => {
+  aplicarConfig();
+  aplicarSlugNosLinks();
+});
