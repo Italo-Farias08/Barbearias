@@ -31,7 +31,7 @@
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://barber-7p3h.onrender.com';
+    : 'https://barbearias-muti-tenant.onrender.com';
 
 // Lê o slug da URL — aceita ?b=goldline ou /goldline/pagina.html
 function lerSlug() {

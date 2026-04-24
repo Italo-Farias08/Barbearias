@@ -53,7 +53,7 @@ document.getElementById('telefoneCliente').addEventListener('input',function(){
 const API=
   window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'
     ?'http://127.0.0.1:3000'
-    :'https://barber-7p3h.onrender.com';
+    :'https://barbearias-muti-tenant.onrender.com';
 
 const diasDiv=document.getElementById('dias');
 const horariosDiv=document.getElementById('horarios');
