@@ -1,4 +1,13 @@
 // ================================
+// ANTI-FOUC — esconde imediatamente
+// ================================
+document.documentElement.style.visibility = 'hidden';
+
+const timeoutSeguranca = setTimeout(() => {
+  document.documentElement.style.visibility = 'visible';
+}, 3000);
+
+// ================================
 // CONFIG BASE
 // ================================
 const BASE_URL =
@@ -55,11 +64,14 @@ async function aplicarConfig() {
 
   } catch (err) {
     console.error('Erro ao carregar config:', err);
+  } finally {
+    clearTimeout(timeoutSeguranca);
+    document.documentElement.style.visibility = 'visible';
   }
 }
 
 // ================================
-// APLICAR SLUG NOS LINKS — CORRIGIDO
+// APLICAR SLUG NOS LINKS
 // ================================
 function aplicarSlugNosLinks() {
   const slug = getSlug();
@@ -68,33 +80,26 @@ function aplicarSlugNosLinks() {
   document.querySelectorAll('a').forEach(link => {
     const href = link.getAttribute('href');
 
-    // Ignora: vazio, externo, âncora pura (#secao), javascript:
     if (
       !href ||
       href.startsWith('http') ||
       href.startsWith('//') ||
-      href.startsWith('#') ||       // <-- âncora pura: deixa quieto
+      href.startsWith('#') ||
       href.startsWith('javascript')
     ) return;
 
-    // Para links que já têm âncora junto com path (ex: "outro.html#secao")
     const [pathPart, hashPart] = href.split('#');
-
-    // Monta a URL só com o path (sem o hash)
     const url = new URL(pathPart, window.location.href);
-
-    // Garante que o slug está lá
     url.searchParams.set('b', slug);
 
-    // Reconstrói com o hash, se existia
-    const novoHref = url.pathname + url.search + (hashPart ? '#' + hashPart : '');
-
-    link.setAttribute('href', novoHref);
+    link.setAttribute('href', url.pathname + url.search + (hashPart ? '#' + hashPart : ''));
   });
 }
 
+// ================================
+// INIT
+// ================================
 window.addEventListener('load', () => {
-  console.log('URL FINAL:', window.location.href);
   aplicarConfig();
   aplicarSlugNosLinks();
 });
