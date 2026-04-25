@@ -28,10 +28,8 @@ async function aplicarConfig() {
     if (!config || !config.nome) return;
 
     const cor = config.cor_primaria || '#c9a84c';
-
     document.documentElement.style.setProperty('--gold', cor);
     document.documentElement.style.setProperty('--gold2', cor);
-
     document.title = config.nome;
 
     const dados = {
@@ -44,7 +42,6 @@ async function aplicarConfig() {
 
     Object.entries(dados).forEach(([chave, valor]) => {
       if (!valor) return;
-
       document.querySelectorAll(`[data-barber="${chave}"]`).forEach(el => {
         el.textContent = valor;
       });
@@ -61,6 +58,9 @@ async function aplicarConfig() {
   }
 }
 
+// ================================
+// APLICAR SLUG NOS LINKS — CORRIGIDO
+// ================================
 function aplicarSlugNosLinks() {
   const slug = getSlug();
   if (!slug) return;
@@ -68,18 +68,33 @@ function aplicarSlugNosLinks() {
   document.querySelectorAll('a').forEach(link => {
     const href = link.getAttribute('href');
 
-    if (!href || href.startsWith('http')) return;
+    // Ignora: vazio, externo, âncora pura (#secao), javascript:
+    if (
+      !href ||
+      href.startsWith('http') ||
+      href.startsWith('//') ||
+      href.startsWith('#') ||       // <-- âncora pura: deixa quieto
+      href.startsWith('javascript')
+    ) return;
 
-    const url = new URL(href, window.location.origin);
+    // Para links que já têm âncora junto com path (ex: "outro.html#secao")
+    const [pathPart, hashPart] = href.split('#');
 
+    // Monta a URL só com o path (sem o hash)
+    const url = new URL(pathPart, window.location.href);
+
+    // Garante que o slug está lá
     url.searchParams.set('b', slug);
 
-    link.setAttribute('href', url.pathname + url.search);
+    // Reconstrói com o hash, se existia
+    const novoHref = url.pathname + url.search + (hashPart ? '#' + hashPart : '');
+
+    link.setAttribute('href', novoHref);
   });
 }
+
 window.addEventListener('load', () => {
   console.log('URL FINAL:', window.location.href);
-
   aplicarConfig();
   aplicarSlugNosLinks();
 });
