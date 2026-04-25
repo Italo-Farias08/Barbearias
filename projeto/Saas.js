@@ -61,9 +61,6 @@ async function aplicarConfig() {
   }
 }
 
-// ================================
-// PRESERVAR SLUG NOS LINKS
-// ================================
 function aplicarSlugNosLinks() {
   const slug = getSlug();
   if (!slug) return;
@@ -80,10 +77,6 @@ function aplicarSlugNosLinks() {
     link.setAttribute('href', url.pathname + url.search);
   });
 }
-
-// ================================
-// INICIALIZAÇÃO
-// ================================
 window.addEventListener('load', () => {
   console.log('URL FINAL:', window.location.href);
 
