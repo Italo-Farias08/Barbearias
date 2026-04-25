@@ -14,7 +14,8 @@ window.login = async function () {
   try {
     const slug = new URLSearchParams(window.location.search).get("b");
     localStorage.setItem("slug", slug);
-    const res = await fetch(`http://localhost:3000/api/${slug}/login`, {
+
+    const res = await fetch(`${BASE_URL}/api/${slug}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password })
