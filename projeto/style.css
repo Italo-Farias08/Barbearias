@@ -1,5 +1,5 @@
   :root {
-  --gold:  #ffc926;
+  --gold:  #ffc926; 
   --gold2: #ffc926;
   --dark: #080807;
   --dark2: #101010;
@@ -18,7 +18,6 @@ html{scroll-behavior:smooth;
 }
 @keyframes scan{from{top:0;}to{top:100vh;}}
 
-/* CANVAS */
 #particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
 body{
   background:var(--dark);
@@ -49,8 +48,11 @@ body::after{
   transition:width .2s,height .2s;
 }
 .cursor-ring{
-  position:fixed;width:36px;height:36px;
-  border:1px solid rgba(201,168,76,.5);border-radius:50%;
+  position:fixed;
+  width:36px;
+  height:36px;
+  border:1px solid rgba(201,168,76,.5);
+  border-radius:50%;
   pointer-events:none;z-index:9998;
   transform:translate(-50%,-50%);
   transition:width .35s,height .35s;
@@ -245,7 +247,7 @@ html, body {
 .slide.active .slide-btn{opacity:1;
   transform:translateY(0);
 }
-.slide-btn:hover{background:var(--gold2);
+.slide-btn:hover{background:var(--gold);
   gap:20px;}
 .slide-btn svg{transition:transform .3s;
 }
@@ -618,7 +620,7 @@ will-change: auto;
   padding:20px 48px;
   transition:background .3s,gap .3s;
 }
-.btn-gold:hover{background:var(--gold2);
+.btn-gold:hover{background:var(--gold);
   gap:20px;
 }
 

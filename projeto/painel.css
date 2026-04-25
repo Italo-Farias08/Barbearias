@@ -45,9 +45,13 @@ header{
   border-bottom:1px solid var(--border);
 }
 
-.logo{display:flex;flex-direction:column;line-height:1;text-decoration:none;}
+.logo{display:flex;
+  flex-direction:column;line-height:1;text-decoration:none;}
+
 .logo-main{font-family:'Playfair Display',serif;font-weight:900;font-size:19px;letter-spacing:.18em;color:var(--gold);}
+
 .logo-sub{font-size:8px;letter-spacing:.5em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
 
 .header-right{display:flex;align-items:center;gap:20px;}
 
