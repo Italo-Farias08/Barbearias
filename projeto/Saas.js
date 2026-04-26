@@ -31,22 +31,28 @@ const API = `${BASE_URL}/api/${BARBER_SLUG}`;
 // ================================
 async function aplicarConfig() {
   try {
-    const res = await fetch(`${API}/config`);
+    const res    = await fetch(`${API}/config`);
     const config = await res.json();
+
+    console.log('CONFIG RECEBIDA:', config);
 
     if (!config || !config.nome) return;
 
+    // Cor primária
     const cor = config.cor_primaria || '#c9a84c';
     document.documentElement.style.setProperty('--gold', cor);
     document.documentElement.style.setProperty('--gold2', cor);
+
+    // Título da aba
     document.title = config.nome;
 
+    // Campos de texto
     const dados = {
-      nome: config.nome,
-      cidade: config.cidade ? '· ' + config.cidade : '',
+      nome:    config.nome,
+      cidade:  config.cidade   ? '· ' + config.cidade : '',
       horario: config.horario_func || 'Seg a Sáb · 9h às 20h',
       whatsapp: config.whatsapp || '',
-      sobre: config.sobre || ''
+      sobre:   config.sobre    || ''
     };
 
     Object.entries(dados).forEach(([chave, valor]) => {
@@ -56,6 +62,7 @@ async function aplicarConfig() {
       });
     });
 
+    // Logo
     if (config.logo_url) {
       document.querySelectorAll('[data-barber="logo"]').forEach(el => {
         el.innerHTML = `<img src="${config.logo_url}" style="height:36px;">`;
@@ -95,9 +102,6 @@ function aplicarSlugNosLinks() {
     link.setAttribute('href', url.pathname + url.search + (hashPart ? '#' + hashPart : ''));
   });
 }
-const res = await fetch(`${API}/config`);
-const config = await res.json();
-console.log('CONFIG RECEBIDA:', config); // ← adiciona isso
 
 // ================================
 // INIT
