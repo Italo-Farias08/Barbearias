@@ -95,6 +95,9 @@ function aplicarSlugNosLinks() {
     link.setAttribute('href', url.pathname + url.search + (hashPart ? '#' + hashPart : ''));
   });
 }
+const res = await fetch(`${API}/config`);
+const config = await res.json();
+console.log('CONFIG RECEBIDA:', config); // ← adiciona isso
 
 // ================================
 // INIT
