@@ -605,7 +605,20 @@ app.get("/api/:slug/horarios", resolveBarbearia, async (req, res) => {
     res.json({});
   }
 });
-
+app.get("/api/:slug/config", resolveBarbearia, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT slug, nome, cidade, horario_func, whatsapp,
+              cor_primaria, logo_url, sobre
+       FROM barbearias WHERE slug = $1`,
+      [req.params.slug]
+    );
+    res.json(result.rows[0] || {});
+  } catch (err) {
+    console.error(err);
+    res.json({});
+  }
+});
 
 // ============================================================
 // BANCO + START

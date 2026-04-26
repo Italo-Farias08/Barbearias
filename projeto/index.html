@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<canvas id="particles"></canvas>
 <header id="header">
   <a href="#" class="logo">
     <span class="logo-main" data-barber="nome"></span>
@@ -193,26 +192,7 @@ const obs = new IntersectionObserver(entries => {
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
 /* PARTÍCULAS */
-(function () {
-  const canvas = document.getElementById('particles');
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
-  function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
-  resize(); window.addEventListener('resize', resize);
-  function rand(a, b) { return a + Math.random() * (b - a); }
-  for (let i = 0; i < 55; i++) particles.push({ x: rand(0, 1), y: rand(0, 1), size: rand(.6, 1.8), speed: rand(.00008, .00022), alpha: rand(.15, .5), drift: rand(-.0001, .0001) });
-  (function draw() {
-    ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => {
-      p.y -= p.speed; p.x += p.drift;
-      if (p.y < 0) { p.y = 1; p.x = rand(0, 1); }
-      if (p.x < 0 || p.x > 1) { p.x = rand(0, 1); }
-      ctx.beginPath(); ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(201,168,76,${p.alpha})`; ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  })();
-})();
+
 </script>
 
 </body>

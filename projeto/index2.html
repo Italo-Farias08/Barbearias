@@ -734,15 +734,28 @@ async function carregarHorarios() {
 function renderizarHorarios(ocupados) {
   horariosDiv.innerHTML = '';
 
+  const agora = new Date();
+  const ehHoje = dataSelecionada &&
+    dataSelecionada.toDateString() === agora.toDateString();
+
   horarios.forEach(h => {
     const div = document.createElement('div');
     div.className = 'horario';
     div.textContent = h;
 
-    if (ocupados.includes(h)) {
+    // Verifica se o horário já passou (só importa se for hoje)
+    let jaPAssou = false;
+    if (ehHoje) {
+      const [hora, min] = h.split(':').map(Number);
+      const horarioDate = new Date();
+      horarioDate.setHours(hora, min, 0, 0);
+      jaPAssou = horarioDate <= agora;
+    }
+
+    if (ocupados.includes(h) || jaPAssou) {
       div.style.opacity = '0.3';
       div.style.pointerEvents = 'none';
-      div.textContent += ' ✕';
+      div.textContent += jaPAssou ? ' ⌛' : ' ✕';
     } else {
       div.onclick = () => selecionarHorario(div);
     }
