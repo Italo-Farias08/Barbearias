@@ -1,5 +1,5 @@
   :root {
-  --gold:  #7200be; 
+  --gold:  #ffc926; 
   --gold2: #ffc926;
   --dark: #080807;
   --dark2: #101010;
@@ -355,7 +355,7 @@ html, body {
   font-family:'Playfair Display',serif;
   font-size:140px;
   font-weight:900;
-  color:rgba(201,168,76,.028);
+  color:rgba(158, 158, 158, 0.075);
   letter-spacing:.1em;
   pointer-events:none;
   white-space:nowrap;
@@ -475,7 +475,7 @@ will-change: auto;
 .srv-num{font-family:'Playfair Display',serif;
   font-size:11px;
   letter-spacing:.3em;
-  color:rgba(201, 168, 76, 0.753);
+  color: var(--gold);
   margin-bottom:24px;
 }
 
@@ -584,7 +584,7 @@ will-change: auto;
   font-family:'Playfair Display',serif;
   font-size:220px;
   font-weight:900;
-  color:rgba(201,168,76,.022);
+  color:rgba(167, 167, 167, 0.022);
   white-space:nowrap;
   pointer-events:none;letter-spacing:.1em;
 }

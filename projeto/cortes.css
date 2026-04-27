@@ -91,8 +91,8 @@ header{
 .page-hero::before{
   content:'';position:absolute;inset:0;
   background-image:
-    linear-gradient(rgba(201,168,76,.045) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(201,168,76,.045) 1px,transparent 1px);
+    linear-gradient(rgba(202, 202, 202, 0.068) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(196, 194, 194, 0.055) 1px,transparent 1px);
   background-size:52px 52px;
   -webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%);
   mask-image:linear-gradient(to bottom,black 0%,transparent 100%);
@@ -105,7 +105,7 @@ header{
   position:absolute;top:20px;right:-10px;
   font-family:'Playfair Display',serif;
   font-size:160px;font-weight:900;
-  color:rgba(201,168,76,.025);
+  color:rgba(180, 180, 180, 0.025);
   letter-spacing:.08em;pointer-events:none;
   white-space:nowrap;line-height:1;
 }
@@ -157,8 +157,9 @@ header{
   grid-template-columns:repeat(3,1fr);
   gap:1px;
   background:var(--border);
-  border:1px solid var(--border);
+  border:1px solid rgba(255, 255, 255, 0.274);
   border-top:none;
+  background-color: #080807;
 }
 
 /* CARD */
@@ -256,6 +257,7 @@ header{
 }
 
 .corte-price{text-align:right;}
+
 .price-from{
   display:block;font-size:9px;
   letter-spacing:.3em;text-transform:uppercase;
@@ -263,12 +265,14 @@ header{
 }
 .price-val{
   font-family:'Playfair Display',serif;
-  font-size:26px;color:var(--gold);line-height:1;
+  font-size:26px;
+  color:var(--gold);
+  line-height:1;
 }
 
 /* FOOTER */
 footer{
-  border-top:1px solid var(--border);
+  border-top:1px solid rgba(179, 179, 179, 0.342);
   padding:32px 96px;
   display:flex;justify-content:space-between;
   align-items:center;

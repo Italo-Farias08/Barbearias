@@ -57,7 +57,7 @@ header{
   padding:20px 56px;
   background:rgba(8,8,7,.92);
   backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid var(--gold);
 }
 .logo{display:flex;
   flex-direction:column;
@@ -100,8 +100,8 @@ header{
   content:'';
   position:absolute;inset:0;
   background-image:
-    linear-gradient(rgba(201,168,76,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(201,168,76,.04) 1px,transparent 1px);
+    linear-gradient(rgba(202, 202, 202, 0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(194, 194, 194, 0.04) 1px,transparent 1px);
   background-size:52px 52px;
   -webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%);
   mask-image:linear-gradient(to bottom,black 0%,transparent 100%);
@@ -115,7 +115,7 @@ header{
   font-family:'Playfair Display',serif;
   font-size:160px;
   font-weight:900;
-  color:rgba(201,168,76,.025);
+  color:rgba(202, 202, 202, 0.025);
   letter-spacing:.08em;
   pointer-events:none;
   white-space:nowrap;
