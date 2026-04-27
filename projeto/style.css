@@ -51,7 +51,7 @@ body::after{
   position:fixed;
   width:36px;
   height:36px;
-  border:1px solid rgba(201,168,76,.5);
+  border:1px solid  rgba(255, 255, 255, 0.295);
   border-radius:50%;
   pointer-events:none;z-index:9998;
   transform:translate(-50%,-50%);

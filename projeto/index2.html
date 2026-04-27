@@ -26,7 +26,16 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 #particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
 
 
-header{position:sticky;top:0;z-index:200;display:flex;justify-content:space-between;align-items:center;padding:20px 56px;background:rgba(8,8,7,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+header{position:sticky;
+  top:0;
+  z-index:200;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 56px;
+  background:rgba(8,8,7,.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid  rgba(255, 255, 255, 0.295);}
 
 .logo{display:flex;flex-direction:column;line-height:1;text-decoration:none;}
 .logo-main{font-family:'Playfair Display',serif;font-weight:900;font-size:20p x;letter-spacing:.18em;color:var(--gold);}
@@ -50,7 +59,7 @@ pointer-events:none;}
 
 .hero-inner{position:relative;z-index:1;}
 
-.servico-badge{display:inline-flex;align-items:center;gap:10px;background:var(--dark3);border:1px solid var(--border);padding:8px 18px;margin-bottom:24px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.servico-badge{display:inline-flex;align-items:center;gap:10px;background:var(--dark3);border:1px solid  rgba(255, 255, 255, 0.295);padding:8px 18px;margin-bottom:24px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
 .servico-badge strong{color:var(--gold);font-weight:500;}
 .eyebrow{display:flex;align-items:center;gap:14px;font-size:10px;letter-spacing:.45em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;animation:fadeUp .6s ease both;}
 .eyebrow::before{content:'';width:36px;height:1px;background:var(--gold);}

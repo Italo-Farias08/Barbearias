@@ -94,7 +94,7 @@ header{
   position:relative;
   padding:64px 96px 52px;
   overflow:hidden;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid red;
 }
 .page-hero::before{
   content:'';

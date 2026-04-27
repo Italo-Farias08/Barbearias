@@ -50,7 +50,7 @@ header{
   padding:20px 56px;
   background:rgba(8,8,7,.92);
   backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid  rgba(255, 255, 255, 0.295);
 }
 
 .logo{
@@ -84,7 +84,7 @@ header{
   position:relative;
   padding:72px 96px 56px;
   overflow:hidden;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid rgba(255, 255, 255, 0.295);
 }
 
 /* grid geométrico de fundo */
