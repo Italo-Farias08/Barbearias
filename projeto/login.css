@@ -25,7 +25,6 @@ body{
   overflow:hidden;
 }
 
-/* NOISE */
 body::after{
   content:'';position:fixed;inset:0;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
@@ -34,7 +33,6 @@ body::after{
 
 @keyframes scan{from{top:0;}to{top:100vh;}}
 
-/* GRID BG */
 .grid-bg{
   position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:
@@ -43,10 +41,8 @@ body::after{
   background-size:52px 52px;
 }
 
-/* CANVAS */
 #particles{position:fixed;inset:0;pointer-events:none;z-index:1;}
 
-/* CARD */
 .card{
   position:relative;
   z-index:10;
@@ -61,7 +57,6 @@ body::after{
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
 
-/* cantos tech */
 .card::before,.card::after{
   content:'';position:absolute;
   width:32px;height:32px;
@@ -75,15 +70,12 @@ body::after{
   bottom:0;right:0;
   border-bottom:1px solid var(--gold);
   border-right:1px solid var(--gold);
-  /* overrides the noise pseudo — use separate divs instead */
 }
 
-/* Cantos extras via spans */
 .corner{position:absolute;width:32px;height:32px;}
 .corner.tr{top:0;right:0;border-top:1px solid var(--gold);border-right:1px solid var(--gold);}
 .corner.bl{bottom:0;left:0;border-bottom:1px solid var(--gold);border-left:1px solid var(--gold);}
 
-/* LOGO */
 .logo-wrap{
   display:flex;
   flex-direction:column;
@@ -132,7 +124,6 @@ body::after{
   margin-top:5px;
 }
 
-/* DIVIDER */
 .divider{
   display:flex;
   align-items:center;
@@ -146,7 +137,6 @@ body::after{
   color:var(--muted);
 }
 
-/* FORM */
 .field{position:relative;
   margin-bottom:16px;
 }
@@ -176,14 +166,12 @@ body::after{
 .field input:focus{border-color:var(--gold);}
 .field input::placeholder{color:rgba(106,106,98,.5);}
 
-/* linha dourada animada */
 .field::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
   background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .35s;
 }
 .field:focus-within::after{transform:scaleX(1);}
 
-/* BOTÃO */
 .btn-login{
   width:100%;margin-top:32px;
   padding:18px;

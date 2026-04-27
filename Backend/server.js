@@ -14,7 +14,7 @@ const app = express();
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
 
-app.use(helmet()); // headers de segurança (XSS, clickjacking etc.)
+app.use(helmet());
 
 // Limite global: 200 req/min por IP
 app.use(rateLimit({
@@ -32,7 +32,7 @@ const limiterLogin = rateLimit({
   message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
 });
 
-app.use(express.json({ limit: "10kb" })); // impede body gigante (DoS)
+app.use(express.json({ limit: "10kb" }));
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",")
@@ -195,12 +195,10 @@ app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
 // HELPERS
 // ============================================================
 
-// Valida se o slug tem apenas letras, números e hífen (evita injection de rota)
 function slugValido(slug) {
   return /^[a-z0-9-]+$/.test(slug);
 }
 
-// Verifica se a barbearia está com assinatura ativa
 async function podeUsarSistema(slug) {
   const result = await db.query(
     "SELECT ativo, vencimento FROM barbearias WHERE slug = $1",
@@ -208,7 +206,7 @@ async function podeUsarSistema(slug) {
   );
   const barb = result.rows[0];
   if (!barb || !barb.vencimento) return false;
-  const hoje      = new Date();
+  const hoje       = new Date();
   const vencimento = new Date(barb.vencimento);
   return barb.ativo && hoje <= vencimento;
 }
@@ -219,7 +217,6 @@ async function podeUsarSistema(slug) {
 async function resolveBarbearia(req, res, next) {
   const { slug } = req.params;
 
-  // Bloqueia slugs malformados antes de ir ao banco
   if (!slugValido(slug)) {
     return res.status(400).json({ erro: "Slug inválido" });
   }
@@ -248,8 +245,6 @@ async function verificarAssinatura(req, res, next) {
   next();
 }
 
-// Aplica resolveBarbearia + verificarAssinatura em todas as rotas /api/:slug/*
-// EXCETO config e login (precisam funcionar mesmo sem assinatura paga)
 app.use("/api/:slug", resolveBarbearia);
 
 // ============================================================
@@ -276,7 +271,6 @@ app.get("/api/:slug/config", async (req, res) => {
 app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   const { username, password } = req.body;
 
-  // Validação básica de entrada
   if (!username || !password || typeof username !== "string" || typeof password !== "string") {
     return res.status(400).json({ erro: "Dados inválidos" });
   }
@@ -299,9 +293,6 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
     const user = result.rows[0];
 
     // ⚠️  IMPORTANTE: troque para bcrypt quando puder.
-    // Por enquanto mantém a comparação direta pra não quebrar nada,
-    // mas adicione o hash nas senhas do banco quando possível:
-    //   const ok = await bcrypt.compare(password, user.password);
     if (password !== user.password) {
       return res.status(401).json({ erro: "Usuário ou senha inválidos" });
     }
@@ -321,17 +312,33 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
 // AGENDAR
 // ============================================================
 
-// Valida os campos de um agendamento
+// ✅ CORRIGIDO: valida horário usando a data EXATA enviada pelo cliente
+// (sem converter para UTC), comparando com o horário de Brasília.
+// O servidor pode estar em UTC, mas a data/hora vem do frontend já no fuso certo.
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
   if (!horario || !/^\d{2}:\d{2}(:\d{2})?$/.test(horario)) return "Horário inválido";
 
-  // Bloqueia agendamentos no passado
+  // Pega hora atual de Brasília (UTC-3) — independente do fuso do servidor
   const agora = new Date();
-  const [h, m] = horario.split(":");
-  const dataHorario = new Date(`${data}T${h}:${m}:00`);
-  if (dataHorario <= agora) return "Não é possível agendar em horário passado";
+  const agoraBrasilia = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+
+  const [h, m]      = horario.split(":");
+  const [ano, mes, dia] = data.split("-");
+
+  // Monta a data/hora do agendamento como se fosse no horário de Brasília
+  const dataHorarioBrasilia = new Date(
+    Number(ano),
+    Number(mes) - 1,
+    Number(dia),
+    Number(h),
+    Number(m),
+    0
+  );
+
+  // Compara: se o horário de Brasília do agendamento já passou, rejeita
+  if (dataHorarioBrasilia <= agoraBrasilia) return "Não é possível agendar em horário passado";
 
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
   return null;
@@ -344,7 +351,7 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   if (erro) return res.status(400).json({ erro });
 
   const barbearia_id = req.barbearia.id;
-  const horarioLimpo = horario.substring(0, 5); // normaliza para HH:MM
+  const horarioLimpo = horario.substring(0, 5);
 
   try {
     const existe = await db.query(

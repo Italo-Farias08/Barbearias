@@ -685,6 +685,19 @@ document.getElementById('telefoneCliente').addEventListener('input', function ()
   else if (v.length <= 11) this.value = v.replace(/(\d{2})(\d{1})(\d{0,4})(\d{0,4})/, '($1) $2 $3-$4');
 });
 
+/* ============================================================
+   FUNÇÃO AUXILIAR — converte Date para string YYYY-MM-DD
+   usando o horário LOCAL (sem conversão UTC).
+   Isso evita o bug onde às 21h de Recife (00h UTC)
+   a data virava o dia seguinte.
+   ============================================================ */
+function dataLocalStr(date) {
+  const ano = date.getFullYear();
+  const mes = String(date.getMonth() + 1).padStart(2, '0');
+  const dia = String(date.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 /* VARIÁVEIS — API vem do saas.js (carregado antes) */
 const diasDiv       = document.getElementById('dias');
 const horariosDiv   = document.getElementById('horarios');
@@ -696,66 +709,79 @@ const confirmarBtn  = document.getElementById('confirmarNome');
 
 let dataSelecionada    = null;
 let horarioSelecionado = null;
+let horarios           = [];
 
-let horarios = [];
+/* ============================================================
+   GERA LISTA DE HORÁRIOS com base na config do banco
+   ============================================================ */
 function gerarHorarios(config) {
   horarios = [];
 
-  const inicio = config.hora_inicio.split(':');
-  const fim    = config.hora_fim.split(':');
-  const intervalo = config.intervalo_minutos;
+  const [horaIni, minIni] = config.hora_inicio.substring(0, 5).split(':');
+  const [horaFim, minFim] = config.hora_fim.substring(0, 5).split(':');
+  const intervalo = Number(config.intervalo_minutos);
 
-  let data = new Date();
-  data.setHours(inicio[0], inicio[1], 0, 0);
+  // Usa datas genéricas só para calcular os horários — sem depender do dia atual
+  const base    = new Date(2000, 0, 1, Number(horaIni), Number(minIni), 0);
+  const fimDate = new Date(2000, 0, 1, Number(horaFim), Number(minFim), 0);
 
-  const fimDate = new Date();
-  fimDate.setHours(fim[0], fim[1], 0, 0);
-
-  while (data <= fimDate) {
-    const h = String(data.getHours()).padStart(2, '0');
-    const m = String(data.getMinutes()).padStart(2, '0');
-
+  while (base <= fimDate) {
+    const h = String(base.getHours()).padStart(2, '0');
+    const m = String(base.getMinutes()).padStart(2, '0');
     horarios.push(`${h}:${m}`);
-
-    data.setMinutes(data.getMinutes() + intervalo);
+    base.setMinutes(base.getMinutes() + intervalo);
   }
 }
 
+/* ============================================================
+   BUSCA CONFIG DE HORÁRIOS DO SERVIDOR
+   ============================================================ */
 async function carregarHorarios() {
-  const barberId = localStorage.getItem('barber_id');
-
-  const res = await fetch(`${API}/horarios`)
-  const config = await res.json();
-
-  gerarHorarios(config);
-
-  // não coloca nada aqui
+  try {
+    const res    = await fetch(`${API}/horarios`);
+    const config = await res.json();
+    gerarHorarios(config);
+  } catch (e) {
+    // fallback padrão caso a requisição falhe
+    gerarHorarios({ hora_inicio: '08:00', hora_fim: '21:00', intervalo_minutos: 30 });
+  }
 }
+
+/* ============================================================
+   RENDERIZA OS HORÁRIOS, marcando ocupados e já passados
+   ============================================================ */
 function renderizarHorarios(ocupados) {
   horariosDiv.innerHTML = '';
 
+  // Hora atual do Brasil — usa o relógio do dispositivo do usuário (já está no fuso certo)
   const agora = new Date();
   const ehHoje = dataSelecionada &&
-    dataSelecionada.toDateString() === agora.toDateString();
+    dataSelecionada.getFullYear() === agora.getFullYear() &&
+    dataSelecionada.getMonth()    === agora.getMonth()    &&
+    dataSelecionada.getDate()     === agora.getDate();
 
   horarios.forEach(h => {
     const div = document.createElement('div');
     div.className = 'horario';
     div.textContent = h;
 
-    // Verifica se o horário já passou (só importa se for hoje)
-    let jaPAssou = false;
+    let jaPassou = false;
     if (ehHoje) {
       const [hora, min] = h.split(':').map(Number);
-      const horarioDate = new Date();
-      horarioDate.setHours(hora, min, 0, 0);
-      jaPAssou = horarioDate <= agora;
+      // Compara direto usando hora/minuto local — sem criar string ISO
+      const horarioDate = new Date(
+        agora.getFullYear(),
+        agora.getMonth(),
+        agora.getDate(),
+        hora, min, 0
+      );
+      jaPassou = horarioDate <= agora;
     }
 
-    if (ocupados.includes(h) || jaPAssou) {
-      div.style.opacity = '0.3';
+    if (ocupados.includes(h) || jaPassou) {
+      div.style.opacity      = '0.3';
       div.style.pointerEvents = 'none';
-      div.textContent += jaPAssou ? ' ⌛' : ' ✕';
+      div.textContent += jaPassou ? ' ⌛' : ' ✕';
     } else {
       div.onclick = () => selecionarHorario(div);
     }
@@ -764,15 +790,19 @@ function renderizarHorarios(ocupados) {
   });
 }
 
+/* ============================================================
+   GERA OS PRÓXIMOS DIAS (exceto domingo)
+   ============================================================ */
 const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const hoje = new Date();
+const meses     = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const hoje      = new Date();
 
 function gerarProximosDias(qtd) {
-  qtd = qtd || 10; diasDiv.innerHTML = '';
+  qtd = qtd || 10;
+  diasDiv.innerHTML = '';
   for (let i = 0; i < qtd; i++) {
-    const data = new Date(); data.setDate(hoje.getDate() + i);
-    if (data.getDay() === 0) continue;
+    const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+    if (data.getDay() === 0) continue; // pula domingo
     const div = document.createElement('div');
     div.classList.add('dia');
     div.dataset.label = `${data.getDate()} de ${meses[data.getMonth()]}`;
@@ -782,52 +812,39 @@ function gerarProximosDias(qtd) {
   }
 }
 
-
+/* ============================================================
+   SELECIONA UM DIA — busca horários ocupados no servidor
+   ============================================================ */
 function selecionarDia(elemento, data) {
   document.querySelectorAll('.dia').forEach(d => d.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
-  dataSelecionada = data; horarioSelecionado = null;
+  dataSelecionada    = data;
+  horarioSelecionado = null;
   document.getElementById('resumo').classList.remove('visivel');
   botao.disabled = true;
-  const dataFormatada = data.toISOString().split('T')[0];
+
+  // ✅ USA dataLocalStr — evita virar o dia por conta do UTC
+  const dataFormatada = dataLocalStr(data);
+
   horariosDiv.innerHTML = '<div class="loading-txt">Carregando horários...</div>';
   fetch(`${API}/agendamentos/data/${dataFormatada}`)
     .then(res => { if (!res.ok) throw new Error(); return res.json(); })
     .then(ocupados => {
-      const ho = Array.isArray(ocupados) ? ocupados.map(h => h.horario).filter(Boolean) : [];
+      const ho = Array.isArray(ocupados)
+        ? ocupados.map(h => (h.horario || '').trim().substring(0, 5)).filter(Boolean)
+        : [];
       renderizarHorarios(ho);
     })
     .catch(() => renderizarHorarios([]));
 }
 
-function gerarHorarios(config) {
-  horarios = [];
-
-  const [horaIni, minIni] = config.hora_inicio.substring(0,5).split(':');
-  const [horaFim, minFim] = config.hora_fim.substring(0,5).split(':');
-
-  const intervalo = config.intervalo_minutos;
-
-  let data = new Date();
-  data.setHours(horaIni, minIni, 0, 0);
-
-  const fimDate = new Date();
-  fimDate.setHours(horaFim, minFim, 0, 0);
-
-  while (data <= fimDate) {
-    const h = String(data.getHours()).padStart(2, '0');
-    const m = String(data.getMinutes()).padStart(2, '0');
-
-    horarios.push(`${h}:${m}`);
-
-    data.setMinutes(data.getMinutes() + intervalo);
-  }
-}
-
+/* ============================================================
+   SELECIONA UM HORÁRIO
+   ============================================================ */
 function selecionarHorario(elemento) {
   document.querySelectorAll('.horario').forEach(h => h.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
-  horarioSelecionado = elemento.textContent.replace(' ✕', '').trim();
+  horarioSelecionado = elemento.textContent.replace(' ✕', '').replace(' ⌛', '').trim();
   const diaSel = document.querySelector('.dia.selecionado');
   document.getElementById('resumoServico').textContent = nomeServico || '—';
   document.getElementById('resumoData').textContent    = diaSel ? diaSel.dataset.label : '—';
@@ -837,27 +854,46 @@ function selecionarHorario(elemento) {
   botao.disabled = false;
 }
 
+/* ============================================================
+   ABRE MODAL AO CLICAR EM CONFIRMAR
+   ============================================================ */
 botao.addEventListener('click', () => {
-  if (!dataSelecionada || !horarioSelecionado) { mostrarMensagem('⚠️ Selecione dia e horário!', '#e05050'); return; }
+  if (!dataSelecionada || !horarioSelecionado) {
+    mostrarMensagem('⚠️ Selecione dia e horário!', '#e05050');
+    return;
+  }
   modal.classList.add('aberto');
   setTimeout(() => inputNome.focus(), 300);
 });
 
 document.getElementById('cancelarModal').addEventListener('click', () => modal.classList.remove('aberto'));
 
+/* ============================================================
+   CONFIRMA O AGENDAMENTO
+   ============================================================ */
 confirmarBtn.addEventListener('click', () => {
   const nome     = inputNome.value.trim();
   const telefone = limparTelefone(inputTel.value.trim());
-  if (!nome)                          { mostrarMensagem('Digite seu nome!', '#e05050'); inputNome.focus(); return; }
-  if (!telefone || telefone.length < 10) { mostrarMensagem('Digite um WhatsApp válido!', '#e05050'); inputTel.focus(); return; }
-  if (!valorServico)                  { mostrarMensagem('Selecione um serviço!', '#e05050'); return; }
 
-  const dataFormatada = dataSelecionada.toISOString().split('T')[0];
+  if (!nome)                             { mostrarMensagem('Digite seu nome!', '#e05050'); inputNome.focus(); return; }
+  if (!telefone || telefone.length < 10) { mostrarMensagem('Digite um WhatsApp válido!', '#e05050'); inputTel.focus(); return; }
+  if (!valorServico)                     { mostrarMensagem('Selecione um serviço!', '#e05050'); return; }
+
+  // ✅ USA dataLocalStr — data correta no fuso do Brasil
+  const dataFormatada = dataLocalStr(dataSelecionada);
   const horarioFinal  = horarioSelecionado;
 
   /* Número do barbeiro — vem do saas.js via localStorage */
   const numeroBarbeiro = localStorage.getItem('barber_wa') || '5581991204180';
-  const mensagem = `🧾 *AGENDAMENTO CONFIRMADO*\n\n👤 Nome: ${nome}\n📱 WhatsApp: ${telefone}\n💰 Serviço: R$${valorServico}\n📅 Data: ${dataFormatada}\n⏰ Horário: ${horarioFinal}\n\n💈 Novo agendamento recebido!`;
+  const mensagem =
+    `🧾 *AGENDAMENTO CONFIRMADO*\n\n` +
+    `👤 Nome: ${nome}\n` +
+    `📱 WhatsApp: ${telefone}\n` +
+    `💰 Serviço: R$${valorServico}\n` +
+    `📅 Data: ${dataFormatada}\n` +
+    `⏰ Horário: ${horarioFinal}\n\n` +
+    `💈 Novo agendamento recebido!`;
+
   window.open(`https://api.whatsapp.com/send?phone=${numeroBarbeiro}&text=${encodeURIComponent(mensagem)}`, '_blank');
 
   fetch(`${API}/agendar`, {
@@ -877,10 +913,9 @@ confirmarBtn.addEventListener('click', () => {
 inputNome.addEventListener('keydown', e => { if (e.key === 'Enter') inputTel.focus(); });
 inputTel.addEventListener('keydown',  e => { if (e.key === 'Enter') confirmarBtn.click(); });
 
+/* INICIALIZA */
 gerarProximosDias();
-
-carregarHorarios(); // 👈 ESSA LINHA RESOLVE
-
+carregarHorarios();
 </script>
 </body>
 </html>
