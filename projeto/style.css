@@ -633,7 +633,7 @@ will-change: auto;
 }
 
 footer{padding:64px 96px 36px;
-  border-top:1px solid var(--border);
+  border-top:1px solid  rgba(255, 255, 255, 0.295);
   
 }
 
@@ -641,7 +641,7 @@ footer{padding:64px 96px 36px;
   justify-content:space-between;
   align-items:flex-start;
   padding-bottom:48px;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid  rgba(255, 255, 255, 0.295);
   margin-bottom:32px;
 }
 
