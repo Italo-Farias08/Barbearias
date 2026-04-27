@@ -312,26 +312,33 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
 // AGENDAR
 // ============================================================
 
-// ✅ CORRIGIDO: compara tudo em UTC puro.
-// O frontend envia data "YYYY-MM-DD" e horario "HH:MM" já no fuso do usuário (Brasília).
-// Tratamos esse horário como UTC-3 somando 3h para obter o instante UTC equivalente,
-// e comparamos com Date.now() que também é UTC. Assim o servidor não precisa de fuso.
+// ✅ CORRIGIDO: valida horário usando a data EXATA enviada pelo cliente
+// (sem converter para UTC), comparando com o horário de Brasília.
+// O servidor pode estar em UTC, mas a data/hora vem do frontend já no fuso certo.
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
   if (!horario || !/^\d{2}:\d{2}(:\d{2})?$/.test(horario)) return "Horário inválido";
 
-  const [ano, mes, dia] = data.split("-").map(Number);
-  const [h, m]          = horario.split(":").map(Number);
+  // Pega hora atual de Brasília (UTC-3) — independente do fuso do servidor
+  const agora = new Date();
+  const agoraBrasilia = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
 
-  // Monta o instante UTC do agendamento assumindo que o horário enviado é Brasília (UTC-3)
-  // Brasília = UTC-3, então UTC = horário local + 3h
-  const agendamentoUTC = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
+  const [h, m]      = horario.split(":");
+  const [ano, mes, dia] = data.split("-");
 
-  // Margem de 2 minutos para evitar rejeição por diferença de clock
-  const agoraUTC = Date.now() - 2 * 60 * 1000;
+  // Monta a data/hora do agendamento como se fosse no horário de Brasília
+  const dataHorarioBrasilia = new Date(
+    Number(ano),
+    Number(mes) - 1,
+    Number(dia),
+    Number(h),
+    Number(m),
+    0
+  );
 
-  if (agendamentoUTC <= agoraUTC) return "Não é possível agendar em horário passado";
+  // Compara: se o horário de Brasília do agendamento já passou, rejeita
+  if (dataHorarioBrasilia <= agoraBrasilia) return "Não é possível agendar em horário passado";
 
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
   return null;
