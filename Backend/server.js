@@ -572,6 +572,25 @@ app.get("/api/:slug/servicos", async (req, res) => {
     res.json([]);
   }
 });
+// ============================================================
+// PROFISSIONAIS
+// ============================================================
+app.get("/api/:slug/profissionais", async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, nome, foto_url, especialidade
+       FROM profissionais
+       WHERE barbearia_id = $1 AND ativo = true
+       ORDER BY ordem`,
+      [req.barbearia.id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
 
 // ============================================================
 // BANCO + START
