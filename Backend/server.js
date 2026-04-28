@@ -312,40 +312,33 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
 // AGENDAR
 // ============================================================
 
-// ✅ CORRIGIDO: valida horário usando a data EXATA enviada pelo cliente
-// (sem converter para UTC), comparando com o horário de Brasília.
-// O servidor pode estar em UTC, mas a data/hora vem do frontend já no fuso certo.
+// ✅ CORRIGIDO: compara tudo em UTC puro.
+// O frontend envia data "YYYY-MM-DD" e horario "HH:MM" já no fuso do usuário (Brasília).
+// Tratamos esse horário como UTC-3 somando 3h para obter o instante UTC equivalente,
+// e comparamos com Date.now() que também é UTC. Assim o servidor não precisa de fuso.
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
   if (!horario || !/^\d{2}:\d{2}(:\d{2})?$/.test(horario)) return "Horário inválido";
 
-  // Pega hora atual de Brasília (UTC-3) — independente do fuso do servidor
-  const agora = new Date();
-  const agoraBrasilia = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const [h, m]          = horario.split(":").map(Number);
 
-  const [h, m]      = horario.split(":");
-  const [ano, mes, dia] = data.split("-");
+  // Monta o instante UTC do agendamento assumindo que o horário enviado é Brasília (UTC-3)
+  // Brasília = UTC-3, então UTC = horário local + 3h
+  const agendamentoUTC = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
 
-  // Monta a data/hora do agendamento como se fosse no horário de Brasília
-  const dataHorarioBrasilia = new Date(
-    Number(ano),
-    Number(mes) - 1,
-    Number(dia),
-    Number(h),
-    Number(m),
-    0
-  );
+  // Margem de 2 minutos para evitar rejeição por diferença de clock
+  const agoraUTC = Date.now() - 2 * 60 * 1000;
 
-  // Compara: se o horário de Brasília do agendamento já passou, rejeita
-  if (dataHorarioBrasilia <= agoraBrasilia) return "Não é possível agendar em horário passado";
+  if (agendamentoUTC <= agoraUTC) return "Não é possível agendar em horário passado";
 
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
   return null;
 }
 
 app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
-  const { nome, telefone, data, horario, valor, profissional_id } = req.body;
+  const { nome, telefone, data, horario, valor } = req.body;
 
   const erro = validarAgendamento({ nome, data, horario, valor });
   if (erro) return res.status(400).json({ erro });
@@ -355,31 +348,17 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
 
   try {
     const existe = await db.query(
-  `SELECT id FROM agendamentos
-   WHERE barbearia_id = $1 
-   AND data = $2 
-   AND horario = $3 
-   AND status = 'pendente'
-   AND profissional_id = $4`,
-  [barbearia_id, data, horarioLimpo, profissional_id]
-);
+      `SELECT id FROM agendamentos
+       WHERE barbearia_id = $1 AND data = $2 AND horario = $3 AND status = 'pendente'`,
+      [barbearia_id, data, horarioLimpo]
+    );
     if (existe.rows.length > 0) return res.json({ erro: "Horário já ocupado!" });
 
     await db.query(
-  `INSERT INTO agendamentos (
-    barbearia_id, nome, telefone, data, horario, valor, profissional_id
-  )
-   VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-  [
-    barbearia_id,
-    nome.trim(),
-    telefone || null,
-    data,
-    horarioLimpo,
-    Number(valor) || 0,
-    profissional_id || null
-  ]
-);
+      `INSERT INTO agendamentos (barbearia_id, nome, telefone, data, horario, valor)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [barbearia_id, nome.trim(), telefone || null, data, horarioLimpo, Number(valor) || 0]
+    );
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
@@ -413,16 +392,11 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   }
 
   try {
-   const profissional_id = req.query.profissional_id;
-
-const result = await db.query(
-  `SELECT TRIM(horario) AS horario FROM agendamentos
-   WHERE barbearia_id = $1
-   AND data = $2
-   AND status = 'pendente'
-   AND ($3::int IS NULL OR profissional_id = $3)`,
-  [req.barbearia.id, data, profissional_id || null]
-);
+    const result = await db.query(
+      `SELECT TRIM(horario) AS horario FROM agendamentos
+       WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'`,
+      [req.barbearia.id, data]
+    );
     res.json(result.rows);
   } catch {
     res.json([]);
@@ -591,6 +565,7 @@ app.get("/api/:slug/servicos", async (req, res) => {
     res.json([]);
   }
 });
+
 // ============================================================
 // PROFISSIONAIS
 // ============================================================
@@ -603,11 +578,168 @@ app.get("/api/:slug/profissionais", async (req, res) => {
        ORDER BY ordem`,
       [req.barbearia.id]
     );
-
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.json([]);
+  }
+});
+
+// ============================================================
+// PLANOS — lista os planos ativos da barbearia (público)
+// ============================================================
+app.get("/api/:slug/planos", async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, nome, descricao, cortes_mes, valor
+       FROM planos
+       WHERE barbearia_id = $1 AND ativo = true
+       ORDER BY ordem, valor`,
+      [req.barbearia.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+// ============================================================
+// ASSINAR — cliente solicita assinatura (fica como "aguardando")
+// ============================================================
+app.post("/api/:slug/assinar", async (req, res) => {
+  const { nome, telefone, plano_id } = req.body;
+
+  if (!nome || typeof nome !== "string" || nome.trim().length < 2)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (!plano_id || isNaN(Number(plano_id)))
+    return res.status(400).json({ erro: "Plano inválido" });
+
+  try {
+    // Verifica se o plano pertence a essa barbearia
+    const plano = await db.query(
+      `SELECT id FROM planos WHERE id = $1 AND barbearia_id = $2 AND ativo = true`,
+      [Number(plano_id), req.barbearia.id]
+    );
+    if (plano.rows.length === 0)
+      return res.status(400).json({ erro: "Plano não encontrado" });
+
+    await db.query(
+      `INSERT INTO assinantes (barbearia_id, plano_id, nome, telefone, status)
+       VALUES ($1, $2, $3, $4, 'aguardando')`,
+      [req.barbearia.id, Number(plano_id), nome.trim(), telefone || null]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ erro: "Erro ao registrar assinatura" });
+  }
+});
+
+// ============================================================
+// LISTAR ASSINANTES — painel do barbeiro
+// ============================================================
+app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT a.*, p.nome AS plano_nome, p.cortes_mes, p.valor AS plano_valor
+       FROM assinantes a
+       JOIN planos p ON p.id = a.plano_id
+       WHERE a.barbearia_id = $1
+       ORDER BY
+         CASE a.status
+           WHEN 'aguardando' THEN 0
+           WHEN 'ativo'      THEN 1
+           WHEN 'vencido'    THEN 2
+           ELSE 3
+         END,
+         a.criado_em DESC`,
+      [req.barbearia.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+// ============================================================
+// AÇÕES DO ASSINANTE — barbeiro confirma, registra corte etc.
+// ============================================================
+app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
+  const id   = Number(req.params.id);
+  const acao = req.params.acao;
+
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+
+  const acoesValidas = ["confirmar", "usar-corte", "renovar", "cancelar"];
+  if (!acoesValidas.includes(acao))
+    return res.status(400).json({ erro: "Ação inválida" });
+
+  try {
+    // Garante que o assinante pertence a essa barbearia
+    const check = await db.query(
+      `SELECT a.id, a.status, a.cortes_usados, p.cortes_mes
+       FROM assinantes a JOIN planos p ON p.id = a.plano_id
+       WHERE a.id = $1 AND a.barbearia_id = $2`,
+      [id, req.barbearia.id]
+    );
+    if (check.rows.length === 0)
+      return res.status(404).json({ erro: "Assinante não encontrado" });
+
+    const ass = check.rows[0];
+
+    if (acao === "confirmar") {
+      // Ativa o plano por 30 dias a partir de hoje
+      await db.query(
+        `UPDATE assinantes
+         SET status = 'ativo',
+             cortes_usados = 0,
+             data_inicio = NOW(),
+             data_vencimento = NOW() + INTERVAL '30 days'
+         WHERE id = $1`,
+        [id]
+      );
+      return res.json({ sucesso: true });
+    }
+
+    if (acao === "usar-corte") {
+      if (ass.status !== "ativo")
+        return res.json({ erro: "Plano não está ativo" });
+      if (ass.cortes_usados >= ass.cortes_mes)
+        return res.json({ erro: "Limite de cortes atingido neste mês" });
+
+      await db.query(
+        `UPDATE assinantes SET cortes_usados = cortes_usados + 1 WHERE id = $1`,
+        [id]
+      );
+      return res.json({ sucesso: true });
+    }
+
+    if (acao === "renovar") {
+      // Volta para aguardando — cliente paga novamente
+      await db.query(
+        `UPDATE assinantes
+         SET status = 'aguardando', cortes_usados = 0,
+             data_inicio = NULL, data_vencimento = NULL
+         WHERE id = $1`,
+        [id]
+      );
+      return res.json({ sucesso: true });
+    }
+
+    if (acao === "cancelar") {
+      await db.query(
+        `UPDATE assinantes SET status = 'cancelado' WHERE id = $1`,
+        [id]
+      );
+      return res.json({ sucesso: true });
+    }
+
+  } catch (err) {
+    console.error(err);
+    res.json({ erro: "Erro ao executar ação" });
   }
 });
 

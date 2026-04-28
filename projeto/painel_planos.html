@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel — Planos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="painel.css">
+<style>
+/* ============================================================
+   ESTILOS EXTRAS PARA A PÁGINA DE PLANOS
+   ============================================================ */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border-dim);margin-bottom:32px;}
+.tab{padding:14px 28px;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Barlow',sans-serif;}
+.tab:hover{color:var(--cream);}
+.tab.ativa{color:var(--gold);border-bottom-color:var(--gold);}
+
+.tab-content{display:none;}
+.tab-content.ativa{display:block;}
+
+/* CARDS ASSINANTES */
+.asscard{
+  background:var(--dark3);
+  border:1px solid var(--border-dim);
+  padding:0;
+  margin-bottom:12px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:stretch;
+  transition:border-color .2s;
+}
+.asscard:hover{border-color:rgba(201,168,76,.25);}
+
+.asscard-info{padding:20px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;}
+
+.asscard-nome{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex:0 0 100%;margin-bottom:2px;}
+.asscard-meta{display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+.asscard-item{font-size:12px;color:var(--muted);}
+.asscard-item strong{color:var(--cream);font-weight:400;}
+
+/* BARRA DE CORTES */
+.cortes-wrap{display:flex;align-items:center;gap:10px;}
+.cortes-barra{height:4px;background:var(--dark2);border-radius:2px;flex:1;min-width:80px;overflow:hidden;}
+.cortes-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .4s;}
+.cortes-txt{font-size:11px;color:var(--muted);white-space:nowrap;}
+
+/* BADGES DE STATUS */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;}
+.badge-aguardando{background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.25);}
+.badge-ativo{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.25);}
+.badge-vencido{background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.25);}
+.badge-cancelado{background:rgba(156,156,151,.12);color:#9c9c97;border:1px solid rgba(156,156,151,.25);}
+
+/* AÇÕES DO CARD */
+.asscard-actions{
+  display:flex;flex-direction:column;gap:0;
+  border-left:1px solid var(--border-dim);
+  min-width:130px;
+}
+.asscard-actions button{
+  flex:1;background:none;border:none;
+  font-family:'Barlow',sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  cursor:pointer;padding:0 16px;transition:background .2s, color .2s;
+  border-bottom:1px solid var(--border-dim);
+}
+.asscard-actions button:last-child{border-bottom:none;}
+.btn-confirmar-pag{color:#2ecc71;}
+.btn-confirmar-pag:hover{background:rgba(46,204,113,.12);}
+.btn-usar-corte{color:var(--gold);}
+.btn-usar-corte:hover{background:rgba(201,168,76,.1);}
+.btn-cancelar-ass{color:#e74c3c;}
+.btn-cancelar-ass:hover{background:rgba(231,76,60,.1);}
+.btn-renovar{color:#3498db;}
+.btn-renovar:hover{background:rgba(52,152,219,.1);}
+
+/* EMPTY */
+.empty-ass{padding:52px;text-align:center;color:var(--muted);}
+.empty-ass-icon{font-size:36px;margin-bottom:12px;}
+.empty-ass-txt{font-size:13px;letter-spacing:.1em;}
+
+/* STATS */
+.stats-planos{display:flex;gap:16px;margin-bottom:36px;flex-wrap:wrap;}
+.sp{background:var(--dark3);border:1px solid var(--border-dim);padding:20px 24px;flex:1;min-width:140px;}
+.sp-num{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:var(--gold);}
+.sp-lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+
+/* LISTA DE PLANOS CONFIGURADOS */
+.plano-config-card{
+  background:var(--dark3);border:1px solid var(--border-dim);
+  padding:20px 24px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.plano-config-info{}
+.plano-config-nome{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px;}
+.plano-config-desc{font-size:12px;color:var(--muted);}
+.plano-config-right{text-align:right;}
+.plano-config-preco{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold);}
+.plano-config-cortes{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* FILTRO */
+.filtro-wrap{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.filtro-btn{padding:8px 16px;background:var(--dark3);border:1px solid var(--border-dim);color:var(--muted);font-family:'Barlow',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.filtro-btn:hover,.filtro-btn.ativo{background:var(--gold);border-color:var(--gold);color:var(--dark);}
+
+:root{--gold:#ffc926;--dark:#080807;--dark2:#101010;--dark3:#161614;--cream:#f0ebe0;--muted:#9c9c97;--border:rgba(201,168,76,0.18);--border-dim:rgba(255,255,255,0.06);}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<header>
+  <a href="index.html" class="logo">
+    <span class="logo-main" data-barber="nome"></span>
+    <span class="logo-sub" data-barber="cidade"></span>
+  </a>
+  <div class="header-right">
+    <div class="admin-badge"><div class="badge-dot"></div>Painel Admin</div>
+    <a href="login.html" class="btn-sair" onclick="localStorage.removeItem('token')">Sair</a>
+  </div>
+</header>
+
+<div class="page-intro">
+  <div class="intro-inner">
+    <div>
+      <div class="eyebrow">Planos mensais</div>
+      <h1 class="page-title">Assinantes <em>ativos</em></h1>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+  <!-- STATS -->
+  <div class="stats-planos" id="statsPlanos">
+    <div class="sp"><div class="sp-num" id="spAguardando">—</div><div class="sp-lbl">Aguardando pagamento</div></div>
+    <div class="sp"><div class="sp-num" id="spAtivos">—</div><div class="sp-lbl">Assinantes ativos</div></div>
+    <div class="sp"><div class="sp-num" id="spReceita">—</div><div class="sp-lbl">Receita mensal</div></div>
+    <div class="sp"><div class="sp-num" id="spVencendo">—</div><div class="sp-lbl">Vencendo em 5 dias</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab ativa" onclick="mudarTab('assinantes',this)">Assinantes</button>
+    <button class="tab" onclick="mudarTab('planos',this)">Meus Planos</button>
+  </div>
+
+  <!-- TAB: ASSINANTES -->
+  <div class="tab-content ativa" id="tab-assinantes">
+    <div class="filtro-wrap">
+      <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('aguardando',this)">⏳ Aguardando</button>
+      <button class="filtro-btn" onclick="filtrar('ativo',this)">✅ Ativos</button>
+      <button class="filtro-btn" onclick="filtrar('vencido',this)">❌ Vencidos</button>
+    </div>
+    <div id="listaAssinantes"></div>
+  </div>
+
+  <!-- TAB: PLANOS CONFIGURADOS -->
+  <div class="tab-content" id="tab-planos">
+    <div id="listaPlanos"></div>
+    <p style="color:var(--muted);font-size:12px;margin-top:20px;letter-spacing:.08em;">
+      Para adicionar, editar ou remover planos, use o banco de dados conforme o arquivo <strong style="color:var(--cream)">banco_planos.sql</strong>.
+    </p>
+  </div>
+
+</div>
+
+<div class="menu-botoes">
+  <a href="painel.html" class="menu-btn">
+    <span class="menu-icon">📋</span>
+    Agendamentos
+  </a>
+  <a href="lucro.html" class="menu-btn lucro">
+    <span class="menu-icon">💰</span>
+    Lucros
+  </a>
+</div>
+
+<script src="Saas.js"></script>
+<script>
+/* PARTÍCULAS */
+(function(){
+  const c=document.getElementById('particles'),ctx=c.getContext('2d');
+  let W,H,pts=[];
+  function r(){W=c.width=innerWidth;H=c.height=innerHeight;}r();addEventListener('resize',r);
+  function rn(a,b){return a+Math.random()*(b-a);}
+  for(let i=0;i<45;i++) pts.push({x:rn(0,1),y:rn(0,1),s:rn(.4,1.6),sp:rn(.00006,.0002),a:rn(.1,.38),d:rn(-.0001,.0001)});
+  (function draw(){ctx.clearRect(0,0,W,H);pts.forEach(p=>{p.y-=p.sp;p.x+=p.d;if(p.y<0){p.y=1;p.x=rn(0,1);}if(p.x<0||p.x>1)p.x=rn(0,1);ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.s,0,Math.PI*2);ctx.fillStyle=`rgba(201,168,76,${p.a})`;ctx.fill();});requestAnimationFrame(draw);})();
+})();
+
+/* TOAST */
+function toast(txt,cor){
+  cor=cor||'#c9a84c';
+  const el=document.createElement('div');el.className='toast';el.textContent=txt;el.style.background=cor;
+  document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),500);},2800);
+}
+
+/* TABS */
+function mudarTab(nome, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('ativa'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('ativa'));
+  btn.classList.add('ativa');
+  document.getElementById('tab-'+nome).classList.add('ativa');
+}
+
+/* FILTRO */
+let filtroAtual = 'todos';
+let todosAssinantes = [];
+
+function filtrar(status, btn){
+  filtroAtual = status;
+  document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderAssinantes(filtroAtual === 'todos' ? todosAssinantes : todosAssinantes.filter(a=>a.status===status));
+}
+
+/* FORMATA DATA */
+function fmtData(d){
+  if(!d) return '—';
+  const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const [y,m,dd]=d.split('T')[0].split('-');
+  return `${parseInt(dd)} ${meses[parseInt(m)-1]} ${y}`;
+}
+
+/* DIAS ATÉ VENCER */
+function diasAteVencer(dataVenc){
+  if(!dataVenc) return null;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const venc = new Date(dataVenc); venc.setHours(0,0,0,0);
+  return Math.ceil((venc - hoje) / 86400000);
+}
+
+/* STATS */
+function calcStats(list, planosMapa){
+  const aguardando = list.filter(a=>a.status==='aguardando').length;
+  const ativos     = list.filter(a=>a.status==='ativo').length;
+  const vencendo   = list.filter(a=>{
+    if(a.status!=='ativo') return false;
+    const d = diasAteVencer(a.data_vencimento);
+    return d !== null && d <= 5 && d >= 0;
+  }).length;
+
+  // Receita: soma dos planos ativos
+  const receita = list
+    .filter(a=>a.status==='ativo')
+    .reduce((s,a)=>{
+      const p = planosMapa[a.plano_id];
+      return s + (p ? Number(p.valor) : 0);
+    }, 0);
+
+  document.getElementById('spAguardando').textContent = aguardando;
+  document.getElementById('spAtivos').textContent     = ativos;
+  document.getElementById('spReceita').textContent    = 'R$'+receita.toFixed(0);
+  document.getElementById('spVencendo').textContent   = vencendo;
+}
+
+/* RENDER ASSINANTES */
+function renderAssinantes(list){
+  const div = document.getElementById('listaAssinantes');
+  div.innerHTML = '';
+
+  if(list.length === 0){
+    div.innerHTML = `<div class="empty-ass"><div class="empty-ass-icon">👤</div><div class="empty-ass-txt">Nenhum assinante nesta categoria</div></div>`;
+    return;
+  }
+
+  list.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'asscard';
+
+    const statusBadge = {
+      aguardando: '<span class="badge badge-aguardando">⏳ Aguardando pagamento</span>',
+      ativo:      '<span class="badge badge-ativo">✅ Ativo</span>',
+      vencido:    '<span class="badge badge-vencido">❌ Vencido</span>',
+      cancelado:  '<span class="badge badge-cancelado">Cancelado</span>',
+    }[a.status] || '';
+
+    const cortesPct = a.cortes_mes > 0 ? Math.min(100, Math.round((a.cortes_usados/a.cortes_mes)*100)) : 0;
+    const dias = diasAteVencer(a.data_vencimento);
+    const diasTxt = a.status==='ativo' && dias !== null
+      ? (dias < 0 ? `<span style="color:#e74c3c;">Vencido há ${Math.abs(dias)}d</span>`
+         : dias <= 5 ? `<span style="color:#ffc107;">Vence em ${dias}d</span>`
+         : `Vence em ${dias}d`)
+      : '';
+
+    const info = document.createElement('div');
+    info.className = 'asscard-info';
+    info.innerHTML = `
+      <div class="asscard-nome">${a.nome}</div>
+      <div class="asscard-meta">
+        <div class="asscard-item">📱 <strong>${a.telefone||'—'}</strong></div>
+        <div class="asscard-item">📋 Plano: <strong>${a.plano_nome||'—'}</strong></div>
+        <div class="asscard-item">${statusBadge}</div>
+        ${a.data_vencimento ? `<div class="asscard-item">📅 ${diasTxt || fmtData(a.data_vencimento)}</div>` : ''}
+      </div>
+      <div style="width:100%;margin-top:8px;">
+        <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Cortes usados no mês</div>
+        <div class="cortes-wrap">
+          <div class="cortes-barra"><div class="cortes-fill" style="width:${cortesPct}%"></div></div>
+          <span class="cortes-txt">${a.cortes_usados} / ${a.cortes_mes}</span>
+        </div>
+      </div>
+    `;
+
+    const actions = document.createElement('div');
+    actions.className = 'asscard-actions';
+
+    // Botão: confirmar pagamento (só se aguardando ou vencido)
+    if(a.status === 'aguardando' || a.status === 'vencido'){
+      const btn = document.createElement('button');
+      btn.className = 'btn-confirmar-pag';
+      btn.textContent = '✅ Confirmar pago';
+      btn.title = 'Ativa o plano por 30 dias';
+      btn.onclick = () => acao(a.id, 'confirmar');
+      actions.appendChild(btn);
+    }
+
+    // Botão: registrar corte (só se ativo e ainda tem cortes)
+    if(a.status === 'ativo'){
+      const btn = document.createElement('button');
+      btn.className = 'btn-usar-corte';
+      const restantes = a.cortes_mes - a.cortes_usados;
+      btn.textContent = `✂️ Usar corte (${restantes} restante${restantes!==1?'s':''})`;
+      btn.disabled = restantes <= 0;
+      if(restantes <= 0) { btn.style.opacity='.3'; btn.style.cursor='not-allowed'; btn.title='Limite de cortes atingido'; }
+      btn.onclick = () => acao(a.id, 'usar-corte');
+      actions.appendChild(btn);
+
+      // Botão: renovar (reabre pagamento)
+      const btnR = document.createElement('button');
+      btnR.className = 'btn-renovar';
+      btnR.textContent = '🔄 Renovar';
+      btnR.title = 'Marca como aguardando novo pagamento';
+      btnR.onclick = () => acao(a.id, 'renovar');
+      actions.appendChild(btnR);
+    }
+
+    // Botão: WhatsApp
+    if(a.telefone){
+      const btn = document.createElement('button');
+      btn.className = 'btn-usar-corte';
+      btn.style.color = '#25D366';
+      btn.textContent = '📲 WhatsApp';
+      btn.onclick = () => {
+        let tel = a.telefone.replace(/\D/g,'');
+        if(!tel.startsWith('55')) tel = '55'+tel;
+        const msg = a.status === 'aguardando'
+          ? `Olá, ${a.nome}! Seu plano *${a.plano_nome}* está aguardando confirmação de pagamento. Assim que confirmarmos, seu plano será ativado! 💈`
+          : `Olá, ${a.nome}! Seu plano *${a.plano_nome}* está ativo. Você tem *${a.cortes_mes - a.cortes_usados} corte(s)* disponíveis este mês. 💈`;
+        window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+      };
+      actions.appendChild(btn);
+    }
+
+    // Botão: cancelar
+    const btnCanc = document.createElement('button');
+    btnCanc.className = 'btn-cancelar-ass';
+    btnCanc.textContent = '✕ Cancelar';
+    btnCanc.onclick = () => {
+      if(confirm(`Cancelar assinatura de ${a.nome}?`)) acao(a.id, 'cancelar');
+    };
+    actions.appendChild(btnCanc);
+
+    card.appendChild(info);
+    card.appendChild(actions);
+    document.getElementById('listaAssinantes').appendChild(card);
+  });
+}
+
+/* AÇÃO DO ASSINANTE */
+async function acao(id, tipo){
+  try{
+    const r = await fetch(`${API}/assinantes/${id}/${tipo}`, { method: 'PUT' });
+    const data = await r.json();
+    if(data.erro){ toast(data.erro,'#e05050'); return; }
+
+    const msgs = {
+      'confirmar':   '✅ Pagamento confirmado! Plano ativado.',
+      'usar-corte':  '✂️ Corte registrado!',
+      'renovar':     '🔄 Plano marcado para renovação.',
+      'cancelar':    'Assinatura cancelada.',
+    };
+    toast(msgs[tipo]||'Feito!', tipo==='cancelar'?'#e05050':undefined);
+    carregarTudo();
+  } catch(e){
+    toast('Erro ao executar ação','#e05050');
+  }
+}
+
+/* CARREGAR TUDO */
+async function carregarTudo(){
+  document.getElementById('listaAssinantes').innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando...</div>';
+
+  try{
+    const slug = localStorage.getItem('slug');
+    if(!slug){ window.location.href='/login.html'; return; }
+
+    const [resAss, resPlanos] = await Promise.all([
+      fetch(`${API}/assinantes`),
+      fetch(`${API}/planos`)
+    ]);
+
+    const assinantes = await resAss.json();
+    const planos     = await resPlanos.json();
+
+    // Mapa de planos para lookup
+    const planosMapa = {};
+    if(Array.isArray(planos)) planos.forEach(p=>{ planosMapa[p.id]=p; });
+
+    // Injeta nome do plano em cada assinante
+    todosAssinantes = Array.isArray(assinantes) ? assinantes.map(a=>({
+      ...a,
+      plano_nome:  planosMapa[a.plano_id]?.nome || '—',
+      cortes_mes:  planosMapa[a.plano_id]?.cortes_mes || 0,
+    })) : [];
+
+    calcStats(todosAssinantes, planosMapa);
+    renderAssinantes(filtroAtual==='todos' ? todosAssinantes : todosAssinantes.filter(a=>a.status===filtroAtual));
+
+    // Renderiza planos configurados
+    const lp = document.getElementById('listaPlanos');
+    lp.innerHTML = '';
+    if(!Array.isArray(planos)||planos.length===0){
+      lp.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px 0;">Nenhum plano cadastrado.</div>';
+    } else {
+      planos.forEach(p=>{
+        lp.innerHTML += `
+          <div class="plano-config-card">
+            <div class="plano-config-info">
+              <div class="plano-config-nome">${p.nome}</div>
+              <div class="plano-config-desc">${p.descricao||''} · ${p.cortes_mes} cortes/mês</div>
+            </div>
+            <div class="plano-config-right">
+              <div class="plano-config-preco">R$${Number(p.valor).toFixed(2).replace('.',',')}</div>
+              <div class="plano-config-cortes">por mês</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+  } catch(e){
+    console.error(e);
+    document.getElementById('listaAssinantes').innerHTML='<div class="empty-ass"><div class="empty-ass-icon">⚠️</div><div class="empty-ass-txt">Erro ao carregar</div></div>';
+  }
+}
+
+carregarTudo();
+</script>
+</body>
+</html>
