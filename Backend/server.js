@@ -355,10 +355,14 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
 
   try {
     const existe = await db.query(
-      `SELECT id FROM agendamentos
-       WHERE barbearia_id = $1 AND data = $2 AND horario = $3 AND status = 'pendente'`,
-      [barbearia_id, data, horarioLimpo]
-    );
+  `SELECT id FROM agendamentos
+   WHERE barbearia_id = $1 
+   AND data = $2 
+   AND horario = $3 
+   AND status = 'pendente'
+   AND profissional_id = $4`,
+  [barbearia_id, data, horarioLimpo, profissional_id]
+);
     if (existe.rows.length > 0) return res.json({ erro: "Horário já ocupado!" });
 
     await db.query(
