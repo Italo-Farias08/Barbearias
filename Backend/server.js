@@ -254,10 +254,12 @@ app.get("/api/:slug/config", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT slug, nome, cidade, horario_func, whatsapp,
+              pix_chave,
               cor_primaria, logo_url, sobre
        FROM barbearias WHERE slug = $1`,
       [req.params.slug]
     );
+
     res.json(result.rows[0] || {});
   } catch (err) {
     console.error(err);
