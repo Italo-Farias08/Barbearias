@@ -398,26 +398,40 @@ async function acao(id, tipo){
       'renovar':     '🔄 Plano marcado para renovação.',
       'cancelar':    'Assinatura cancelada.',
     };
+
     toast(msgs[tipo]||'Feito!', tipo==='cancelar'?'#e05050':undefined);
-    /* APAGAR CANCELADOS */
-async function apagarCancelados(){
-  const qtd = todosAssinantes.filter(a=>a.status==='cancelado').length;
-  if(qtd === 0){ toast('Nenhum cancelado para apagar.','#9c9c97'); return; }
-  if(!confirm(`Apagar ${qtd} assinante(s) cancelado(s) permanentemente? Esta ação não pode ser desfeita.`)) return;
-  try{
-    const r = await fetch(`${API}/assinantes/cancelados`, { method: 'DELETE' });
-    const data = await r.json();
-    if(data.erro){ toast(data.erro,'#e05050'); return; }
-    toast(`🗑 ${qtd} registro(s) apagado(s).`,'#e74c3c');
     carregarTudo();
+
   } catch(e){
-    toast('Erro ao apagar','#e05050');
+    toast('Erro ao executar ação','#e05050');
   }
 }
 
-carregarTudo();
+/* APAGAR CANCELADOS (AGORA GLOBAL — FUNCIONA NO BOTÃO) */
+async function apagarCancelados(){
+  const qtd = todosAssinantes.filter(a=>a.status==='cancelado').length;
+
+  if(qtd === 0){
+    toast('Nenhum cancelado para apagar.','#9c9c97');
+    return;
+  }
+
+  if(!confirm(`Apagar ${qtd} assinante(s) cancelado(s) permanentemente? Esta ação não pode ser desfeita.`)) return;
+
+  try{
+    const r = await fetch(`${API}/assinantes/cancelados`, { method: 'DELETE' });
+    const data = await r.json();
+
+    if(data.erro){
+      toast(data.erro,'#e05050');
+      return;
+    }
+
+    toast(`🗑 ${qtd} registro(s) apagado(s).`,'#e74c3c');
+    carregarTudo();
+
   } catch(e){
-    toast('Erro ao executar ação','#e05050');
+    toast('Erro ao apagar','#e05050');
   }
 }
 
