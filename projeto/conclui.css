@@ -41,7 +41,7 @@ header{
   padding:18px 56px;
   background:rgba(8,8,7,.95);
   backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid rgba(255, 255, 255, 0.13);
 }
 
 .logo{display:flex;flex-direction:column;line-height:1;text-decoration:none;}
@@ -74,14 +74,14 @@ header{
 .page-intro{
   position:relative;
   padding:56px 96px 44px;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid rgba(255, 255, 255, 0.13);
   overflow:hidden;z-index:1;
 }
 .page-intro::before{
   content:'';position:absolute;inset:0;
   background-image:
-    linear-gradient(rgba(201,168,76,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(201,168,76,.04) 1px,transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255, 255, 255, 0.04) 1px,transparent 1px);
   background-size:52px 52px;
   -webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%);
   mask-image:linear-gradient(to bottom,black 0%,transparent 100%);
@@ -113,11 +113,19 @@ header{
 .page-title em{font-style:italic;color:var(--green);}
 
 .btn-reload{
-  display:flex;align-items:center;gap:8px;
-  background:transparent;border:1px solid var(--border);
-  color:var(--muted);font-family:'Barlow',sans-serif;
-  font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  padding:10px 20px;cursor:pointer;transition:all .3s;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:transparent;
+  border:1px solid rgba(255, 255, 255, 0.13);
+  color:var(--muted);
+  font-family:'Barlow',sans-serif;
+  font-size:10px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  padding:10px 20px;
+  cursor:pointer;
+  transition:all .3s;
 }
 .btn-reload:hover{border-color:var(--gold);color:var(--gold);}
 .btn-reload svg{transition:transform .5s;}
@@ -127,8 +135,8 @@ header{
 .stats-bar{
   display:flex;
   gap:1px;
-  background:var(--border);
-  border:1px solid var(--border);
+  background: rgba(255, 255, 255, 0.13);
+  border:1px solid rgba(255, 255, 255, 0.13);
   position:relative;z-index:1;
   margin: 10px;
   
@@ -155,7 +163,7 @@ header{
 .sec-label::after{content:'';flex:1;height:1px;background:var(--border-dim);}
 
 /* LISTA */
-#lista{display:flex;flex-direction:column;gap:1px;background:var(--border); margin: 10px; border-radius: 10px;}
+#lista{display:flex;flex-direction:column;gap:1px;background: rgba(255, 255, 255, 0.13); margin: 10px; border-radius: 10px;}
 
 /* CARD */
 .card{
