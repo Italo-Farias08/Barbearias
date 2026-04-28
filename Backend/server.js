@@ -664,6 +664,23 @@ app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
 });
 
 // ============================================================
+// APAGAR ASSINANTES CANCELADOS — vem ANTES de /:id/:acao para não conflitar
+// ============================================================
+app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, res) => {
+  try {
+    const r = await db.query(
+      `DELETE FROM assinantes WHERE barbearia_id = $1 AND status = 'cancelado'`,
+      [req.barbearia.id]
+    );
+    console.log(`Assinantes cancelados apagados (${req.params.slug}):`, r.rowCount);
+    res.json({ sucesso: true, apagados: r.rowCount });
+  } catch (err) {
+    console.error(err);
+    res.json({ erro: "Erro ao apagar cancelados" });
+  }
+});
+
+// ============================================================
 // AÇÕES DO ASSINANTE — barbeiro confirma, registra corte etc.
 // ============================================================
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {

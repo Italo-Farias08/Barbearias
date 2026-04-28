@@ -103,6 +103,15 @@
 .filtro-btn{padding:8px 16px;background:var(--dark3);border:1px solid var(--border-dim);color:var(--muted);font-family:'Barlow',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
 .filtro-btn:hover,.filtro-btn.ativo{background:var(--gold);border-color:var(--gold);color:var(--dark);}
 
+.btn-apagar-cancelados{
+  padding:10px 18px;background:transparent;
+  border:1px solid rgba(231,76,60,.35);
+  color:#e74c3c;font-family:'Barlow',sans-serif;
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  cursor:pointer;transition:all .25s;white-space:nowrap;
+}
+.btn-apagar-cancelados:hover{background:rgba(231,76,60,.12);}
+
 :root{--gold:#ffc926;--dark:#080807;--dark2:#101010;--dark3:#161614;--cream:#f0ebe0;--muted:#9c9c97;--border:rgba(201,168,76,0.18);--border-dim:rgba(255,255,255,0.06);}
 </style>
 </head>
@@ -148,11 +157,17 @@
 
   <!-- TAB: ASSINANTES -->
   <div class="tab-content ativa" id="tab-assinantes">
-    <div class="filtro-wrap">
-      <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
-      <button class="filtro-btn" onclick="filtrar('aguardando',this)">⏳ Aguardando</button>
-      <button class="filtro-btn" onclick="filtrar('ativo',this)">✅ Ativos</button>
-      <button class="filtro-btn" onclick="filtrar('vencido',this)">❌ Vencidos</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
+      <div class="filtro-wrap" style="margin-bottom:0;">
+        <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
+        <button class="filtro-btn" onclick="filtrar('aguardando',this)">⏳ Aguardando</button>
+        <button class="filtro-btn" onclick="filtrar('ativo',this)">✅ Ativos</button>
+        <button class="filtro-btn" onclick="filtrar('vencido',this)">❌ Vencidos</button>
+        <button class="filtro-btn" onclick="filtrar('cancelado',this)" style="border-color:rgba(231,76,60,.3);color:#e74c3c;">✕ Cancelados</button>
+      </div>
+      <button class="btn-apagar-cancelados" id="btnApagarCancelados" onclick="apagarCancelados()">
+        🗑 Apagar cancelados
+      </button>
     </div>
     <div id="listaAssinantes"></div>
   </div>
@@ -384,7 +399,23 @@ async function acao(id, tipo){
       'cancelar':    'Assinatura cancelada.',
     };
     toast(msgs[tipo]||'Feito!', tipo==='cancelar'?'#e05050':undefined);
+    /* APAGAR CANCELADOS */
+async function apagarCancelados(){
+  const qtd = todosAssinantes.filter(a=>a.status==='cancelado').length;
+  if(qtd === 0){ toast('Nenhum cancelado para apagar.','#9c9c97'); return; }
+  if(!confirm(`Apagar ${qtd} assinante(s) cancelado(s) permanentemente? Esta ação não pode ser desfeita.`)) return;
+  try{
+    const r = await fetch(`${API}/assinantes/cancelados`, { method: 'DELETE' });
+    const data = await r.json();
+    if(data.erro){ toast(data.erro,'#e05050'); return; }
+    toast(`🗑 ${qtd} registro(s) apagado(s).`,'#e74c3c');
     carregarTudo();
+  } catch(e){
+    toast('Erro ao apagar','#e05050');
+  }
+}
+
+carregarTudo();
   } catch(e){
     toast('Erro ao executar ação','#e05050');
   }
