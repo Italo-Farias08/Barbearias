@@ -1,24 +1,56 @@
 (function(){
-  const canvas=document.getElementById('particles');
-  const ctx=canvas.getContext('2d');
+  const canvas=document.getElementById('particles'),
+        ctx=canvas.getContext('2d');
+
+  ctx.filter = 'blur(1.5px)'; // efeito desfocado
+
   let W,H,pts=[];
-  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
-  resize(); window.addEventListener('resize',resize);
+
+  function resize(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+  }
+
+  resize();
+  window.addEventListener('resize',resize);
+
   function rand(a,b){return a+Math.random()*(b-a);}
-  for(let i=0;i<40;i++) pts.push({x:rand(0,1),y:rand(0,1),size:rand(.4,1.5),speed:rand(.00006,.0002),alpha:rand(.1,.35),drift:rand(-.0001,.0001)});
+
+  for(let i=0;i<50;i++) 
+    pts.push({
+      x:rand(0,1),
+      y:rand(0,1),
+      size:rand(.6,2),
+      speed:rand(.00008,.00018),
+      alpha:rand(.05,.18), // mais suave
+      drift:rand(-.0001,.0001)
+    });
+
   (function draw(){
     ctx.clearRect(0,0,W,H);
+
     pts.forEach(p=>{
-      p.y-=p.speed; p.x+=p.drift;
-      if(p.y<0){p.y=1;p.x=rand(0,1);}
-      if(p.x<0||p.x>1){p.x=rand(0,1);}
-      ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
-      ctx.fillStyle=`rgba(201,168,76,${p.alpha})`;ctx.fill();
+      p.y-=p.speed;
+      p.x+=p.drift;
+
+      if(p.y<0){
+        p.y=1;
+        p.x=rand(0,1);
+      }
+
+      if(p.x<0||p.x>1)
+        p.x=rand(0,1);
+
+      ctx.beginPath();
+      ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
+
+      ctx.fillStyle = `rgba(240,240,240,${p.alpha})`; // branco suave
+      ctx.fill();
     });
+
     requestAnimationFrame(draw);
   })();
 })();
-
 /* TOAST */
 function toast(texto, cor){
   cor=cor||'#4caf7a';

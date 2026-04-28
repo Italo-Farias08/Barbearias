@@ -9,14 +9,12 @@ const app = express();
 
 // ============================================================
 // SEGURANÇA — rate limiting e helmet
-// npm install express-rate-limit helmet
 // ============================================================
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
 
 app.use(helmet());
 
-// Limite global: 200 req/min por IP
 app.use(rateLimit({
   windowMs: 60 * 1000,
   max: 200,
@@ -25,7 +23,6 @@ app.use(rateLimit({
   message: { erro: "Muitas requisições. Tente novamente em 1 minuto." }
 }));
 
-// Limite mais restrito para login: 10 tentativas/min por IP
 const limiterLogin = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -194,7 +191,6 @@ app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
 // ============================================================
 // HELPERS
 // ============================================================
-
 function slugValido(slug) {
   return /^[a-z0-9-]+$/.test(slug);
 }
@@ -259,7 +255,6 @@ app.get("/api/:slug/config", async (req, res) => {
        FROM barbearias WHERE slug = $1`,
       [req.params.slug]
     );
-
     res.json(result.rows[0] || {});
   } catch (err) {
     console.error(err);
@@ -268,7 +263,7 @@ app.get("/api/:slug/config", async (req, res) => {
 });
 
 // ============================================================
-// LOGIN — com rate limit próprio
+// LOGIN
 // ============================================================
 app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   const { username, password } = req.body;
@@ -294,7 +289,6 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
 
     const user = result.rows[0];
 
-    // ⚠️  IMPORTANTE: troque para bcrypt quando puder.
     if (password !== user.password) {
       return res.status(401).json({ erro: "Usuário ou senha inválidos" });
     }
@@ -311,13 +305,8 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
 });
 
 // ============================================================
-// AGENDAR
+// AGENDAR — CORRIGIDO: salva profissional_id e valida conflito por profissional
 // ============================================================
-
-// ✅ CORRIGIDO: compara tudo em UTC puro.
-// O frontend envia data "YYYY-MM-DD" e horario "HH:MM" já no fuso do usuário (Brasília).
-// Tratamos esse horário como UTC-3 somando 3h para obter o instante UTC equivalente,
-// e comparamos com Date.now() que também é UTC. Assim o servidor não precisa de fuso.
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
@@ -326,11 +315,8 @@ function validarAgendamento({ nome, data, horario, valor }) {
   const [ano, mes, dia] = data.split("-").map(Number);
   const [h, m]          = horario.split(":").map(Number);
 
-  // Monta o instante UTC do agendamento assumindo que o horário enviado é Brasília (UTC-3)
-  // Brasília = UTC-3, então UTC = horário local + 3h
+  // Brasília (UTC-3) → UTC = local + 3h
   const agendamentoUTC = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
-
-  // Margem de 2 minutos para evitar rejeição por diferença de clock
   const agoraUTC = Date.now() - 2 * 60 * 1000;
 
   if (agendamentoUTC <= agoraUTC) return "Não é possível agendar em horário passado";
@@ -340,27 +326,40 @@ function validarAgendamento({ nome, data, horario, valor }) {
 }
 
 app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
-  const { nome, telefone, data, horario, valor } = req.body;
+  // ✅ CORRIGIDO: extrai profissional_id do body
+  const { nome, telefone, data, horario, valor, profissional_id } = req.body;
 
   const erro = validarAgendamento({ nome, data, horario, valor });
   if (erro) return res.status(400).json({ erro });
 
   const barbearia_id = req.barbearia.id;
   const horarioLimpo = horario.substring(0, 5);
+  const profId       = profissional_id ? Number(profissional_id) : null;
 
   try {
-    const existe = await db.query(
-      `SELECT id FROM agendamentos
-       WHERE barbearia_id = $1 AND data = $2 AND horario = $3 AND status = 'pendente'`,
-      [barbearia_id, data, horarioLimpo]
-    );
+    // ✅ CORRIGIDO: verifica conflito separado por profissional
+    let queryConflito = `
+      SELECT id FROM agendamentos
+      WHERE barbearia_id = $1 AND data = $2 AND horario = $3 AND status = 'pendente'
+    `;
+    const paramsConflito = [barbearia_id, data, horarioLimpo];
+
+    if (profId) {
+      queryConflito += ` AND profissional_id = $4`;
+      paramsConflito.push(profId);
+    }
+
+    const existe = await db.query(queryConflito, paramsConflito);
     if (existe.rows.length > 0) return res.json({ erro: "Horário já ocupado!" });
 
+    // ✅ CORRIGIDO: salva profissional_id no INSERT
     await db.query(
-      `INSERT INTO agendamentos (barbearia_id, nome, telefone, data, horario, valor)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [barbearia_id, nome.trim(), telefone || null, data, horarioLimpo, Number(valor) || 0]
+      `INSERT INTO agendamentos
+         (barbearia_id, nome, telefone, data, horario, valor, profissional_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [barbearia_id, nome.trim(), telefone || null, data, horarioLimpo, Number(valor) || 0, profId]
     );
+
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
@@ -369,12 +368,19 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
 });
 
 // ============================================================
-// LISTAR AGENDAMENTOS
+// LISTAR AGENDAMENTOS — CORRIGIDO: traz nome do profissional
 // ============================================================
 app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   try {
+    // ✅ CORRIGIDO: JOIN com profissionais para trazer o nome no painel
     const result = await db.query(
-      `SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY id DESC`,
+      `SELECT a.*,
+              p.nome   AS profissional_nome,
+              p.foto_url AS profissional_foto
+       FROM agendamentos a
+       LEFT JOIN profissionais p ON p.id = a.profissional_id
+       WHERE a.barbearia_id = $1
+       ORDER BY a.id DESC`,
       [req.barbearia.id]
     );
     res.json(result.rows);
@@ -384,21 +390,31 @@ app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
 });
 
 // ============================================================
-// HORÁRIOS OCUPADOS POR DATA
+// HORÁRIOS OCUPADOS POR DATA — CORRIGIDO: filtra por profissional
 // ============================================================
 app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   const { data } = req.params;
+  // ✅ CORRIGIDO: recebe profissional_id da query string
+  const { profissional_id } = req.query;
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
     return res.status(400).json({ erro: "Data inválida" });
   }
 
   try {
-    const result = await db.query(
-      `SELECT TRIM(horario) AS horario FROM agendamentos
-       WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'`,
-      [req.barbearia.id, data]
-    );
+    let query = `
+      SELECT TRIM(horario) AS horario FROM agendamentos
+      WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'
+    `;
+    const params = [req.barbearia.id, data];
+
+    // ✅ CORRIGIDO: filtra por profissional se vier na query string
+    if (profissional_id && !isNaN(Number(profissional_id))) {
+      query += ` AND profissional_id = $3`;
+      params.push(Number(profissional_id));
+    }
+
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch {
     res.json([]);
@@ -414,7 +430,6 @@ app.get("/api/:slug/horarios", async (req, res) => {
       `SELECT * FROM horarios_barbearia WHERE barbearia_id = $1`,
       [req.barbearia.id]
     );
-
     res.json(result.rows[0] || {
       hora_inicio: "08:00",
       hora_fim: "21:00",
@@ -588,7 +603,7 @@ app.get("/api/:slug/profissionais", async (req, res) => {
 });
 
 // ============================================================
-// PLANOS — lista os planos ativos da barbearia (público)
+// PLANOS
 // ============================================================
 app.get("/api/:slug/planos", async (req, res) => {
   try {
@@ -607,7 +622,7 @@ app.get("/api/:slug/planos", async (req, res) => {
 });
 
 // ============================================================
-// ASSINAR — cliente solicita assinatura (fica como "aguardando")
+// ASSINAR
 // ============================================================
 app.post("/api/:slug/assinar", async (req, res) => {
   const { nome, telefone, plano_id } = req.body;
@@ -618,7 +633,6 @@ app.post("/api/:slug/assinar", async (req, res) => {
     return res.status(400).json({ erro: "Plano inválido" });
 
   try {
-    // Verifica se o plano pertence a essa barbearia
     const plano = await db.query(
       `SELECT id FROM planos WHERE id = $1 AND barbearia_id = $2 AND ativo = true`,
       [Number(plano_id), req.barbearia.id]
@@ -639,7 +653,7 @@ app.post("/api/:slug/assinar", async (req, res) => {
 });
 
 // ============================================================
-// LISTAR ASSINANTES — painel do barbeiro
+// LISTAR ASSINANTES
 // ============================================================
 app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   try {
@@ -666,7 +680,7 @@ app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
 });
 
 // ============================================================
-// APAGAR ASSINANTES CANCELADOS — vem ANTES de /:id/:acao para não conflitar
+// APAGAR ASSINANTES CANCELADOS
 // ============================================================
 app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, res) => {
   try {
@@ -683,7 +697,7 @@ app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, 
 });
 
 // ============================================================
-// AÇÕES DO ASSINANTE — barbeiro confirma, registra corte etc.
+// AÇÕES DO ASSINANTE
 // ============================================================
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
   const id   = Number(req.params.id);
@@ -697,7 +711,6 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     return res.status(400).json({ erro: "Ação inválida" });
 
   try {
-    // Garante que o assinante pertence a essa barbearia
     const check = await db.query(
       `SELECT a.id, a.status, a.cortes_usados, p.cortes_mes
        FROM assinantes a JOIN planos p ON p.id = a.plano_id
@@ -710,7 +723,6 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     const ass = check.rows[0];
 
     if (acao === "confirmar") {
-      // Ativa o plano por 30 dias a partir de hoje
       await db.query(
         `UPDATE assinantes
          SET status = 'ativo',
@@ -737,7 +749,6 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     }
 
     if (acao === "renovar") {
-      // Volta para aguardando — cliente paga novamente
       await db.query(
         `UPDATE assinantes
          SET status = 'aguardando', cortes_usados = 0,
