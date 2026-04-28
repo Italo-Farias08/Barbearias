@@ -285,6 +285,32 @@ footer a{
   transition:color .3s;
 }
 footer a:hover{color:var(--gold);}
+.btn-assinaturas{
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  border: 1px solid var(--gold)!important;
+  border-radius: 8px !important;
+  background: var(--dark3) ;
+  color: #dbdbdb;
+  padding: 14px 18px;
+  border-radius: 30px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  font-weight: 500;
+  box-shadow: 0 0px 4px var(--gold);
+  z-index: 9999;
+
+  transition: all .25s;
+}
+
+.btn-assinaturas:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.6);
+}
 
 /* RESPONSIVE */
 @media(max-width:1000px){
