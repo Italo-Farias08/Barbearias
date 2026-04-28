@@ -78,7 +78,6 @@ const nomesDias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const hoje=new Date();
 
-/* GERAR DIAS */
 function gerarProximosDias(qtd){
   qtd=qtd||10;diasDiv.innerHTML='';
   for(let i=0;i<qtd;i++){
@@ -92,8 +91,6 @@ function gerarProximosDias(qtd){
     diasDiv.appendChild(div);
   }
 }
-
-/* SELECIONAR DIA */
 function selecionarDia(elemento,data){
   document.querySelectorAll('.dia').forEach(d=>d.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
@@ -112,8 +109,6 @@ function selecionarDia(elemento,data){
     })
     .catch(()=>renderizarHorarios([]));
 }
-
-/* RENDERIZAR HORÁRIOS */
 function renderizarHorarios(horariosOcupados){
   horariosDiv.innerHTML='';
   const agora=new Date();
