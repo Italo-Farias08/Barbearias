@@ -345,7 +345,7 @@ function validarAgendamento({ nome, data, horario, valor }) {
 }
 
 app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
-  const { nome, telefone, data, horario, valor } = req.body;
+  const { nome, telefone, data, horario, valor, profissional_id } = req.body;
 
   const erro = validarAgendamento({ nome, data, horario, valor });
   if (erro) return res.status(400).json({ erro });
@@ -362,10 +362,20 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
     if (existe.rows.length > 0) return res.json({ erro: "Horário já ocupado!" });
 
     await db.query(
-      `INSERT INTO agendamentos (barbearia_id, nome, telefone, data, horario, valor)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [barbearia_id, nome.trim(), telefone || null, data, horarioLimpo, Number(valor) || 0]
-    );
+  `INSERT INTO agendamentos (
+    barbearia_id, nome, telefone, data, horario, valor, profissional_id
+  )
+   VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+  [
+    barbearia_id,
+    nome.trim(),
+    telefone || null,
+    data,
+    horarioLimpo,
+    Number(valor) || 0,
+    profissional_id || null
+  ]
+);
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
@@ -399,11 +409,16 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   }
 
   try {
-    const result = await db.query(
-      `SELECT TRIM(horario) AS horario FROM agendamentos
-       WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'`,
-      [req.barbearia.id, data]
-    );
+   const profissional_id = req.query.profissional_id;
+
+const result = await db.query(
+  `SELECT TRIM(horario) AS horario FROM agendamentos
+   WHERE barbearia_id = $1
+   AND data = $2
+   AND status = 'pendente'
+   AND ($3::int IS NULL OR profissional_id = $3)`,
+  [req.barbearia.id, data, profissional_id || null]
+);
     res.json(result.rows);
   } catch {
     res.json([]);
