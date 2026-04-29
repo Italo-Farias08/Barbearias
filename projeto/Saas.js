@@ -46,13 +46,13 @@ async function aplicarConfig() {
     // Título da aba
     document.title = config.nome;
 
-    // Campos de texto
+    // Campos de texto simples
     const dados = {
-      nome:    config.nome,
-      cidade:  config.cidade   ? '· ' + config.cidade : '',
-      horario: config.horario_func || 'Seg a Sáb · 9h às 20h',
-      whatsapp: config.whatsapp || '',
-      sobre:   config.sobre    || ''
+      nome:     config.nome,
+      cidade:   config.cidade    ? '· ' + config.cidade : '',
+      horario:  config.horario_func || 'Seg a Sáb · 9h às 20h',
+      whatsapp: config.whatsapp  || '',
+      sobre:    config.sobre     || ''
     };
 
     Object.entries(dados).forEach(([chave, valor]) => {
@@ -62,12 +62,28 @@ async function aplicarConfig() {
       });
     });
 
-    // Logo
-    if (config.logo_url) {
-      document.querySelectorAll('[data-barber="logo"]').forEach(el => {
-        el.innerHTML = `<img src="${config.logo_url}" style="height:36px;">`;
-      });
-    }
+    // ================================
+    // LOGO — imagem ou nome como fallback
+    // ================================
+    document.querySelectorAll('[data-barber="logo"]').forEach(el => {
+      el.innerHTML = ''; // limpa
+
+      if (config.logo_url) {
+        // Tem logo: mostra a imagem; se falhar, cai pro nome
+        const img = document.createElement('img');
+        img.src   = config.logo_url;
+        img.alt   = config.nome;
+        img.style.cssText = 'height:38px;width:auto;object-fit:contain;display:block;';
+        img.onerror = () => {
+          // Imagem quebrou — renderiza o nome no lugar
+          el.innerHTML = _logoTexto(config.nome);
+        };
+        el.appendChild(img);
+      } else {
+        // Sem logo: usa o nome da barbearia estilizado
+        el.innerHTML = _logoTexto(config.nome);
+      }
+    });
 
   } catch (err) {
     console.error('Erro ao carregar config:', err);
@@ -75,6 +91,18 @@ async function aplicarConfig() {
     clearTimeout(timeoutSeguranca);
     document.documentElement.style.visibility = 'visible';
   }
+}
+
+// Helper: markup do nome como logo textual
+function _logoTexto(nome) {
+  return `<span style="
+    font-family:'Playfair Display',serif;
+    font-weight:900;
+    font-size:20px;
+    letter-spacing:.18em;
+    color:var(--gold);
+    line-height:1;
+  ">${nome}</span>`;
 }
 
 // ================================

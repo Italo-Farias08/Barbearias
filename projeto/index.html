@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,8 +11,12 @@
 <body>
 <header id="header">
   <a href="#" class="logo">
-    <span class="logo-main" data-barber="nome"></span>
-    <span class="logo-sub"  data-barber="cidade"></span>
+    <!-- ✅ data-barber="logo" → Saas.js coloca a imagem ou o nome aqui -->
+    <span data-barber="logo">
+      <!-- fallback visível antes do JS carregar -->
+      <span class="logo-main" data-barber="nome"></span>
+      <span class="logo-sub"  data-barber="cidade"></span>
+    </span>
   </a>
   <nav>
     <a href="#servicos">Serviços</a>
@@ -79,10 +83,6 @@
   <div class="about-txt">
     <div class="sec-eyebrow">Nossa história</div>
     <h2 class="sec-title" style="font-size:clamp(30px,3.5vw,48px);margin-bottom:0;">Mais que um corte,<br><em>uma experiência</em></h2>
-    <!--
-      data-barber="sobre" → texto da seção "sobre" vem do banco
-      Se a barbearia não tiver "sobre" cadastrado, mantém o texto padrão abaixo
-    -->
     <p data-barber="sobre">A Gold Line nasceu da paixão pelo ofício e pelo cuidado com o cliente. Aqui cada detalhe importa — da música ambiente ao produto no cabelo. Você sai não só bem cortado, mas bem tratado.</p>
     <div class="about-stats">
       <div><div class="astat-num">200+</div><div class="astat-lbl">Clientes</div></div>
@@ -102,7 +102,8 @@
 <footer>
   <div class="footer-top">
     <div>
-      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--gold);letter-spacing:.18em;" data-barber="nome">GOLD LINE</div>
+      <!-- Logo no footer: imagem ou nome -->
+      <div data-barber="logo" style="margin-bottom:8px;"></div>
       <div class="footer-info">
         <span data-barber="cidade">Vitória de Santo Antão — PE</span><br>
         <span data-barber="horario">Seg a Sáb · 9h às 20h</span><br>
@@ -121,10 +122,6 @@
   </div>
 </footer>
 
-<!--
-  saas.js VEM ANTES do script da página.
-  Ele define a variável global  API  que o script abaixo usa.
--->
 <script src="Saas.js" defer></script>
 
 <script>
@@ -190,10 +187,6 @@ const obs = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: .1 });
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-
-/* PARTÍCULAS */
-
 </script>
-
 </body>
 </html>
