@@ -73,7 +73,7 @@ async function aplicarConfig() {
         const img = document.createElement('img');
         img.src   = config.logo_url;
         img.alt   = config.nome;
-        img.style.cssText = 'height:100px;width:auto;object-fit:contain;display:block;';
+        img.style.cssText = 'height:60px;width:auto;object-fit:contain;display:block;';
         img.onerror = () => {
           // Imagem quebrou — renderiza o nome no lugar
           el.innerHTML = _logoTexto(config.nome);
