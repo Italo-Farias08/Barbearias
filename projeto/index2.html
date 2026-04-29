@@ -134,9 +134,13 @@ footer a:hover{color:var(--gold);}
 <body>
 <canvas id="particles"></canvas>
 <header>
-  <a href="index.html" class="logo">
-    <span class="logo-main" data-barber="nome"></span>
-    <span class="logo-sub"  data-barber="cidade"></span>
+   <a href="#" class="logo">
+    <!-- ✅ data-barber="logo" → Saas.js coloca a imagem ou o nome aqui -->
+    <span data-barber="logo">
+      <!-- fallback visível antes do JS carregar -->
+      <span class="logo-main" data-barber="nome"></span>
+      <span class="logo-sub"  data-barber="cidade"></span>
+    </span>
   </a>
   <div class="step-tag"><div class="step-dot"></div>Passo 2 de 2 — Agendamento</div>
 </header>
