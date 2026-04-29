@@ -69,7 +69,7 @@ header{
   transition:padding .4s,background .4s,border-color .4s;
 }
 header.scrolled{
-  padding:16px 56px;
+  padding:16px 36px;
   background:rgba(8,8,7,.92);
   backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(255, 255, 255, 0.295);
@@ -680,7 +680,7 @@ footer{padding:64px 96px 36px;
 @media(max-width:900px){
   header{padding:18px 24px;
   }
-  header.scrolled{padding:14px 24px;
+  header.scrolled{padding:14px 15px;
   }
   nav a:not(.nav-cta){display:none;
   }
