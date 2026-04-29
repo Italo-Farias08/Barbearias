@@ -413,9 +413,9 @@ async function carregarPlanos(){
         <div class="plano-nome">${p.nome}</div>
         <div class="plano-desc">${p.descricao||''}</div>
         <div class="plano-cortes">
-          <span class="plano-cortes-num">${p.cortes_mes}</span>
-          <span class="plano-cortes-txt">cortes<br>por mês</span>
-        </div>
+  <span class="plano-cortes-num">${p.cortes_mes == 0 ? '∞' : p.cortes_mes}</span>
+  <span class="plano-cortes-txt">${p.cortes_mes == 0 ? 'cortes<br>ilimitados' : 'cortes<br>por mês'}</span>
+</div>
         <div class="plano-preco"><strong>R$${Number(p.valor).toFixed(2).replace('.',',')}</strong> / mês</div>
         <button class="btn-selecionar">Selecionar plano</button>
       `;
