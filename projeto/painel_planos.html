@@ -17,7 +17,8 @@
 .tab.ativa{color:var(--gold);border-bottom-color:var(--gold);}
 
 .tab-content{display:none;}
-.tab-content.ativa{display:block;}
+.tab-content.ativa{display:block;
+margin: 10px;}
 
 /* CARDS ASSINANTES */
 .asscard{
@@ -30,7 +31,7 @@
   align-items:stretch;
   transition:border-color .2s;
 }
-.asscard:hover{border-color:rgba(201,168,76,.25);}
+.asscard:hover{border-color:rgba(224, 224, 224, 0.25);}
 
 .asscard-info{padding:20px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;}
 
@@ -47,9 +48,14 @@
 
 /* BADGES DE STATUS */
 .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;}
-.badge-aguardando{background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.25);}
-.badge-ativo{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.25);}
+.badge-aguardando{background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255, 255, 255, 0.25);}
+
+.badge-ativo{background:rgba(46,204,113,.12);
+  color:#2ecc71;
+  border:1px solid rgba(46,204,113,.25);}
+
 .badge-vencido{background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.25);}
+
 .badge-cancelado{background:rgba(156,156,151,.12);color:#9c9c97;border:1px solid rgba(156,156,151,.25);}
 
 /* AÇÕES DO CARD */
@@ -80,8 +86,20 @@
 .empty-ass-txt{font-size:13px;letter-spacing:.1em;}
 
 /* STATS */
-.stats-planos{display:flex;gap:16px;margin-bottom:36px;flex-wrap:wrap;}
-.sp{background:var(--dark3);border:1px solid var(--border-dim);padding:20px 24px;flex:1;min-width:140px;}
+.stats-planos{
+  display:flex;
+  gap:16px;
+  margin-bottom:36px;
+  flex-wrap:wrap;
+  margin: 10px;
+}
+
+.sp{background:var(--dark3);
+  border:1px solid var(--border-dim);
+  padding:20px 24px;
+  flex:1;
+  min-width:140px;}
+
 .sp-num{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:var(--gold);}
 .sp-lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
 
@@ -99,8 +117,23 @@
 .plano-config-cortes{font-size:11px;color:var(--muted);margin-top:2px;}
 
 /* FILTRO */
-.filtro-wrap{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
-.filtro-btn{padding:8px 16px;background:var(--dark3);border:1px solid var(--border-dim);color:var(--muted);font-family:'Barlow',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.filtro-wrap{display:flex;
+  gap:8px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+}
+
+.filtro-btn{padding:8px 16px;
+  background:var(--dark3);
+  border:1px solid var(--border-dim);
+  color:var(--muted);
+  font-family:'Barlow',sans-serif;
+  font-size:9px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .2s;}
+  
 .filtro-btn:hover,.filtro-btn.ativo{background:var(--gold);border-color:var(--gold);color:var(--dark);}
 
 .btn-apagar-cancelados{
@@ -112,7 +145,7 @@
 }
 .btn-apagar-cancelados:hover{background:rgba(231,76,60,.12);}
 
-:root{--gold:#ffc926;--dark:#080807;--dark2:#101010;--dark3:#161614;--cream:#f0ebe0;--muted:#9c9c97;--border:rgba(201,168,76,0.18);--border-dim:rgba(255,255,255,0.06);}
+:root{--gold:#ffc926;--dark:#080807;--dark2:#101010;--dark3:#161614;--cream:#f0ebe0;--muted:#9c9c97;--border:rgba(240, 233, 233, 0.18);--border-dim:rgba(255,255,255,0.06);}
 </style>
 </head>
 <body>
