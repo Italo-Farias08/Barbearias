@@ -267,193 +267,264 @@ document.getElementById('telefoneCliente').addEventListener('input',function(){
 function dataLocalStr(date){
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
+let profissionalSelecionado = null, dataSelecionada = null, horarioSelecionado = null;
+let horarios = [];
+let configHorarios = null; // ← guarda config completa por dia
 
-let profissionalSelecionado=null,dataSelecionada=null,horarioSelecionado=null,horarios=[];
-
-function inicialNome(nome){return nome?nome.trim().charAt(0).toUpperCase():'?';}
-function renderFotoContainer(fotoUrl,nome,el,cssClassIni){
-  el.innerHTML='';
+function inicialNome(nome){ return nome ? nome.trim().charAt(0).toUpperCase() : '?'; }
+function renderFotoContainer(fotoUrl, nome, el, cssClassIni){
+  el.innerHTML = '';
   if(fotoUrl){
-    const img=document.createElement('img');img.src=fotoUrl;img.alt=nome;
-    img.onerror=()=>{el.innerHTML=`<div class="${cssClassIni}">${inicialNome(nome)}</div>`;};
+    const img = document.createElement('img'); img.src = fotoUrl; img.alt = nome;
+    img.onerror = () => { el.innerHTML = `<div class="${cssClassIni}">${inicialNome(nome)}</div>`; };
     el.appendChild(img);
-  } else {el.innerHTML=`<div class="${cssClassIni}">${inicialNome(nome)}</div>`;}
+  } else { el.innerHTML = `<div class="${cssClassIni}">${inicialNome(nome)}</div>`; }
 }
 
+// ── PROFISSIONAIS ──────────────────────────────────────────
 async function carregarProfissionais(){
-  const wrap=document.getElementById('profissionais');
+  const wrap = document.getElementById('profissionais');
   try{
-    const res=await fetch(`${API}/profissionais`);
-    const list=await res.json();
-    wrap.innerHTML='';
-    if(!Array.isArray(list)||list.length===0){
-      profissionalSelecionado={id:null,nome:'Qualquer profissional',foto_url:null,especialidade:''};
-      wrap.innerHTML='<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Qualquer profissional disponível será atribuído.</span>';
+    const res  = await fetch(`${API}/profissionais`);
+    const list = await res.json();
+    wrap.innerHTML = '';
+    if(!Array.isArray(list) || list.length === 0){
+      profissionalSelecionado = {id:null, nome:'Qualquer profissional', foto_url:null, especialidade:''};
+      wrap.innerHTML = '<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Qualquer profissional disponível será atribuído.</span>';
       return;
     }
-    list.forEach(prof=>{
-      const card=document.createElement('div');
-      card.className='prof-card';card.dataset.id=prof.id;
-      card.innerHTML=`
+    list.forEach(prof => {
+      const card = document.createElement('div');
+      card.className = 'prof-card'; card.dataset.id = prof.id;
+      card.innerHTML = `
         <div class="prof-check"><svg viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <div class="prof-anel" id="anel-${prof.id}"></div>
         <div class="prof-nome">${prof.nome}</div>
-        ${prof.especialidade?`<div class="prof-especialidade">${prof.especialidade}</div>`:''}
+        ${prof.especialidade ? `<div class="prof-especialidade">${prof.especialidade}</div>` : ''}
       `;
-      renderFotoContainer(prof.foto_url,prof.nome,card.querySelector(`#anel-${prof.id}`),'prof-avatar-default');
-      card.onclick=()=>selecionarProfissional(card,prof);
+      renderFotoContainer(prof.foto_url, prof.nome, card.querySelector(`#anel-${prof.id}`), 'prof-avatar-default');
+      card.onclick = () => selecionarProfissional(card, prof);
       wrap.appendChild(card);
     });
-    if(list.length===1) selecionarProfissional(wrap.querySelector('.prof-card'),list[0]);
-  } catch(e){wrap.innerHTML='<span style="color:var(--muted);font-size:13px;">Erro ao carregar profissionais.</span>';}
+    if(list.length === 1) selecionarProfissional(wrap.querySelector('.prof-card'), list[0]);
+  } catch(e){ wrap.innerHTML = '<span style="color:var(--muted);font-size:13px;">Erro ao carregar profissionais.</span>'; }
 }
 
-function selecionarProfissional(elemento,prof){
-  document.querySelectorAll('.prof-card').forEach(c=>c.classList.remove('selecionado'));
+function selecionarProfissional(elemento, prof){
+  document.querySelectorAll('.prof-card').forEach(c => c.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
-  profissionalSelecionado=prof;
-  document.getElementById('resumoProfNome').textContent=prof.nome;
-  renderFotoContainer(prof.foto_url,prof.nome,document.getElementById('resumoProfFoto'),'resumo-prof-ini');
-  document.getElementById('modalProfNome').textContent=prof.nome;
-  document.getElementById('modalProfEsp').textContent=prof.especialidade||'';
-  renderFotoContainer(prof.foto_url,prof.nome,document.getElementById('modalProfFoto'),'modal-prof-ini-lg');
+  profissionalSelecionado = prof;
+  document.getElementById('resumoProfNome').textContent = prof.nome;
+  renderFotoContainer(prof.foto_url, prof.nome, document.getElementById('resumoProfFoto'), 'resumo-prof-ini');
+  document.getElementById('modalProfNome').textContent = prof.nome;
+  document.getElementById('modalProfEsp').textContent  = prof.especialidade || '';
+  renderFotoContainer(prof.foto_url, prof.nome, document.getElementById('modalProfFoto'), 'modal-prof-ini-lg');
   if(dataSelecionada) carregarHorariosOcupados(dataLocalStr(dataSelecionada));
 }
 
-function gerarHorarios(config){
-  horarios=[];
-  const[hi,mi]=config.hora_inicio.substring(0,5).split(':');
-  const[hf,mf]=config.hora_fim.substring(0,5).split(':');
-  const intv=Number(config.intervalo_minutos);
-  const base=new Date(2000,0,1,+hi,+mi,0);
-  const fim=new Date(2000,0,1,+hf,+mf,0);
-  while(base<=fim){horarios.push(`${String(base.getHours()).padStart(2,'0')}:${String(base.getMinutes()).padStart(2,'0')}`);base.setMinutes(base.getMinutes()+intv);}
-}
+// ── HORÁRIOS POR DIA DA SEMANA ─────────────────────────────
 async function carregarHorarios(){
-  try{const res=await fetch(`${API}/horarios`);gerarHorarios(await res.json());}
-  catch(e){gerarHorarios({hora_inicio:'08:00',hora_fim:'21:00',intervalo_minutos:30});}
+  try{
+    const res = await fetch(`${API}/horarios`);
+    configHorarios = await res.json();
+  } catch(e){
+    // fallback se a API falhar
+    configHorarios = { intervalo_minutos: 30 };
+    for(let d = 0; d <= 6; d++){
+      configHorarios[String(d)] = d === 0
+        ? { aberto: false }
+        : { aberto: true, hora_inicio: '08:00', hora_fim: '21:00' };
+    }
+  }
 }
+
+function gerarHorariosDoDia(data){
+  horarios = [];
+  const diaSemana = String(data.getDay()); // "0"=Dom ... "6"=Sáb
+  const diaCfg = configHorarios && configHorarios[diaSemana];
+
+  if(!diaCfg || !diaCfg.aberto) return; // dia fechado → horarios permanece []
+
+  const [hi, mi] = diaCfg.hora_inicio.substring(0,5).split(':');
+  const [hf, mf] = diaCfg.hora_fim.substring(0,5).split(':');
+  const intv = Number(configHorarios.intervalo_minutos || 30);
+
+  const base = new Date(2000, 0, 1, +hi, +mi, 0);
+  const fim  = new Date(2000, 0, 1, +hf, +mf, 0);
+
+  while(base <= fim){
+    horarios.push(`${String(base.getHours()).padStart(2,'0')}:${String(base.getMinutes()).padStart(2,'0')}`);
+    base.setMinutes(base.getMinutes() + intv);
+  }
+}
+
 function renderizarHorarios(ocupados){
-  const div=document.getElementById('horarios');div.innerHTML='';
-  const agora=new Date();
-  const ehHoje=dataSelecionada&&dataSelecionada.getFullYear()===agora.getFullYear()&&dataSelecionada.getMonth()===agora.getMonth()&&dataSelecionada.getDate()===agora.getDate();
-  horarios.forEach(h=>{
-    const el=document.createElement('div');el.className='horario';el.textContent=h;
-    let passou=false;
-    if(ehHoje){const[hr,mn]=h.split(':').map(Number);passou=new Date(agora.getFullYear(),agora.getMonth(),agora.getDate(),hr,mn,0)<=agora;}
-    if(ocupados.includes(h)||passou){el.style.opacity='0.3';el.style.pointerEvents='none';el.textContent+=passou?' ⌛':' ✕';}
-    else el.onclick=()=>selecionarHorario(el);
+  const div = document.getElementById('horarios');
+  div.innerHTML = '';
+  const agora  = new Date();
+  const ehHoje = dataSelecionada &&
+    dataSelecionada.getFullYear() === agora.getFullYear() &&
+    dataSelecionada.getMonth()    === agora.getMonth()    &&
+    dataSelecionada.getDate()     === agora.getDate();
+
+  horarios.forEach(h => {
+    const el = document.createElement('div'); el.className = 'horario'; el.textContent = h;
+    let passou = false;
+    if(ehHoje){
+      const [hr, mn] = h.split(':').map(Number);
+      passou = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), hr, mn, 0) <= agora;
+    }
+    if(ocupados.includes(h) || passou){
+      el.style.opacity = '0.3'; el.style.pointerEvents = 'none';
+      el.textContent += passou ? ' ⌛' : ' ✕';
+    } else {
+      el.onclick = () => selecionarHorario(el);
+    }
     div.appendChild(el);
   });
 }
+
 async function carregarHorariosOcupados(dataFormatada){
-  document.getElementById('horarios').innerHTML='<div class="loading-txt">Carregando horários...</div>';
-  let url=`${API}/agendamentos/data/${dataFormatada}`;
-  if(profissionalSelecionado&&profissionalSelecionado.id) url+=`?profissional_id=${profissionalSelecionado.id}`;
+  document.getElementById('horarios').innerHTML = '<div class="loading-txt">Carregando horários...</div>';
+  let url = `${API}/agendamentos/data/${dataFormatada}`;
+  if(profissionalSelecionado && profissionalSelecionado.id)
+    url += `?profissional_id=${profissionalSelecionado.id}`;
   try{
-    const res=await fetch(url);if(!res.ok)throw new Error();
-    const ocupados=await res.json();
-    renderizarHorarios(Array.isArray(ocupados)?ocupados.map(h=>(h.horario||'').trim().substring(0,5)).filter(Boolean):[]);
-  }catch(e){renderizarHorarios([]);}
+    const res = await fetch(url); if(!res.ok) throw new Error();
+    const ocupados = await res.json();
+    renderizarHorarios(
+      Array.isArray(ocupados)
+        ? ocupados.map(h => (h.horario || '').trim().substring(0,5)).filter(Boolean)
+        : []
+    );
+  } catch(e){ renderizarHorarios([]); }
 }
 
-const nomesDias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const hoje=new Date();
+// ── CALENDÁRIO ─────────────────────────────────────────────
+const nomesDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const meses     = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const hoje      = new Date();
+
 function gerarProximosDias(qtd){
-  qtd=qtd||10;const d=document.getElementById('dias');d.innerHTML='';
-  for(let i=0;i<qtd;i++){
-    const data=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()+i);
-    if(data.getDay()===0)continue;
-    const el=document.createElement('div');el.classList.add('dia');
-    el.dataset.label=`${data.getDate()} de ${meses[data.getMonth()]}`;
-    el.innerHTML=`<small>${nomesDias[data.getDay()]}</small><strong>${data.getDate()}</strong><span>${meses[data.getMonth()]}</span>`;
-    el.onclick=()=>selecionarDia(el,data);d.appendChild(el);
+  qtd = qtd || 14;
+  const d = document.getElementById('dias'); d.innerHTML = '';
+  for(let i = 0; i < qtd; i++){
+    const data     = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+    const diaSemana = String(data.getDay());
+    const diaCfg   = configHorarios && configHorarios[diaSemana];
+    const fechado  = !diaCfg || !diaCfg.aberto;
+
+    if(fechado) continue; // ← pula dias fechados no calendário
+
+    const el = document.createElement('div'); el.classList.add('dia');
+    el.dataset.label = `${data.getDate()} de ${meses[data.getMonth()]}`;
+    el.innerHTML = `<small>${nomesDias[data.getDay()]}</small><strong>${data.getDate()}</strong><span>${meses[data.getMonth()]}</span>`;
+    el.onclick = () => selecionarDia(el, data);
+    d.appendChild(el);
   }
 }
-function selecionarDia(elemento,data){
-  document.querySelectorAll('.dia').forEach(d=>d.classList.remove('selecionado'));
+
+function selecionarDia(elemento, data){
+  document.querySelectorAll('.dia').forEach(d => d.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
-  dataSelecionada=data;horarioSelecionado=null;
+  dataSelecionada    = data;
+  horarioSelecionado = null;
   document.getElementById('resumo').classList.remove('visivel');
-  document.querySelector('.btn-confirmar').disabled=true;
-  if(!profissionalSelecionado){mostrarMensagem('⚠️ Escolha um profissional primeiro!','#e05050');return;}
+  document.querySelector('.btn-confirmar').disabled = true;
+
+  // Gera os horários certos pro dia clicado
+  gerarHorariosDoDia(data);
+
+  if(horarios.length === 0){
+    document.getElementById('horarios').innerHTML =
+      '<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Fechado neste dia.</span>';
+    return;
+  }
+
+  if(!profissionalSelecionado){
+    mostrarMensagem('⚠️ Escolha um profissional primeiro!','#e05050');
+    return;
+  }
+
   carregarHorariosOcupados(dataLocalStr(data));
 }
+
 function selecionarHorario(elemento){
-  document.querySelectorAll('.horario').forEach(h=>h.classList.remove('selecionado'));
+  document.querySelectorAll('.horario').forEach(h => h.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
-  horarioSelecionado=elemento.textContent.replace(' ✕','').replace(' ⌛','').trim();
-  const diaSel=document.querySelector('.dia.selecionado');
-  document.getElementById('resumoServico').textContent=nomeServico||'—';
-  document.getElementById('resumoData').textContent=diaSel?diaSel.dataset.label:'—';
-  document.getElementById('resumoHora').textContent=horarioSelecionado;
-  document.getElementById('resumoValor').textContent=valorServico?'R$'+valorServico:'—';
+  horarioSelecionado = elemento.textContent.replace(' ✕','').replace(' ⌛','').trim();
+  const diaSel = document.querySelector('.dia.selecionado');
+  document.getElementById('resumoServico').textContent = nomeServico || '—';
+  document.getElementById('resumoData').textContent    = diaSel ? diaSel.dataset.label : '—';
+  document.getElementById('resumoHora').textContent    = horarioSelecionado;
+  document.getElementById('resumoValor').textContent   = valorServico ? 'R$' + valorServico : '—';
   document.getElementById('resumo').classList.add('visivel');
-  document.querySelector('.btn-confirmar').disabled=false;
+  document.querySelector('.btn-confirmar').disabled = false;
 }
 
-const modal=document.getElementById('modalNome');
-const inputNome=document.getElementById('nomeCliente');
-const inputTel=document.getElementById('telefoneCliente');
-const confirmarBtn=document.getElementById('confirmarNome');
+// ── MODAL ──────────────────────────────────────────────────
+const modal       = document.getElementById('modalNome');
+const inputNome   = document.getElementById('nomeCliente');
+const inputTel    = document.getElementById('telefoneCliente');
+const confirmarBtn = document.getElementById('confirmarNome');
 
-document.querySelector('.btn-confirmar').addEventListener('click',()=>{
-  if(!profissionalSelecionado){mostrarMensagem('⚠️ Escolha um profissional!','#e05050');return;}
-  if(!dataSelecionada||!horarioSelecionado){mostrarMensagem('⚠️ Selecione dia e horário!','#e05050');return;}
-  modal.classList.add('aberto');setTimeout(()=>inputNome.focus(),300);
+document.querySelector('.btn-confirmar').addEventListener('click', () => {
+  if(!profissionalSelecionado){ mostrarMensagem('⚠️ Escolha um profissional!','#e05050'); return; }
+  if(!dataSelecionada || !horarioSelecionado){ mostrarMensagem('⚠️ Selecione dia e horário!','#e05050'); return; }
+  modal.classList.add('aberto'); setTimeout(() => inputNome.focus(), 300);
 });
-document.getElementById('cancelarModal').addEventListener('click',()=>modal.classList.remove('aberto'));
+document.getElementById('cancelarModal').addEventListener('click', () => modal.classList.remove('aberto'));
 
-confirmarBtn.addEventListener('click',()=>{
-  const nome=inputNome.value.trim();
-  const telefone=limparTelefone(inputTel.value.trim());
-  if(!nome){mostrarMensagem('Digite seu nome!','#e05050');inputNome.focus();return;}
-  if(!telefone||telefone.length<10){mostrarMensagem('Digite um WhatsApp válido!','#e05050');inputTel.focus();return;}
-  if(!valorServico){mostrarMensagem('Selecione um serviço!','#e05050');return;}
+confirmarBtn.addEventListener('click', () => {
+  const nome     = inputNome.value.trim();
+  const telefone = limparTelefone(inputTel.value.trim());
+  if(!nome){ mostrarMensagem('Digite seu nome!','#e05050'); inputNome.focus(); return; }
+  if(!telefone || telefone.length < 10){ mostrarMensagem('Digite um WhatsApp válido!','#e05050'); inputTel.focus(); return; }
+  if(!valorServico){ mostrarMensagem('Selecione um serviço!','#e05050'); return; }
 
-  const dataFormatada=dataLocalStr(dataSelecionada);
-  const nomeProfissional=profissionalSelecionado?profissionalSelecionado.nome:'—';
-  const numeroBarbeiro=localStorage.getItem(`barber_wa_${slug}`)||localStorage.getItem('barber_wa')||'5581991204180';
+  const dataFormatada    = dataLocalStr(dataSelecionada);
+  const nomeProfissional = profissionalSelecionado ? profissionalSelecionado.nome : '—';
+  const numeroBarbeiro   = localStorage.getItem(`barber_wa_${slug}`) || localStorage.getItem('barber_wa') || '5581991204180';
 
-  const mensagem=
-    `🧾 *AGENDAMENTO CONFIRMADO*\n\n`+
-    `👤 Nome: ${nome}\n`+
-    `📱 WhatsApp: ${telefone}\n`+
-    `💈 Profissional: ${nomeProfissional}\n`+
-    `💰 Serviço: R$${valorServico}\n`+
-    `📅 Data: ${dataFormatada}\n`+
-    `⏰ Horário: ${horarioSelecionado}\n\n`+
+  const mensagem =
+    `🧾 *AGENDAMENTO CONFIRMADO*\n\n` +
+    `👤 Nome: ${nome}\n` +
+    `📱 WhatsApp: ${telefone}\n` +
+    `💈 Profissional: ${nomeProfissional}\n` +
+    `💰 Serviço: R$${valorServico}\n` +
+    `📅 Data: ${dataFormatada}\n` +
+    `⏰ Horário: ${horarioSelecionado}\n\n` +
     `Novo agendamento recebido!`;
 
-  window.open(`https://api.whatsapp.com/send?phone=${numeroBarbeiro}&text=${encodeURIComponent(mensagem)}`,'_blank');
+  window.open(`https://api.whatsapp.com/send?phone=${numeroBarbeiro}&text=${encodeURIComponent(mensagem)}`, '_blank');
 
-  fetch(`${API}/agendar`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      nome,telefone,
-      data:dataFormatada,
-      horario:horarioSelecionado,
-      valor:valorServico,
-      profissional_id:profissionalSelecionado?profissionalSelecionado.id:null
+  fetch(`${API}/agendar`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      nome, telefone,
+      data:     dataFormatada,
+      horario:  horarioSelecionado,
+      valor:    valorServico,
+      profissional_id: profissionalSelecionado ? profissionalSelecionado.id : null
     })
   })
-  .then(r=>r.json())
-  .then(r=>{
+  .then(r => r.json())
+  .then(r => {
     modal.classList.remove('aberto');
-    if(r.erro){mostrarMensagem(r.erro,'#e05050');return;}
+    if(r.erro){ mostrarMensagem(r.erro,'#e05050'); return; }
     mostrarMensagem('✅ Agendado com sucesso!');
   })
-  .catch(()=>mostrarMensagem('Erro ao agendar!','#e05050'));
+  .catch(() => mostrarMensagem('Erro ao agendar!','#e05050'));
 });
 
-inputNome.addEventListener('keydown',e=>{if(e.key==='Enter')inputTel.focus();});
-inputTel.addEventListener('keydown',e=>{if(e.key==='Enter')confirmarBtn.click();});
+inputNome.addEventListener('keydown', e => { if(e.key === 'Enter') inputTel.focus(); });
+inputTel.addEventListener('keydown',  e => { if(e.key === 'Enter') confirmarBtn.click(); });
 
+// ── INICIALIZAÇÃO — ordem importa! ─────────────────────────
 carregarProfissionais();
-gerarProximosDias();
-carregarHorarios();
+carregarHorarios().then(() => gerarProximosDias(14)); // ← calendário só depois da config carregar
+
 </script>
 </body>
 </html>

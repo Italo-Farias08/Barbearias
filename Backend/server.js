@@ -424,20 +424,64 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
 // ============================================================
 // HORÁRIOS DA BARBEARIA (configuração)
 // ============================================================
+// ============================================================
+// GET HORÁRIOS — retorna config por dia da semana
+// ============================================================
 app.get("/api/:slug/horarios", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT * FROM horarios_barbearia WHERE barbearia_id = $1`,
       [req.barbearia.id]
     );
-    res.json(result.rows[0] || {
-      hora_inicio: "08:00",
-      hora_fim: "21:00",
-      intervalo_minutos: 30
-    });
+    const row = result.rows[0];
+
+    // Se já tem dias_semana configurado, retorna ele
+    if (row && row.dias_semana) {
+      return res.json(row.dias_semana);
+    }
+
+    // Fallback: converte o formato antigo (hora_inicio/hora_fim global)
+    // para o novo formato por dia, aplicando o mesmo horário pra todos os dias
+    const hi  = (row && row.hora_inicio) ? row.hora_inicio : "08:00";
+    const hf  = (row && row.hora_fim)    ? row.hora_fim    : "21:00";
+    const intv = (row && row.intervalo_minutos) ? row.intervalo_minutos : 30;
+
+    const fallback = { intervalo_minutos: intv };
+    for (let d = 0; d <= 6; d++) {
+      fallback[String(d)] = d === 0
+        ? { aberto: false }
+        : { aberto: true, hora_inicio: hi, hora_fim: hf };
+    }
+    res.json(fallback);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro ao buscar horários" });
+  }
+});
+
+// ============================================================
+// SALVAR HORÁRIOS POR DIA DA SEMANA (painel admin)
+// ============================================================
+app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
+  const config = req.body; // recebe o objeto completo { intervalo_minutos, "0": {...}, "1": {...}, ... }
+
+  if (!config || typeof config !== "object") {
+    return res.status(400).json({ erro: "Config inválida" });
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO horarios_barbearia (barbearia_id, dias_semana)
+       VALUES ($1, $2)
+       ON CONFLICT (barbearia_id)
+       DO UPDATE SET dias_semana = $2`,
+      [req.barbearia.id, JSON.stringify(config)]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao salvar horários" });
   }
 });
 
