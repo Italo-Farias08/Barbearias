@@ -421,7 +421,7 @@ html, body {
   cursor: default;
   transition: background .4s;
   border-radius: 15px;
-  opacity: 0.4;
+  background-color: rgba(8, 8, 7, 0.6);
 }
 .srv-overlay {
   position: absolute;
