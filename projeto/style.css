@@ -404,8 +404,12 @@ html, body {
   transition: background .4s;
   border-radius: 15px;
 }
-
-/* IMAGEM DE FUNDO */
+.srv-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 7, 0.438);
+  z-index: 1;
+}
 
 
 /* CONTEÚDO */
