@@ -362,6 +362,13 @@ html, body {
   pointer-events:none;
   white-space:nowrap;
 }
+.srv-card::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(8,8,7,0.3),
+    rgba(8,8,7,0.85)
+  );
+}
 
 .sec-eyebrow{
   font-size:10px;
@@ -394,6 +401,17 @@ html, body {
   grid-template-columns:repeat(3,1fr);
   gap:10px;
 
+}
+.srv-card * {
+  position: relative;
+  z-index: 2;
+}
+.srv-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 7, 0.45); /* controla transparência aqui */
+  z-index: 1;
 }
 .srv-card {
   background: var(--dark);
