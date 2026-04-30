@@ -441,6 +441,7 @@ html, body {
   transform-origin: left;
   transition: transform .45s;
   z-index: 3;
+  opacity: 0.4;
 }
 
 
