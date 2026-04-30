@@ -414,7 +414,15 @@ html, body {
   background: rgba(8, 8, 7, 0.45); /* controla transparência aqui */
   z-index: 1;
 }
-v-overlay {
+.srv-card {
+  padding: 48px 36px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: background .4s;
+  border-radius: 15px;
+}
+.srv-overlay {
   position: absolute;
   inset: 0;
   background: rgba(8, 8, 7, 0.438);
