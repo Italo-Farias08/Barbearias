@@ -394,24 +394,19 @@ html, body {
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:10px;
-
 }
+
 .srv-card {
+  background-size: cover;
+  background-position: center;
   background-blend-mode: darken;
-  background-color: rgba(8,8,7,0.4); /* controla transparência */
+  background-color: rgba(8,8,7,0.3); /* controla transparência */
 }
 .srv-card * {
   position: relative;
   z-index: 2;
 }
 
-.srv-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(8, 8, 7, 0.45); /* controla transparência aqui */
-  z-index: 1;
-}
 .srv-card {
   background: var(--dark);
   padding: 48px 36px;
