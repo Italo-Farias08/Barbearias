@@ -421,6 +421,7 @@ html, body {
   cursor: default;
   transition: background .4s;
   border-radius: 15px;
+  opacity: 0.4;
 }
 .srv-overlay {
   position: absolute;
@@ -441,7 +442,7 @@ html, body {
   transform-origin: left;
   transition: transform .45s;
   z-index: 3;
-  opacity: 0.4;
+  
 }
 
 
