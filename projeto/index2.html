@@ -484,8 +484,14 @@ confirmarBtn.addEventListener('click', () => {
 
   const dataFormatada    = dataLocalStr(dataSelecionada);
   const nomeProfissional = profissionalSelecionado ? profissionalSelecionado.nome : '—';
-  const numeroBarbeiro   = localStorage.getItem(`barber_wa_${slug}`) || localStorage.getItem('barber_wa') || '5581991204180';
+  const numeroBarbeiro = profissionalSelecionado?.whatsapp
+  || localStorage.getItem(`barber_wa_${slug}`)
+  || localStorage.getItem('barber_wa');
 
+if(!numeroBarbeiro){
+  mostrarMensagem('⚠️ Profissional sem WhatsApp cadastrado!', '#e05050');
+  return;
+}
   const mensagem =
     `🧾 *AGENDAMENTO CONFIRMADO*\n\n` +
     `👤 Nome: ${nome}\n` +
