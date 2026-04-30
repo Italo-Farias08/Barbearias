@@ -411,7 +411,7 @@ html, body {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(8, 8, 7, 0.45); /* controla transparência aqui */
+  background: rgba(8, 8, 7, 0.349); /* controla transparência aqui */
   z-index: 1;
 }
 .srv-card {
@@ -429,13 +429,6 @@ html, body {
   z-index: 1;
 }
 
-
-/* CONTEÚDO */
-.srv-card * {
-  position: relative;
-  z-index: 2;
-}
-
 .srv-card::after {
   content: '';
   position: absolute;
@@ -450,10 +443,6 @@ html, body {
   z-index: 3;
 }
 
-/* HOVER */
-.srv-card:hover {
-  background: #0e0e0c;
-}
 
 .srv-card:hover::after {
   transform: scaleX(1);
