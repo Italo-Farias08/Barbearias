@@ -407,6 +407,13 @@ html, body {
   z-index: 2;
 }
 
+.srv-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 7, 0.45); /* controla transparência aqui */
+  z-index: 1;
+}
 .srv-card {
   background: var(--dark);
   padding: 48px 36px;
