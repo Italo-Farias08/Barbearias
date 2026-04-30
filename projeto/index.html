@@ -215,13 +215,6 @@ async function carregarServicosDestaque() {
 }
 
 setTimeout(carregarServicosDestaque, 150);
-const { nome, descricao, preco, ordem, imagem } = req.body;
-// ...
-await db.query(
-  `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem)
-   VALUES ($1, $2, $3, $4, $5, $6)`,
-  [req.barbearia.id, nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null]
-);
 
 /* SCROLL REVEAL */
 const obs = new IntersectionObserver(entries => {
