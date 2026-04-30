@@ -179,8 +179,12 @@ const tt = document.getElementById('tickerTrack');
 });
 async function carregarServicosDestaque() {
   const grid = document.getElementById('srvGrid');
+
   try {
-    const res  = await fetch(`${API}/servicos-destaque`);
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('b');
+
+    const res = await fetch(`${API}/servicos-destaque?slug=${slug}`);
     const list = await res.json();
 
     if (!Array.isArray(list) || list.length === 0) {
@@ -189,13 +193,24 @@ async function carregarServicosDestaque() {
     }
 
     grid.innerHTML = list.map((s, i) => {
-      const temFoto = s.imagem && s.imagem.trim() !== '';
+
+      const imagemValida =
+        s.imagem &&
+        s.imagem !== 'null' &&
+        s.imagem.trim() !== '' &&
+        s.imagem.startsWith('http');
+
+      const bg = imagemValida
+        ? `background-image:url('${s.imagem}?v=${Date.now()}');background-size:cover;background-position:center;`
+        : '';
+
       return `
         <div class="srv-card" style="
-          ${temFoto ? `background-image:url('${s.imagem}');background-size:cover;background-position:center;` : ''}
+          ${bg}
           position:relative;overflow:hidden;
         ">
-          ${temFoto ? `<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,8,7,0.35) 0%,rgba(8,8,7,0.88) 100%);"></div>` : ''}
+          ${imagemValida ? `<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,8,7,0.35) 0%,rgba(8,8,7,0.88) 100%);"></div>` : ''}
+          
           <div style="position:relative;z-index:1;">
             <div class="srv-num">${String(i + 1).padStart(2, '0')}</div>
             <h3 class="srv-name">${s.nome}</h3>
@@ -210,6 +225,7 @@ async function carregarServicosDestaque() {
     }).join('');
 
   } catch(e) {
+    console.error(e);
     grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:20px 0;">Erro ao carregar serviços.</p>';
   }
 }
