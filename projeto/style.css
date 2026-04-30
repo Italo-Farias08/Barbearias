@@ -406,18 +406,7 @@ html, body {
 }
 
 /* IMAGEM DE FUNDO */
-.srv-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-size: cover;
-background-position: center;
-will-change: auto;
-  filter: brightness(0.45);
-  z-index: 0;
-}
+
 
 /* CONTEÚDO */
 .srv-card * {
@@ -425,6 +414,19 @@ will-change: auto;
   z-index: 2;
 }
 
+.srv-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .45s;
+  z-index: 3;
+}
 
 /* HOVER */
 .srv-card:hover {
