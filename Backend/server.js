@@ -633,10 +633,11 @@ app.get("/api/:slug/servicos", async (req, res) => {
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, nome, foto_url, especialidade
-       FROM profissionais
-       WHERE barbearia_id = $1 AND ativo = true
-       ORDER BY ordem`,
+      // CORRETO
+    `SELECT id, nome, foto_url, especialidade, whatsapp
+    FROM profissionais
+    WHERE barbearia_id = $1 AND ativo = true
+     ORDER BY ordem`
       [req.barbearia.id]
     );
     res.json(result.rows);
