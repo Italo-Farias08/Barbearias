@@ -396,13 +396,15 @@ html, body {
   gap:10px;
 
 }
+.srv-card {
+  background-blend-mode: darken;
+  background-color: rgba(8,8,7,0.4); /* controla transparência */
+}
 .srv-card * {
   position: relative;
   z-index: 2;
-  background-blend-mode: darken;
-  background-color: rgba(8,8,7,0.5);
-  filter: brightness(1);
 }
+
 .srv-card::before {
   content: "";
   position: absolute;
