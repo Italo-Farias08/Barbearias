@@ -425,19 +425,6 @@ will-change: auto;
   z-index: 2;
 }
 
-.srv-card::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gold);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform .45s;
-  z-index: 3;
-}
 
 /* HOVER */
 .srv-card:hover {
@@ -448,31 +435,7 @@ will-change: auto;
   transform: scaleX(1);
 }
 
-/* IMAGENS (mesmo que tu já tinha) */
-.srv-card:nth-child(1)::before {
-  background-image: url("https://images.pexels.com/photos/1570807/pexels-photo-1570807.jpeg");
-  opacity: 0.4;
-}
-
-.srv-card:nth-child(2)::before {
-  background-image: url("https://images.pexels.com/photos/3998424/pexels-photo-3998424.jpeg");
-  opacity: 0.4;
-}
-
-.srv-card:nth-child(3)::before {
-  background-image: url("https://images.pexels.com/photos/1453005/pexels-photo-1453005.jpeg");
-  opacity: 0.4;
-}
-
-.srv-card:nth-child(4)::before {
-  background-image: url("https://images.pexels.com/photos/2521978/pexels-photo-2521978.jpeg");
-  opacity: 0.4;
-}
-
-.srv-card:nth-child(5)::before {
-  background-image: url("https://images.pexels.com/photos/1805600/pexels-photo-1805600.jpeg");
-  opacity: 0.4;
-}
+ 
 
 .srv-num{font-family:'Playfair Display',serif;
   font-size:11px;
