@@ -816,6 +816,80 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     res.json({ erro: "Erro ao executar ação" });
   }
 });
+// ============================================================
+// SERVIÇOS DESTAQUE (home)
+// ============================================================
+app.get("/api/:slug/servicos-destaque", async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, nome, descricao, preco
+       FROM servicos_destaque
+       WHERE barbearia_id = $1
+       ORDER BY ordem, id`,
+      [req.barbearia.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+app.post("/api/:slug/servicos-destaque", verificarAssinatura, async (req, res) => {
+  const { nome, descricao, preco, ordem } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(preco)) || Number(preco) < 0)
+    return res.status(400).json({ erro: "Preço inválido" });
+  try {
+    await db.query(
+      `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [req.barbearia.id, nome.trim(), descricao || "", Number(preco), Number(ordem) || 0]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ erro: "Erro ao salvar" });
+  }
+});
+
+app.delete("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  try {
+    await db.query(
+      `DELETE FROM servicos_destaque WHERE id = $1 AND barbearia_id = $2`,
+      [id, req.barbearia.id]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    res.json({ erro: "Erro ao deletar" });
+  }
+});
+app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  const { nome, descricao, preco, ordem, imagem } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(preco)) || Number(preco) < 0)
+    return res.status(400).json({ erro: "Preço inválido" });
+  try {
+    await db.query(
+      `UPDATE servicos_destaque
+       SET nome = $1, descricao = $2, preco = $3, ordem = $4, imagem = $5
+       WHERE id = $6 AND barbearia_id = $7`,
+      [nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null, id, req.barbearia.id]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ erro: "Erro ao atualizar" });
+  }
+});
 
 // ============================================================
 // BANCO + START

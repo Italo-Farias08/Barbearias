@@ -67,12 +67,8 @@
 <section class="services reveal" id="servicos">
   <div class="sec-eyebrow">O que oferecemos</div>
   <h2 class="sec-title">Nossos <em>serviços</em></h2>
-  <div class="srv-grid">
-    <div class="srv-card"><div class="srv-num">01</div><h3 class="srv-name">Corte Masculino</h3><p class="srv-desc">Tesoura ou máquina. O corte certo para o seu estilo e formato de rosto.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$30</span></div></div>
-    <div class="srv-card"><div class="srv-num">02</div><h3 class="srv-name">Barba Completa</h3><p class="srv-desc">Modelagem, navalha quente e finalização com produtos premium.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$20</span></div></div>
-    <div class="srv-card"><div class="srv-num">03</div><h3 class="srv-name">Degradê</h3><p class="srv-desc">Transição perfeita, acabamento limpo. Do skin fade ao low fade.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$30</span></div></div>
-    <div class="srv-card"><div class="srv-num">04</div><h3 class="srv-name">Degradê + Barba</h3><p class="srv-desc">O combo completo. Sai renovado da cabeça ao queixo.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$50</span></div></div>
-    <div class="srv-card"><div class="srv-num">05</div><h3 class="srv-name">Infantil</h3><p class="srv-desc">Cuidado e carinho para os pequenos desde cedo.</p><div class="srv-price"><span class="srv-from">a partir de</span><span class="srv-val">R$20</span></div></div>
+  <div class="srv-grid" id="srvGrid">
+    <!-- carregado do banco -->
   </div>
 </section>
 
@@ -181,6 +177,51 @@ const tt = document.getElementById('tickerTrack');
   s.className = 'ticker-item'; s.textContent = w;
   tt.appendChild(s);
 });
+async function carregarServicosDestaque() {
+  const grid = document.getElementById('srvGrid');
+  try {
+    const res  = await fetch(`${API}/servicos-destaque`);
+    const list = await res.json();
+
+    if (!Array.isArray(list) || list.length === 0) {
+      grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:20px 0;">Nenhum serviço cadastrado.</p>';
+      return;
+    }
+
+    grid.innerHTML = list.map((s, i) => {
+      const temFoto = s.imagem && s.imagem.trim() !== '';
+      return `
+        <div class="srv-card" style="
+          ${temFoto ? `background-image:url('${s.imagem}');background-size:cover;background-position:center;` : ''}
+          position:relative;overflow:hidden;
+        ">
+          ${temFoto ? `<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,8,7,0.35) 0%,rgba(8,8,7,0.88) 100%);"></div>` : ''}
+          <div style="position:relative;z-index:1;">
+            <div class="srv-num">${String(i + 1).padStart(2, '0')}</div>
+            <h3 class="srv-name">${s.nome}</h3>
+            <p class="srv-desc">${s.descricao || ''}</p>
+            <div class="srv-price">
+              <span class="srv-from">a partir de</span>
+              <span class="srv-val">R$${Number(s.preco).toFixed(2).replace('.', ',')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch(e) {
+    grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:20px 0;">Erro ao carregar serviços.</p>';
+  }
+}
+
+setTimeout(carregarServicosDestaque, 150);
+const { nome, descricao, preco, ordem, imagem } = req.body;
+// ...
+await db.query(
+  `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem)
+   VALUES ($1, $2, $3, $4, $5, $6)`,
+  [req.barbearia.id, nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null]
+);
 
 /* SCROLL REVEAL */
 const obs = new IntersectionObserver(entries => {
