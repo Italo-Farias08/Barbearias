@@ -632,14 +632,14 @@ app.get("/api/:slug/servicos", async (req, res) => {
 // ============================================================
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
-    const result = await db.query(
-      // CORRETO
-    `SELECT id, nome, foto_url, especialidade, whatsapp
-    FROM profissionais
-    WHERE barbearia_id = $1 AND ativo = true
-     ORDER BY ordem`
-      [req.barbearia.id]
-    );
+   // CORRETO
+const result = await db.query(
+  `SELECT id, nome, foto_url, especialidade, whatsapp
+   FROM profissionais
+   WHERE barbearia_id = $1 AND ativo = true
+   ORDER BY ordem`,
+  [req.barbearia.id]   // ← vírgula aqui
+);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
