@@ -230,7 +230,14 @@ async function carregarServicosDestaque() {
   }
 }
 
-setTimeout(carregarServicosDestaque, 150);
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof API === 'undefined') {
+    console.error('API não carregou');
+    return;
+  }
+
+  carregarServicosDestaque();
+});
 
 /* SCROLL REVEAL */
 const obs = new IntersectionObserver(entries => {
