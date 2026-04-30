@@ -45,6 +45,10 @@ async function aplicarConfig() {
 
     // Título da aba
     document.title = config.nome;
+    // Salva o WhatsApp da barbearia no localStorage para uso nas outras páginas
+if(config.whatsapp){
+  localStorage.setItem(`barber_wa_${BARBER_SLUG}`, config.whatsapp.replace(/\D/g,''));
+}
 
     // Campos de texto simples
     const dados = {
