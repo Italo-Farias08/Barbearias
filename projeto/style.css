@@ -370,8 +370,7 @@ html, body {
     to bottom,
     rgba(8,8,7,0.15),  /* topo bem leve */
     rgba(8, 8, 7, 0.747)   /* base mais escura pro texto */
-  );
-  z-index: 1;
+  )
 }
 
 .sec-eyebrow{
