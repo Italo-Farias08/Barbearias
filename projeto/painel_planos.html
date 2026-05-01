@@ -11,14 +11,42 @@
 /* ============================================================
    ESTILOS EXTRAS PARA A PÁGINA DE PLANOS
    ============================================================ */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border-dim);margin-bottom:32px;}
-.tab{padding:14px 28px;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Barlow',sans-serif;}
+.tabs{
+  display:flex;
+  gap:0;
+  border-bottom:1px solid var(--border-dim);
+  margin-bottom:32px;
+}
+
+.tab{
+  padding:14px 28px;
+  font-size:10px;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:var(--muted);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all .25s;
+  background:none;
+  border-top:none;
+  border-left:none;
+  border-right:none;
+  font-family:'Barlow',sans-serif;
+}
+
 .tab:hover{color:var(--cream);}
-.tab.ativa{color:var(--gold);border-bottom-color:var(--gold);}
+
+.tab.ativa{
+  color:var(--gold);
+  border-bottom-color:var(--gold);
+}
 
 .tab-content{display:none;}
-.tab-content.ativa{display:block;
-margin: 10px;}
+
+.tab-content.ativa{
+  display:block;
+margin: 10px;
+}
 
 /* CARDS ASSINANTES */
 .asscard{
@@ -33,11 +61,25 @@ margin: 10px;}
 }
 .asscard:hover{border-color:rgba(224, 224, 224, 0.25);}
 
-.asscard-info{padding:20px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;}
+.asscard-info{
+  padding:20px 24px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  align-items:center;
+}
 
-.asscard-nome{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex:0 0 100%;margin-bottom:2px;}
+.asscard-nome{
+  font-family:'Playfair Display',serif;
+  font-size:18px;
+  font-weight:700;
+  flex:0 0 100%;
+  margin-bottom:2px;}
+
 .asscard-meta{display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+
 .asscard-item{font-size:12px;color:var(--muted);}
+
 .asscard-item strong{color:var(--cream);font-weight:400;}
 
 /* BARRA DE CORTES */

@@ -646,10 +646,7 @@ const result = await db.query(
     res.json([]);
   }
 });
-
-// ============================================================
 // PLANOS
-// ============================================================
 app.get("/api/:slug/planos", async (req, res) => {
   try {
     const result = await db.query(
@@ -666,9 +663,7 @@ app.get("/api/:slug/planos", async (req, res) => {
   }
 });
 
-// ============================================================
 // ASSINAR
-// ============================================================
 app.post("/api/:slug/assinar", async (req, res) => {
   const { nome, telefone, plano_id } = req.body;
 
@@ -696,10 +691,7 @@ app.post("/api/:slug/assinar", async (req, res) => {
     res.json({ erro: "Erro ao registrar assinatura" });
   }
 });
-
-// ============================================================
 // LISTAR ASSINANTES
-// ============================================================
 app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -724,9 +716,7 @@ app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // APAGAR ASSINANTES CANCELADOS
-// ============================================================
 app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, res) => {
   try {
     const r = await db.query(
@@ -741,9 +731,7 @@ app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, 
   }
 });
 
-// ============================================================
 // AÇÕES DO ASSINANTE
-// ============================================================
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
   const id   = Number(req.params.id);
   const acao = req.params.acao;
@@ -817,9 +805,7 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     res.json({ erro: "Erro ao executar ação" });
   }
 });
-// ============================================================
 // SERVIÇOS DESTAQUE (home)
-// ============================================================
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
     const result = await db.query(
@@ -925,9 +911,9 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
   }
 });
 
-// ============================================================
+
 // BANCO + START
-// ============================================================
+
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
