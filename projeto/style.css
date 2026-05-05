@@ -702,3 +702,24 @@ footer{padding:64px 96px 36px;
   letter-spacing:.15em;  /* menos espaçamento */
 }
 }
+/* ===== FIX DOUBLE-TAP MOBILE ===== */
+a, button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: none) {
+  nav a:hover,
+  nav a:hover::after { 
+    color: rgba(230,230,230,0.5);
+    transform: scaleX(0);
+  }
+  .nav-cta:hover { background-color: var(--gold); }
+  .slide-btn:hover { gap: 14px; }
+  .slide-btn:hover svg { transform: none; }
+  .btn-gold:hover { gap: 14px; }
+  .btn-gold:hover svg { transform: none; }
+  .srv-card:hover::after { transform: scaleX(0); }
+  .hero-arrow:hover { background: transparent; color: var(--gold); }
+  .footer-links a:hover { color: var(--muted); }
+}
