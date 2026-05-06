@@ -1,5 +1,5 @@
   :root {
-  --gold:  #ffc926; 
+  --gold: transparent;
   --gold2: #ffc926;
   --dark: #080807;
   --dark2: #101010;
@@ -125,8 +125,9 @@ nav a:not(.nav-cta)::after {
   transform-origin: left;
   transition: transform .35s;
 }
-nav a:hover{color:var(--cream);}
-nav a:hover::after{transform:scaleX(1);}
+/* DEPOIS */
+nav a:not(.nav-cta):hover { color: var(--cream); }
+nav a:not(.nav-cta):hover::after { transform: scaleX(1); }
 
 .nav-cta{
   border-radius: 5px;
