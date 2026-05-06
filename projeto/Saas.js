@@ -1,10 +1,21 @@
 // ================================
 // ANTI-FOUC — esconde imediatamente
 // ================================
-document.documentElement.style.visibility = 'hidden';
+// DEPOIS
+// DEPOIS
+function esconderBody() {
+  if (document.body) {
+    document.body.style.visibility = 'hidden';
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.style.visibility = 'hidden';
+    });
+  }
+}
+esconderBody();
 
 const timeoutSeguranca = setTimeout(() => {
-  document.documentElement.style.visibility = 'visible';
+  document.body.style.visibility = 'visible';
 }, 3000);
 
 // ================================
@@ -93,7 +104,7 @@ if(config.whatsapp){
     console.error('Erro ao carregar config:', err);
   } finally {
     clearTimeout(timeoutSeguranca);
-    document.documentElement.style.visibility = 'visible';
+    document.body.style.visibility = 'visible';
   }
 }
 
