@@ -916,9 +916,9 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
   }
 });
 
-// ============================================================
+// ===========================================================
 // BANCO + START
-// ============================================================
+// ===========================================================
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
