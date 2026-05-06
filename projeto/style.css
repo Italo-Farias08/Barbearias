@@ -35,7 +35,12 @@ body::after{
   pointer-events:none;
   z-index:0;
 }
-
+.nav-cta:hover,
+.nav-cta:active,
+.nav-cta:focus {
+  color: black !important;
+  background-color: var(--gold) !important;
+}
 .cursor{
   position:fixed;
   width:8px;
