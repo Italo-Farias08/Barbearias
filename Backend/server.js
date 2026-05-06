@@ -7,6 +7,10 @@ const fs      = require("fs");
 
 const app = express();
 
+// ADICIONA ESSAS DUAS LINHAS AQUI
+app.set('trust proxy', 1);
+app.use(express.json({ limit: "10kb" }));
+
 // ============================================================
 // SEGURANÇA — rate limiting e helmet
 // ============================================================
