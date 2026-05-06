@@ -334,7 +334,6 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   const profId       = profissional_id ? Number(profissional_id) : null;
 
   try {
-    // Verifica se o profissional está disponível
     if (profId) {
       const profCheck = await db.query(
         `SELECT disponivel FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
@@ -502,7 +501,7 @@ app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req,
 });
 
 // ============================================================
-// APAGAR CONCLUÍDOS — vem antes de /:id
+// APAGAR CONCLUÍDOS
 // ============================================================
 app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req, res) => {
   try {
@@ -625,7 +624,7 @@ app.get("/api/:slug/servicos", async (req, res) => {
 });
 
 // ============================================================
-// PROFISSIONAIS — retorna campo disponivel
+// PROFISSIONAIS
 // ============================================================
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
@@ -644,7 +643,7 @@ app.get("/api/:slug/profissionais", async (req, res) => {
 });
 
 // ============================================================
-// DISPONIBILIDADE DO PROFISSIONAL — liga/desliga agendamentos
+// DISPONIBILIDADE DO PROFISSIONAL
 // ============================================================
 app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
@@ -760,7 +759,6 @@ app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, 
       `DELETE FROM assinantes WHERE barbearia_id = $1 AND status = 'cancelado'`,
       [req.barbearia.id]
     );
-    console.log(`Assinantes cancelados apagados (${req.params.slug}):`, r.rowCount);
     res.json({ sucesso: true, apagados: r.rowCount });
   } catch (err) {
     console.error(err);
@@ -797,10 +795,8 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     if (acao === "confirmar") {
       await db.query(
         `UPDATE assinantes
-         SET status = 'ativo',
-             cortes_usados = 0,
-             data_inicio = NOW(),
-             data_vencimento = NOW() + INTERVAL '30 days'
+         SET status = 'ativo', cortes_usados = 0,
+             data_inicio = NOW(), data_vencimento = NOW() + INTERVAL '30 days'
          WHERE id = $1`,
         [id]
       );
@@ -808,15 +804,9 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     }
 
     if (acao === "usar-corte") {
-      if (ass.status !== "ativo")
-        return res.json({ erro: "Plano não está ativo" });
-      if (ass.cortes_usados >= ass.cortes_mes)
-        return res.json({ erro: "Limite de cortes atingido neste mês" });
-
-      await db.query(
-        `UPDATE assinantes SET cortes_usados = cortes_usados + 1 WHERE id = $1`,
-        [id]
-      );
+      if (ass.status !== "ativo") return res.json({ erro: "Plano não está ativo" });
+      if (ass.cortes_usados >= ass.cortes_mes) return res.json({ erro: "Limite de cortes atingido neste mês" });
+      await db.query(`UPDATE assinantes SET cortes_usados = cortes_usados + 1 WHERE id = $1`, [id]);
       return res.json({ sucesso: true });
     }
 
@@ -832,10 +822,7 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     }
 
     if (acao === "cancelar") {
-      await db.query(
-        `UPDATE assinantes SET status = 'cancelado' WHERE id = $1`,
-        [id]
-      );
+      await db.query(`UPDATE assinantes SET status = 'cancelado' WHERE id = $1`, [id]);
       return res.json({ sucesso: true });
     }
 

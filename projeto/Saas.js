@@ -14,10 +14,7 @@ const timeoutSeguranca = setTimeout(() => {
 // ================================
 // CONFIG BASE
 // ================================
-const BASE_URL =
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://barbearias-muti-tenant.onrender.com';
+const BASE_URL = 'https://barbearias-production.up.railway.app';
 
 // ================================
 // SLUG
@@ -94,7 +91,6 @@ async function aplicarConfig() {
   } catch (err) {
     console.error('Erro ao carregar config:', err);
   } finally {
-    // Revela a página com fade suave
     clearTimeout(timeoutSeguranca);
     document.body.style.opacity = '1';
   }
