@@ -1,24 +1,4 @@
 // ================================
-// ANTI-FOUC — esconde imediatamente
-// ================================
-// DEPOIS
-// DEPOIS
-function esconderBody() {
-  if (document.body) {
-    document.body.style.visibility = 'hidden';
-  } else {
-    document.addEventListener('DOMContentLoaded', () => {
-      document.body.style.visibility = 'hidden';
-    });
-  }
-}
-esconderBody();
-
-const timeoutSeguranca = setTimeout(() => {
-  document.body.style.visibility = 'visible';
-}, 3000);
-
-// ================================
 // CONFIG BASE
 // ================================
 const BASE_URL =
@@ -56,10 +36,11 @@ async function aplicarConfig() {
 
     // Título da aba
     document.title = config.nome;
+
     // Salva o WhatsApp da barbearia no localStorage para uso nas outras páginas
-if(config.whatsapp){
-  localStorage.setItem(`barber_wa_${BARBER_SLUG}`, config.whatsapp.replace(/\D/g,''));
-}
+    if (config.whatsapp) {
+      localStorage.setItem(`barber_wa_${BARBER_SLUG}`, config.whatsapp.replace(/\D/g, ''));
+    }
 
     // Campos de texto simples
     const dados = {
@@ -81,30 +62,24 @@ if(config.whatsapp){
     // LOGO — imagem ou nome como fallback
     // ================================
     document.querySelectorAll('[data-barber="logo"]').forEach(el => {
-      el.innerHTML = ''; // limpa
+      el.innerHTML = '';
 
       if (config.logo_url) {
-        // Tem logo: mostra a imagem; se falhar, cai pro nome
         const img = document.createElement('img');
         img.src   = config.logo_url;
         img.alt   = config.nome;
         img.style.cssText = 'height:85px;width:auto;object-fit:contain;display:block;';
         img.onerror = () => {
-          // Imagem quebrou — renderiza o nome no lugar
           el.innerHTML = _logoTexto(config.nome);
         };
         el.appendChild(img);
       } else {
-        // Sem logo: usa o nome da barbearia estilizado
         el.innerHTML = _logoTexto(config.nome);
       }
     });
 
   } catch (err) {
     console.error('Erro ao carregar config:', err);
-  } finally {
-    clearTimeout(timeoutSeguranca);
-    document.body.style.visibility = 'visible';
   }
 }
 
