@@ -109,16 +109,16 @@ nav a{
   transition:color .3s;
   position:relative;
 }
-nav a::after{
-  content:'';
-  position:absolute;bottom:-4px;
-  left:0;
-  right:0;
-  height:1px;
-  background:var(--gold);
-  transform:scaleX(0);
-  transform-origin:left;
-  transition:transform .35s;
+nav a:not(.nav-cta)::after {
+  content: '';
+  position: absolute; bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .35s;
 }
 nav a:hover{color:var(--cream);}
 nav a:hover::after{transform:scaleX(1);}
