@@ -924,4 +924,4 @@ db.query("SELECT NOW()")
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor multi-tenant na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor multi-tenant na porta ${PORT}`));
