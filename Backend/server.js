@@ -29,13 +29,7 @@ const limiterLogin = rateLimit({
   message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
 });
 
-app.use(express.json({ limit: "10kb" }));
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",")
-    : "*",
-  methods: ["GET", "POST", "PUT", "DELETE"]
-}));
+app.use(cors());
 
 // ============================================================
 // WHATSAPP COM BAILEYS
