@@ -3,179 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agendamento</title>
+<title>Painel — Gold Line</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="painel.css">
 <style>
-:root{
-  --gold:#ffc926;--dark:#080807;--dark2:#101010;--dark3:#161614;
-  --cream:#f0ebe0;--muted:#9c9c97;--border:rgba(201,168,76,0.18);--border-dim:rgba(255,255,255,0.06);
-}
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{background:var(--dark);color:var(--cream);font-family:'Barlow',sans-serif;font-weight:300;overflow-x:hidden;min-height:100vh;}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;}
-#particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
-header{position:sticky;top:0;z-index:200;display:flex;justify-content:space-between;align-items:center;padding:20px 56px;background:rgba(8,8,7,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.295);}
-.logo{display:flex;flex-direction:column;line-height:1;text-decoration:none;}
-.logo-main{font-family:'Playfair Display',serif;font-weight:900;font-size:20px;letter-spacing:.18em;color:var(--gold);}
-.logo-sub{font-size:8px;letter-spacing:.5em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
-.step-tag{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);}
-.step-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
-.page-hero{position:relative;padding:64px 96px 52px;overflow:hidden;border-bottom:1px solid rgba(253,253,253,0.199);}
-.page-hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);background-size:52px 52px;-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%);mask-image:linear-gradient(to bottom,black 0%,transparent 100%);pointer-events:none;}
-.page-hero::after{content:'AGENDE';position:absolute;top:10px;right:-10px;font-family:'Playfair Display',serif;font-size:160px;font-weight:900;color:rgba(187,187,187,0.025);letter-spacing:.08em;pointer-events:none;white-space:nowrap;line-height:1;}
-.hero-inner{position:relative;z-index:1;}
-.servico-badge{display:inline-flex;align-items:center;gap:10px;background:var(--dark3);border:1px solid rgba(255,255,255,0.295);padding:8px 18px;margin-bottom:24px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
-.servico-badge strong{color:var(--gold);font-weight:500;}
-.eyebrow{display:flex;align-items:center;gap:14px;font-size:10px;letter-spacing:.45em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;animation:fadeUp .6s ease both;}
-.eyebrow::before{content:'';width:36px;height:1px;background:var(--gold);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-.page-title{font-family:'Playfair Display',serif;font-size:clamp(40px,5.5vw,76px);font-weight:900;line-height:.95;letter-spacing:-.02em;animation:fadeUp .7s .1s ease both;}
-.page-title em{font-style:italic;color:var(--gold);display:block;}
-.main-wrap{position:relative;z-index:1;padding:0 96px 80px;}
-.sec-label{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--muted);margin:48px 0 20px;display:flex;align-items:center;gap:12px;}
-.sec-label::after{content:'';flex:1;height:1px;background:var(--border-dim);}
-#dias{display:flex;gap:8px;flex-wrap:wrap;}
-.dia{display:flex;flex-direction:column;align-items:center;justify-content:center;width:68px;height:80px;gap:3px;background:var(--dark3);border:1px solid var(--border-dim);cursor:pointer;transition:border-color .25s,background .25s;position:relative;}
-.dia::before{content:'';position:absolute;top:0;right:0;width:12px;height:12px;border-top:1px solid rgba(201,168,76,.2);border-right:1px solid rgba(201,168,76,.2);transition:width .35s,height .35s,border-color .35s;}
-.dia:hover::before,.dia.selecionado::before{width:24px;height:24px;border-color:var(--gold);}
-.dia:hover{border-color:var(--gold);background:var(--dark2);}
-.dia.selecionado{background:var(--gold);border-color:var(--gold);}
-.dia.selecionado small,.dia.selecionado strong,.dia.selecionado span{color:var(--dark)!important;}
-.dia small{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);line-height:1;}
-.dia strong{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--cream);line-height:1;}
-.dia span{font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
-#horarios{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;min-height:48px;}
-.horario{padding:14px 8px;background:var(--dark3);border:1px solid var(--border-dim);color:var(--cream);font-family:'Barlow',sans-serif;font-size:14px;letter-spacing:.08em;cursor:pointer;text-align:center;transition:border-color .25s,background .25s;position:relative;}
-.horario::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .35s;}
-.horario:hover{border-color:var(--gold);background:var(--dark2);}
-.horario:hover::after,.horario.selecionado::after{transform:scaleX(1);}
-.horario.selecionado{background:var(--gold);border-color:var(--gold);color:var(--dark);font-weight:500;}
-.horario.selecionado::after{display:none;}
-
-/* ── PROFISSIONAIS ── */
-#profissionais{display:flex;gap:16px;flex-wrap:wrap;}
-.prof-card{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 16px;background:var(--dark3);border:1px solid var(--border-dim);cursor:pointer;transition:border-color .25s,background .25s;position:relative;width:140px;text-align:center;}
-.prof-card::before{content:'';position:absolute;top:0;right:0;width:12px;height:12px;border-top:1px solid rgba(201,168,76,.2);border-right:1px solid rgba(201,168,76,.2);transition:width .35s,height .35s,border-color .35s;}
-.prof-card:hover::before,.prof-card.selecionado::before{width:24px;height:24px;border-color:var(--gold);}
-.prof-card:hover{border-color:var(--gold);background:var(--dark2);}
-.prof-card.selecionado{border-color:var(--gold);background:var(--dark2);}
-.prof-card.selecionado .prof-anel{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,201,38,.22);}
-.prof-card.selecionado .prof-nome{color:var(--gold);}
-.prof-check{position:absolute;top:8px;left:8px;width:18px;height:18px;background:var(--gold);border-radius:50%;display:none;align-items:center;justify-content:center;}
-.prof-card.selecionado .prof-check{display:flex;}
-.prof-check svg{width:10px;height:10px;}
-.prof-anel{width:80px;height:80px;border-radius:50%;border:2px solid var(--border-dim);overflow:hidden;transition:border-color .25s,box-shadow .25s;background:var(--dark2);flex-shrink:0;}
-.prof-anel img{width:100%;height:100%;object-fit:cover;display:block;}
-.prof-avatar-default{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);background:var(--dark3);}
-.prof-nome{font-size:13px;letter-spacing:.06em;color:var(--cream);font-weight:400;line-height:1.3;}
-.prof-especialidade{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
-
-/* ── INDISPONÍVEL ── */
-.prof-card.indisponivel{
-  opacity:.45;
-  cursor:not-allowed;
-  pointer-events:none;
-}
-.prof-card.indisponivel .prof-anel{
-  filter:grayscale(80%);
-  border-color:rgba(224,80,80,.3);
-}
-.prof-card.indisponivel .prof-nome{ color:var(--muted); }
-.prof-indisponivel-tag{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  font-size:8px;
-  letter-spacing:.2em;
-  text-transform:uppercase;
-  color:#e05050;
-  border:1px solid rgba(224,80,80,.3);
-  padding:3px 8px;
+/* ── GRADE DE PROFISSIONAIS ── */
+.prof-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(255,255,255,0.08);
 }
 
-/* ── AVISO TODOS FECHADOS ── */
-.aviso-fechado{
-  width:100%;
-  padding:20px 24px;
-  background:var(--dark3);
-  border:1px solid rgba(224,80,80,.25);
-  border-left:3px solid #e05050;
-  color:#e05050;
-  font-size:12px;
-  letter-spacing:.15em;
-  margin-top:12px;
-  display:flex;
-  align-items:center;
-  gap:12px;
+.prof-item {
+  background: var(--dark2);
+  padding: 22px 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  border-left: 2px solid transparent;
+  transition: background .3s, border-color .3s;
+  animation: fadeUp .5s ease both;
 }
-
-.loading-txt{color:var(--muted);font-size:13px;letter-spacing:.15em;padding:20px 0;display:flex;align-items:center;gap:10px;}
-.loading-txt::before{content:'';display:block;width:16px;height:16px;border:1px solid var(--gold);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-.resumo{background:var(--dark3);border:1px solid rgba(255,255,255,0.295);padding:28px 32px;margin-top:40px;display:none;animation:fadeUp .4s ease;}
-.resumo.visivel{display:block;}
-.resumo-title{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
-.resumo-linha{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-dim);font-size:13px;}
-.resumo-linha:last-child{border-bottom:none;}
-.resumo-key{color:var(--muted);letter-spacing:.1em;}
-.resumo-val{font-family:'Playfair Display',serif;font-size:18px;}
-.resumo-val.gold{color:var(--gold);}
-.resumo-prof{display:flex;align-items:center;gap:10px;}
-.resumo-prof-foto{width:32px;height:32px;border-radius:50%;overflow:hidden;border:1px solid var(--border);background:var(--dark2);flex-shrink:0;}
-.resumo-prof-foto img{width:100%;height:100%;object-fit:cover;}
-.resumo-prof-ini{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--gold);}
-.btn-confirmar{width:100%;margin-top:32px;padding:20px;background:var(--gold);color:var(--dark);border:none;font-family:'Barlow',sans-serif;font-size:11px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:14px;transition:gap .3s;}
-.btn-confirmar:hover{gap:20px;}
-.btn-confirmar:disabled{opacity:.3;cursor:not-allowed;background:var(--muted);}
-.btn-confirmar svg{transition:transform .3s;}
-.btn-confirmar:hover:not(:disabled) svg{transform:translateX(5px);}
-#modalNome{position:fixed;inset:0;z-index:500;background:rgba(8,8,7,.88);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;}
-#modalNome.aberto{display:flex;animation:fadeUp .3s ease;}
-.modal-box{background:var(--dark2);border:1px solid rgba(255,255,255,0.295);padding:52px;width:100%;max-width:520px;position:relative;}
-.modal-box::before{content:'';position:absolute;top:0;right:0;width:36px;height:36px;border-top:1px solid rgba(255,255,255,0.295);border-right:1px solid rgba(255,255,255,0.295);}
-.modal-eyebrow{font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
-.modal-box h3{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;margin-bottom:8px;}
-.modal-box p{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:24px;}
-.modal-prof-banner{display:flex;align-items:center;gap:14px;background:var(--dark3);border:1px solid var(--border);padding:14px 18px;margin-bottom:28px;}
-.modal-prof-foto{width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.295);background:var(--dark2);flex-shrink:0;}
-.modal-prof-foto img{width:100%;height:100%;object-fit:cover;}
-.modal-prof-ini-lg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold);}
-.modal-prof-label{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
-.modal-prof-nome{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--cream);}
-.modal-prof-esp{font-size:11px;color:var(--muted);margin-top:2px;}
-.modal-field{margin-bottom:24px;}
-.modal-field label{display:block;font-size:9px;letter-spacing:.38em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.modal-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-dim);color:var(--cream);font-family:'Barlow',sans-serif;font-size:16px;padding:12px 0;outline:none;transition:border-color .3s;}
-.modal-input:focus{border-color:var(--gold);}
-.modal-input::placeholder{color:rgba(106,106,98,.45);}
-.tel-hint{font-size:9px;letter-spacing:.1em;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px;}
-.tel-hint::before{content:'📲';font-size:11px;}
-.modal-actions{display:flex;gap:12px;margin-top:8px;}
-#confirmarNome{flex:1;padding:16px;background:var(--gold);color:var(--dark);border:none;font-family:'Barlow',sans-serif;font-size:11px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;cursor:pointer;}
-.modal-cancel{padding:16px 20px;background:transparent;color:var(--muted);border:1px solid var(--border-dim);font-family:'Barlow',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .3s;}
-.modal-cancel:hover{border-color:var(--muted);color:var(--cream);}
-.notif{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(10px);padding:14px 28px;font-size:12px;font-weight:500;letter-spacing:.15em;color:#000;z-index:9999;opacity:0;transition:opacity .4s,transform .4s;white-space:nowrap;}
-.notif.show{opacity:1;transform:translateX(-50%) translateY(0);}
-footer{border-top:1px solid rgba(248,248,248,0.151);padding:28px 96px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);letter-spacing:.12em;position:relative;z-index:1;}
-footer a{color:var(--muted);text-decoration:none;transition:color .3s;}
-footer a:hover{color:var(--gold);}
-@media(max-width:900px){
-  header{padding:16px 20px;}
-  .page-hero{padding:48px 24px 40px;}
-  .page-hero::after{font-size:80px;}
-  .main-wrap{padding:0 24px 60px;}
-  footer{padding:24px 20px;flex-direction:column;gap:12px;text-align:center;}
-  .modal-box{padding:36px 24px;margin:16px;}
-  .prof-card{width:110px;}
-  .prof-anel{width:66px;height:66px;}
+.prof-item:hover { background: var(--dark3); border-left-color: var(--gold); }
+.prof-item::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 14px; height: 14px;
+  border-top: 1px solid rgba(201,168,76,.2);
+  border-right: 1px solid rgba(201,168,76,.2);
+  transition: width .35s, height .35s, border-color .35s;
 }
+.prof-item:hover::after { width: 24px; height: 24px; border-color: var(--gold); }
+
+.prof-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--dark3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--gold);
+  transition: border-color .3s;
+}
+.prof-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prof-item.disponivel .prof-avatar  { border-color: rgba(21,255,0,.35); }
+.prof-item.indisponivel .prof-avatar { border-color: rgba(224,80,80,.35); filter: grayscale(60%); }
+
+.prof-info { flex: 1; min-width: 0; }
+.prof-nome-txt {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 700; color: var(--cream);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prof-esp-txt {
+  font-size: 9px; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--muted); margin-top: 2px;
+}
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 9px; letter-spacing: .28em; text-transform: uppercase;
+  border: 1px solid; padding: 3px 9px; margin-top: 7px;
+}
+.status-badge.on  { color: var(--green); border-color: rgba(21,255,0,.3); }
+.status-badge.off { color: var(--red);   border-color: rgba(224,80,80,.3); }
+.status-badge::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+}
+.status-badge.on::before  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.5s ease infinite; }
+.status-badge.off::before { background: var(--red); }
+
+.btn-toggle {
+  display: flex; align-items: center; gap: 8px;
+  border: none;
+  font-family: 'Barlow', sans-serif;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: all .3s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.btn-toggle.pausar {
+  background: transparent; color: var(--red);
+  border: 1px solid rgba(224,80,80,.35);
+}
+.btn-toggle.pausar:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-toggle.ativar {
+  background: transparent; color: var(--green);
+  border: 1px solid rgba(21,255,0,.3);
+}
+.btn-toggle.ativar:hover { background: var(--green); color: var(--dark); border-color: var(--green); }
+.btn-toggle:disabled { opacity: .35; cursor: not-allowed; }
 </style>
 </head>
 <body>
+
 <canvas id="particles"></canvas>
+
 <header>
   <a href="#" class="logo">
     <span data-barber="logo">
@@ -183,404 +114,335 @@ footer a:hover{color:var(--gold);}
       <span class="logo-sub"  data-barber="cidade"></span>
     </span>
   </a>
-  <div class="step-tag"><div class="step-dot"></div>Passo 2 de 2 — Agendamento</div>
+  <div class="header-right">
+    <div class="admin-badge">
+      <div class="badge-dot"></div>
+      Painel Admin
+    </div>
+    <a href="login.html" class="btn-sair" onclick="localStorage.removeItem('token')">Sair</a>
+  </div>
 </header>
-<div class="page-hero">
-  <div class="hero-inner">
-    <div class="servico-badge">
-      ✂️ Serviço: <strong id="nomeServicoDisplay">—</strong>
-      &nbsp;·&nbsp;
-      <strong id="valorServicoDisplay" style="color:var(--gold)">—</strong>
+
+<div class="page-intro">
+  <div class="intro-inner">
+    <div>
+      <div class="eyebrow">Área restrita</div>
+      <h1 class="page-title">Agendamentos <em>pendentes</em></h1>
     </div>
-    <div class="eyebrow">Escolha data e hora</div>
-    <h1 class="page-title">Seu<br><em>horário</em></h1>
   </div>
 </div>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat"><div class="stat-num" id="statTotal">—</div><div class="stat-lbl">Pendentes</div></div>
+  <div class="stat"><div class="stat-num" id="statValor">—</div><div class="stat-lbl">Valor em aberto</div></div>
+</div>
+
 <div class="main-wrap">
-  <div class="sec-label">Escolha o profissional</div>
-  <div id="profissionais"><div class="loading-txt">Carregando profissionais...</div></div>
-  <div class="sec-label">Selecione o dia</div>
-  <div id="dias"></div>
-  <div class="sec-label">Selecione o horário</div>
-  <div id="horarios"></div>
-  <div class="resumo" id="resumo">
-    <div class="resumo-title">Resumo do agendamento</div>
-    <div class="resumo-linha"><span class="resumo-key">Serviço</span><span class="resumo-val" id="resumoServico">—</span></div>
-    <div class="resumo-linha">
-      <span class="resumo-key">Profissional</span>
-      <span class="resumo-val">
-        <div class="resumo-prof">
-          <div class="resumo-prof-foto" id="resumoProfFoto"><div class="resumo-prof-ini" id="resumoProfIni">—</div></div>
-          <span id="resumoProfNome">—</span>
-        </div>
-      </span>
-    </div>
-    <div class="resumo-linha"><span class="resumo-key">Data</span><span class="resumo-val" id="resumoData">—</span></div>
-    <div class="resumo-linha"><span class="resumo-key">Horário</span><span class="resumo-val" id="resumoHora">—</span></div>
-    <div class="resumo-linha"><span class="resumo-key">Total</span><span class="resumo-val gold" id="resumoValor">—</span></div>
-  </div>
-  <button class="btn-confirmar" disabled>
-    Confirmar agendamento
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
-</div>
-<div id="modalNome">
-  <div class="modal-box">
-    <div class="modal-eyebrow">Quase lá</div>
-    <h3>Seus dados</h3>
-    <p>Preencha seu nome e WhatsApp para receber a confirmação e um lembrete antes do horário.</p>
-    <div class="modal-prof-banner">
-      <div class="modal-prof-foto" id="modalProfFoto"><div class="modal-prof-ini-lg" id="modalProfIni">?</div></div>
-      <div>
-        <div class="modal-prof-label">Profissional escolhido</div>
-        <div class="modal-prof-nome" id="modalProfNome">—</div>
-        <div class="modal-prof-esp" id="modalProfEsp"></div>
-      </div>
-    </div>
-    <div class="modal-field">
-      <label>Nome completo</label>
-      <input class="modal-input" id="nomeCliente" type="text" placeholder="Digite seu nome...">
-    </div>
-    <div class="modal-field">
-      <label>WhatsApp</label>
-      <input class="modal-input" id="telefoneCliente" type="tel" placeholder="(81) 9 0000-0000" inputmode="numeric" maxlength="16">
-      <div class="tel-hint">Você receberá um lembrete antes do horário</div>
-    </div>
-    <div class="modal-actions">
-      <button id="confirmarNome">Confirmar reserva</button>
-      <button class="modal-cancel" id="cancelarModal">Cancelar</button>
-    </div>
+  <div class="sec-label">Lista de agendamentos</div>
+  <div id="lista"></div>
+
+  <!-- ── SEÇÃO DE PROFISSIONAIS ── -->
+  <div class="sec-label" style="margin-top:56px;">Disponibilidade dos profissionais</div>
+  <div class="prof-grid" id="profGrid">
+    <div class="loading-state"><div class="spin"></div>Carregando profissionais...</div>
   </div>
 </div>
-<footer>
-  <span>&copy; 2026 Italo Farias</span>
-  <a href="corte.html">← Voltar aos cortes</a>
-</footer>
+
+<div class="menu-botoes">
+  <a href="painel_planos.html" class="menu-btn">
+    <span class="menu-icon">💳</span>
+    Assinaturas
+  </a>
+  <a href="lucro.html" class="menu-btn lucro">
+    <span class="menu-icon">💰</span>
+    Lucros
+  </a>
+  <a href="concluidos.html" class="menu-btn concluidos">
+    <span class="menu-icon">✔</span>
+    Concluídos
+  </a>
+</div>
+
 <script src="Saas.js"></script>
 <script>
 /* PARTÍCULAS */
 (function(){
-  const canvas=document.getElementById('particles'),ctx=canvas.getContext('2d');
+  const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
   ctx.filter='blur(1.5px)';
   let W,H,pts=[];
   function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
-  resize();window.addEventListener('resize',resize);
+  resize(); window.addEventListener('resize',resize);
   function rand(a,b){return a+Math.random()*(b-a);}
   for(let i=0;i<50;i++)
     pts.push({x:rand(0,1),y:rand(0,1),size:rand(.6,2),speed:rand(.00008,.00018),alpha:rand(.05,.18),drift:rand(-.0001,.0001)});
   (function draw(){
     ctx.clearRect(0,0,W,H);
     pts.forEach(p=>{
-      p.y-=p.speed;p.x+=p.drift;
+      p.y-=p.speed; p.x+=p.drift;
       if(p.y<0){p.y=1;p.x=rand(0,1);}
-      if(p.x<0||p.x>1)p.x=rand(0,1);
-      ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
-      ctx.fillStyle=`rgba(240,240,240,${p.alpha})`;ctx.fill();
+      if(p.x<0||p.x>1) p.x=rand(0,1);
+      ctx.beginPath(); ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(240,240,240,${p.alpha})`; ctx.fill();
     });
     requestAnimationFrame(draw);
   })();
 })();
 
-const slug = BARBER_SLUG;
-const valorServico = Number(localStorage.getItem(`valorServico_${slug}`)) || 0;
-const nomeServico  = localStorage.getItem(`nomeServico_${slug}`) || '';
-if(nomeServico)  document.getElementById('nomeServicoDisplay').textContent  = nomeServico;
-if(valorServico) document.getElementById('valorServicoDisplay').textContent = 'R$' + valorServico;
-
-function mostrarMensagem(texto,cor){
-  cor=cor||'#c9a84c';
+/* TOAST */
+function toast(texto, cor){
+  cor = cor||'#c9a84c';
   const el=document.createElement('div');
-  el.className='notif';el.textContent=texto;el.style.background=cor;
+  el.className='toast'; el.textContent=texto; el.style.background=cor;
   document.body.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));
-  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),500);},2600);
-}
-function limparTelefone(tel){return tel.replace(/\D/g,'');}
-document.getElementById('telefoneCliente').addEventListener('input',function(){
-  let v=this.value.replace(/\D/g,'');
-  if(v.length>11)v=v.slice(0,11);
-  if(v.length<=2) this.value=v.replace(/(\d{0,2})/,'($1');
-  else if(v.length<=7) this.value=v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
-  else if(v.length<=11) this.value=v.replace(/(\d{2})(\d{1})(\d{0,4})(\d{0,4})/,'($1) $2 $3-$4');
-});
-function dataLocalStr(date){
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),500); },2800);
 }
 
-let profissionalSelecionado=null, dataSelecionada=null, horarioSelecionado=null;
-let horarios=[], configHorarios=null;
+const lista = document.getElementById('lista');
 
-function inicialNome(nome){ return nome?nome.trim().charAt(0).toUpperCase():'?'; }
-function renderFotoContainer(fotoUrl,nome,el,cssClassIni){
-  el.innerHTML='';
-  if(fotoUrl){
-    const img=document.createElement('img'); img.src=fotoUrl; img.alt=nome;
-    img.onerror=()=>{ el.innerHTML=`<div class="${cssClassIni}">${inicialNome(nome)}</div>`; };
-    el.appendChild(img);
-  } else { el.innerHTML=`<div class="${cssClassIni}">${inicialNome(nome)}</div>`; }
+function formatarData(dataStr){
+  const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const [y,m,d]=dataStr.split('-');
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
 }
 
-/* ── PROFISSIONAIS ── */
-async function carregarProfissionais(){
-  const wrap=document.getElementById('profissionais');
-  try{
-    const res=await fetch(`${API}/profissionais`);
-    const list=await res.json();
-    wrap.innerHTML='';
+function atualizarStats(pendentes){
+  const totalValor = pendentes.reduce((s,a)=>s+(Number(a.valor)||0),0);
+  document.getElementById('statTotal').textContent = pendentes.length;
+  document.getElementById('statValor').textContent = 'R$'+totalValor;
+}
 
-    if(!Array.isArray(list)||list.length===0){
-      profissionalSelecionado={id:null,nome:'Qualquer profissional',foto_url:null,especialidade:''};
-      wrap.innerHTML='<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Qualquer profissional disponível será atribuído.</span>';
+/* ── AGENDAMENTOS ── */
+async function carregarAgendamentos(){
+  lista.innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
+  try {
+    const slug = localStorage.getItem("slug");
+    if (!slug){ window.location.href="/login.html"; return; }
+
+    const [resAg, resProf] = await Promise.all([
+      fetch(`${API}/agendamentos`),
+      fetch(`${API}/profissionais`)
+    ]);
+
+    const dados = await resAg.json();
+
+    let mapaProf = {};
+    try {
+      const profs = await resProf.json();
+      if(Array.isArray(profs)) profs.forEach(p=>{ mapaProf[p.id]=p; });
+    } catch(e){}
+
+    lista.innerHTML = '';
+    const pendentes = dados.filter(a=>(a.status||'pendente')==='pendente');
+    atualizarStats(pendentes);
+
+    if(pendentes.length===0){
+      lista.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">Nenhum agendamento pendente</div></div>`;
       return;
     }
 
-    const disponiveis   = list.filter(p => p.disponivel !== false);
-    const indisponiveis = list.filter(p => p.disponivel === false);
-
-    // Disponíveis primeiro, pausados depois
-    [...disponiveis, ...indisponiveis].forEach(prof => {
-      const pausado = prof.disponivel === false;
+    pendentes.forEach((item,i)=>{
       const card=document.createElement('div');
-      card.className=`prof-card${pausado?' indisponivel':''}`;
-      card.dataset.id=prof.id;
-      card.innerHTML=`
-        <div class="prof-check"><svg viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="prof-anel" id="anel-${prof.id}"></div>
-        <div class="prof-nome">${prof.nome}</div>
-        ${prof.especialidade?`<div class="prof-especialidade">${prof.especialidade}</div>`:''}
-        ${pausado?`<div class="prof-indisponivel-tag">
-          <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg>
-          Indisponível
-        </div>`:''}
+      card.classList.add('card');
+      card.style.animationDelay=(i*0.06)+'s';
+
+      const horario=(item.horario||'').toString().substring(0,5);
+      const dataFmt=item.data?formatarData(item.data):'—';
+
+      const prof=item.profissional_id?mapaProf[item.profissional_id]:null;
+      const nomeProfissional=prof?prof.nome:'—';
+      const fotoProfissional=prof?prof.foto_url:null;
+      const inicialProf=nomeProfissional!=='—'?nomeProfissional.trim().charAt(0).toUpperCase():'?';
+
+      const fotoHtml=fotoProfissional
+        ?`<img src="${fotoProfissional}" alt="${nomeProfissional}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<span style=\\'line-height:28px;font-weight:700;color:#ffc926;font-size:13px;\\'>${inicialProf}</span>'">`
+        :`<span style="line-height:28px;font-weight:700;color:#ffc926;font-size:13px;">${inicialProf}</span>`;
+
+      const info=document.createElement('div');
+      info.classList.add('info');
+      info.innerHTML=`
+        <div class="info-item"><span class="info-label">Cliente</span><span class="info-val"><strong>${item.nome||'—'}</strong></span></div>
+        <div class="info-item">
+          <span class="info-label">Profissional</span>
+          <span class="info-val" style="display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;border-radius:50%;background:#161614;border:1px solid rgba(201,168,76,.3);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">${fotoHtml}</span>
+            <span>${nomeProfissional}</span>
+          </span>
+        </div>
+        <div class="info-item"><span class="info-label">Data</span><span class="info-val">${dataFmt}</span></div>
+        <div class="info-item"><span class="info-label">Horário</span><span class="info-val">${horario||'—'}</span></div>
+        <div class="info-item"><span class="info-label">Status</span><span class="info-val"><span class="status-tag pendente">Pendente</span></span></div>
       `;
-      renderFotoContainer(prof.foto_url,prof.nome,card.querySelector(`#anel-${prof.id}`),'prof-avatar-default');
-      if(!pausado) card.onclick=()=>selecionarProfissional(card,prof);
-      wrap.appendChild(card);
+
+      const valor=document.createElement('div');
+      valor.className='valor-tag';
+      valor.textContent='R$'+(item.valor||0);
+
+      const actions=document.createElement('div');
+      actions.className='card-actions';
+
+      const btnC=document.createElement('button');
+      btnC.className='btn-concluir';
+      btnC.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Concluir';
+      btnC.addEventListener('click',async()=>{
+        btnC.disabled=true; btnX.disabled=true;
+        try{
+          const r=await fetch(`${API}/agendamentos/concluir/${item.id}`,{method:'PUT'});
+          if(!r.ok) throw new Error();
+          toast('✓ Agendamento concluído!');
+          carregarAgendamentos();
+        }catch{
+          toast('Erro ao concluir','#e05050');
+          btnC.disabled=false; btnX.disabled=false;
+        }
+      });
+
+      const btnX=document.createElement('button');
+      btnX.className='btn-cancelar';
+      btnX.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Cancelar';
+      btnX.addEventListener('click',async()=>{
+        btnC.disabled=true; btnX.disabled=true;
+        try{
+          const r=await fetch(`${API}/agendamentos/${item.id}`,{method:'DELETE'});
+          if(!r.ok) throw new Error();
+          toast('Agendamento cancelado','#e05050');
+          carregarAgendamentos();
+        }catch{
+          toast('Erro ao cancelar','#e05050');
+          btnC.disabled=false; btnX.disabled=false;
+        }
+      });
+
+      const btnLembrete=document.createElement('button');
+      btnLembrete.className='btn-lembrete';
+      btnLembrete.innerHTML='📲 Lembrar';
+      btnLembrete.addEventListener('click',()=>{
+        let telefone=(item.telefone||'').replace(/\D/g,'');
+        if(!telefone){ toast('Cliente sem telefone','#e05050'); return; }
+        if(!telefone.startsWith('55')) telefone='55'+telefone;
+        const mensagem=`CONFIRMAÇÃO DE HORÁRIO\n\nOlá, ${item.nome}.\n\nSeu atendimento na barbearia está agendado para:\n\nData: ${dataFmt}\nHorário: ${horario}\nProfissional: ${nomeProfissional}\n\nTrabalhamos com horários organizados, então pedimos pontualidade.\n\nEm caso de imprevisto, entre em contato.\n\nSerá um prazer atendê-lo.`;
+        window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`,'_blank');
+      });
+
+      actions.appendChild(btnLembrete);
+      actions.appendChild(btnC);
+      actions.appendChild(btnX);
+      card.appendChild(info);
+      card.appendChild(valor);
+      card.appendChild(actions);
+      lista.appendChild(card);
     });
 
-    // Auto-seleciona se só tem 1 disponível
-    if(disponiveis.length===1){
-      const unico=wrap.querySelector('.prof-card:not(.indisponivel)');
-      if(unico) selecionarProfissional(unico,disponiveis[0]);
+  } catch(err){
+    console.error('Erro geral:',err);
+    lista.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar agendamentos</div></div>`;
+  }
+}
+
+/* ── PROFISSIONAIS — TOGGLE DISPONIBILIDADE ── */
+async function carregarProfissionaisAdmin(){
+  const grid = document.getElementById('profGrid');
+  try {
+    const res  = await fetch(`${API}/profissionais`);
+    const list = await res.json();
+    grid.innerHTML = '';
+
+    if(!Array.isArray(list) || list.length === 0){
+      grid.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-txt">Nenhum profissional cadastrado</div></div>`;
+      return;
     }
 
-    // Aviso se todos pausados
-    if(disponiveis.length===0){
-      const aviso=document.createElement('div');
-      aviso.className='aviso-fechado';
-      aviso.innerHTML=`
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
-          <path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        Todos os profissionais estão indisponíveis no momento. Tente novamente mais tarde.
+    list.forEach((prof, i) => {
+      const disponivel = prof.disponivel !== false;
+      const item = document.createElement('div');
+      item.className = `prof-item ${disponivel ? 'disponivel' : 'indisponivel'}`;
+      item.style.animationDelay = (i * 0.07) + 's';
+
+      // Avatar
+      const avatarEl = document.createElement('div');
+      avatarEl.className = 'prof-avatar';
+      if(prof.foto_url){
+        const img = document.createElement('img');
+        img.src = prof.foto_url; img.alt = prof.nome;
+        img.onerror = () => { avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase(); };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase();
+      }
+
+      // Info
+      const infoEl = document.createElement('div');
+      infoEl.className = 'prof-info';
+      infoEl.innerHTML = `
+        <div class="prof-nome-txt">${prof.nome}</div>
+        ${prof.especialidade ? `<div class="prof-esp-txt">${prof.especialidade}</div>` : ''}
+        <div class="status-badge ${disponivel ? 'on' : 'off'}">
+          ${disponivel ? 'Aceitando agendamentos' : 'Agendamentos pausados'}
+        </div>
       `;
-      wrap.appendChild(aviso);
-    }
 
-  } catch(e){
-    wrap.innerHTML='<span style="color:var(--muted);font-size:13px;">Erro ao carregar profissionais.</span>';
+      // Botão
+      const btn = document.createElement('button');
+      btn.className = `btn-toggle ${disponivel ? 'pausar' : 'ativar'}`;
+      btn.innerHTML = disponivel
+        ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
+        : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
+
+      btn.addEventListener('click', () => alternarDisponibilidade(prof.id, disponivel, item, btn, infoEl));
+
+      item.appendChild(avatarEl);
+      item.appendChild(infoEl);
+      item.appendChild(btn);
+      grid.appendChild(item);
+    });
+
+  } catch(err){
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar profissionais</div></div>`;
   }
 }
 
-function selecionarProfissional(elemento,prof){
-  document.querySelectorAll('.prof-card').forEach(c=>c.classList.remove('selecionado'));
-  elemento.classList.add('selecionado');
-  profissionalSelecionado=prof;
-  document.getElementById('resumoProfNome').textContent=prof.nome;
-  renderFotoContainer(prof.foto_url,prof.nome,document.getElementById('resumoProfFoto'),'resumo-prof-ini');
-  document.getElementById('modalProfNome').textContent=prof.nome;
-  document.getElementById('modalProfEsp').textContent=prof.especialidade||'';
-  renderFotoContainer(prof.foto_url,prof.nome,document.getElementById('modalProfFoto'),'modal-prof-ini-lg');
-  if(dataSelecionada) carregarHorariosOcupados(dataLocalStr(dataSelecionada));
-}
+async function alternarDisponibilidade(id, disponivel_atual, itemEl, btn, infoEl){
+  btn.disabled = true;
+  const novoStatus = !disponivel_atual;
+  try {
+    const r = await fetch(`${API}/profissionais/${id}/disponibilidade`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disponivel: novoStatus })
+    });
+    if(!r.ok) throw new Error();
 
-/* ── HORÁRIOS ── */
-async function carregarHorarios(){
-  try{
-    const res=await fetch(`${API}/horarios`);
-    configHorarios=await res.json();
-  } catch(e){
-    configHorarios={intervalo_minutos:30};
-    for(let d=0;d<=6;d++){
-      configHorarios[String(d)]=d===0?{aberto:false}:{aberto:true,hora_inicio:'08:00',hora_fim:'21:00'};
-    }
-  }
-}
+    // Atualiza visual
+    itemEl.classList.toggle('disponivel',    novoStatus);
+    itemEl.classList.toggle('indisponivel', !novoStatus);
 
-function gerarHorariosDoDia(data){
-  horarios=[];
-  const diaSemana=String(data.getDay());
-  const diaCfg=configHorarios&&configHorarios[diaSemana];
-  if(!diaCfg||!diaCfg.aberto) return;
-  const [hi,mi]=diaCfg.hora_inicio.substring(0,5).split(':');
-  const [hf,mf]=diaCfg.hora_fim.substring(0,5).split(':');
-  const intv=Number(configHorarios.intervalo_minutos||30);
-  const base=new Date(2000,0,1,+hi,+mi,0);
-  const fim=new Date(2000,0,1,+hf,+mf,0);
-  while(base<=fim){
-    horarios.push(`${String(base.getHours()).padStart(2,'0')}:${String(base.getMinutes()).padStart(2,'0')}`);
-    base.setMinutes(base.getMinutes()+intv);
-  }
-}
+    const badge = infoEl.querySelector('.status-badge');
+    badge.className = `status-badge ${novoStatus ? 'on' : 'off'}`;
+    badge.textContent = novoStatus ? 'Aceitando agendamentos' : 'Agendamentos pausados';
 
-function renderizarHorarios(ocupados){
-  const div=document.getElementById('horarios');
-  div.innerHTML='';
-  const agora=new Date();
-  const ehHoje=dataSelecionada&&
-    dataSelecionada.getFullYear()===agora.getFullYear()&&
-    dataSelecionada.getMonth()===agora.getMonth()&&
-    dataSelecionada.getDate()===agora.getDate();
-  horarios.forEach(h=>{
-    const el=document.createElement('div'); el.className='horario'; el.textContent=h;
-    let passou=false;
-    if(ehHoje){
-      const [hr,mn]=h.split(':').map(Number);
-      passou=new Date(agora.getFullYear(),agora.getMonth(),agora.getDate(),hr,mn,0)<=agora;
-    }
-    if(ocupados.includes(h)||passou){
-      el.style.opacity='0.3'; el.style.pointerEvents='none';
-      el.textContent+=passou?' ⌛':' ✕';
-    } else {
-      el.onclick=()=>selecionarHorario(el);
-    }
-    div.appendChild(el);
-  });
-}
+    btn.className = `btn-toggle ${novoStatus ? 'pausar' : 'ativar'}`;
+    btn.innerHTML = novoStatus
+      ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
+      : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
 
-async function carregarHorariosOcupados(dataFormatada){
-  document.getElementById('horarios').innerHTML='<div class="loading-txt">Carregando horários...</div>';
-  let url=`${API}/agendamentos/data/${dataFormatada}`;
-  if(profissionalSelecionado&&profissionalSelecionado.id)
-    url+=`?profissional_id=${profissionalSelecionado.id}`;
-  try{
-    const res=await fetch(url); if(!res.ok) throw new Error();
-    const ocupados=await res.json();
-    renderizarHorarios(
-      Array.isArray(ocupados)?ocupados.map(h=>(h.horario||'').trim().substring(0,5)).filter(Boolean):[]
+    // Troca o listener pro novo estado
+    const novoBtnClone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(novoBtnClone, btn);
+    novoBtnClone.innerHTML = btn.innerHTML;
+    novoBtnClone.addEventListener('click', () => alternarDisponibilidade(id, novoStatus, itemEl, novoBtnClone, infoEl));
+
+    toast(
+      novoStatus ? '✓ Agendamentos ativados!' : '⏸ Agendamentos pausados',
+      novoStatus ? '#15ff00' : '#e05050'
     );
-  } catch(e){ renderizarHorarios([]); }
-}
-
-/* ── CALENDÁRIO ── */
-const nomesDias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const hoje=new Date();
-
-function gerarProximosDias(qtd){
-  qtd=qtd||14;
-  const d=document.getElementById('dias'); d.innerHTML='';
-  for(let i=0;i<qtd;i++){
-    const data=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()+i);
-    const diaSemana=String(data.getDay());
-    const diaCfg=configHorarios&&configHorarios[diaSemana];
-    const fechado=!diaCfg||!diaCfg.aberto;
-    if(fechado) continue;
-    const el=document.createElement('div'); el.classList.add('dia');
-    el.dataset.label=`${data.getDate()} de ${meses[data.getMonth()]}`;
-    el.innerHTML=`<small>${nomesDias[data.getDay()]}</small><strong>${data.getDate()}</strong><span>${meses[data.getMonth()]}</span>`;
-    el.onclick=()=>selecionarDia(el,data);
-    d.appendChild(el);
+  } catch {
+    toast('Erro ao atualizar', '#e05050');
+    btn.disabled = false;
   }
 }
 
-function selecionarDia(elemento,data){
-  document.querySelectorAll('.dia').forEach(d=>d.classList.remove('selecionado'));
-  elemento.classList.add('selecionado');
-  dataSelecionada=data; horarioSelecionado=null;
-  document.getElementById('resumo').classList.remove('visivel');
-  document.querySelector('.btn-confirmar').disabled=true;
-  gerarHorariosDoDia(data);
-  if(horarios.length===0){
-    document.getElementById('horarios').innerHTML='<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Fechado neste dia.</span>';
-    return;
-  }
-  if(!profissionalSelecionado){
-    mostrarMensagem('⚠️ Escolha um profissional primeiro!','#e05050');
-    return;
-  }
-  carregarHorariosOcupados(dataLocalStr(data));
-}
-
-function selecionarHorario(elemento){
-  document.querySelectorAll('.horario').forEach(h=>h.classList.remove('selecionado'));
-  elemento.classList.add('selecionado');
-  horarioSelecionado=elemento.textContent.replace(' ✕','').replace(' ⌛','').trim();
-  const diaSel=document.querySelector('.dia.selecionado');
-  document.getElementById('resumoServico').textContent=nomeServico||'—';
-  document.getElementById('resumoData').textContent=diaSel?diaSel.dataset.label:'—';
-  document.getElementById('resumoHora').textContent=horarioSelecionado;
-  document.getElementById('resumoValor').textContent=valorServico?'R$'+valorServico:'—';
-  document.getElementById('resumo').classList.add('visivel');
-  document.querySelector('.btn-confirmar').disabled=false;
-}
-
-/* ── MODAL ── */
-const modal=document.getElementById('modalNome');
-const inputNome=document.getElementById('nomeCliente');
-const inputTel=document.getElementById('telefoneCliente');
-const confirmarBtn=document.getElementById('confirmarNome');
-
-document.querySelector('.btn-confirmar').addEventListener('click',()=>{
-  if(!profissionalSelecionado){ mostrarMensagem('⚠️ Escolha um profissional!','#e05050'); return; }
-  if(!dataSelecionada||!horarioSelecionado){ mostrarMensagem('⚠️ Selecione dia e horário!','#e05050'); return; }
-  modal.classList.add('aberto'); setTimeout(()=>inputNome.focus(),300);
-});
-document.getElementById('cancelarModal').addEventListener('click',()=>modal.classList.remove('aberto'));
-
-confirmarBtn.addEventListener('click',()=>{
-  const nome=inputNome.value.trim();
-  const telefone=limparTelefone(inputTel.value.trim());
-  if(!nome){ mostrarMensagem('Digite seu nome!','#e05050'); inputNome.focus(); return; }
-  if(!telefone||telefone.length<10){ mostrarMensagem('Digite um WhatsApp válido!','#e05050'); inputTel.focus(); return; }
-  if(!valorServico){ mostrarMensagem('Selecione um serviço!','#e05050'); return; }
-
-  const dataFormatada=dataLocalStr(dataSelecionada);
-  const nomeProfissional=profissionalSelecionado?profissionalSelecionado.nome:'—';
-  const numeroBarbeiro=profissionalSelecionado?.whatsapp
-    ||localStorage.getItem(`barber_wa_${slug}`)
-    ||localStorage.getItem('barber_wa');
-
-  if(!numeroBarbeiro){ mostrarMensagem('⚠️ Profissional sem WhatsApp cadastrado!','#e05050'); return; }
-
-  const mensagem=
-    `🧾 *AGENDAMENTO CONFIRMADO*\n\n`+
-    `👤 Nome: ${nome}\n`+
-    `📱 WhatsApp: ${telefone}\n`+
-    `💈 Profissional: ${nomeProfissional}\n`+
-    `💰 Serviço: R$${valorServico}\n`+
-    `📅 Data: ${dataFormatada}\n`+
-    `⏰ Horário: ${horarioSelecionado}\n\n`+
-    `Novo agendamento recebido!`;
-
-  window.open(`https://api.whatsapp.com/send?phone=${numeroBarbeiro}&text=${encodeURIComponent(mensagem)}`,'_blank');
-
-  fetch(`${API}/agendar`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      nome,telefone,
-      data:dataFormatada,
-      horario:horarioSelecionado,
-      valor:valorServico,
-      profissional_id:profissionalSelecionado?profissionalSelecionado.id:null
-    })
-  })
-  .then(r=>r.json())
-  .then(r=>{
-    modal.classList.remove('aberto');
-    if(r.erro){ mostrarMensagem(r.erro,'#e05050'); return; }
-    mostrarMensagem('✅ Agendado com sucesso!');
-  })
-  .catch(()=>mostrarMensagem('Erro ao agendar!','#e05050'));
-});
-
-inputNome.addEventListener('keydown',e=>{ if(e.key==='Enter') inputTel.focus(); });
-inputTel.addEventListener('keydown',e=>{ if(e.key==='Enter') confirmarBtn.click(); });
-
-carregarProfissionais();
-carregarHorarios().then(()=>gerarProximosDias(14));
+carregarAgendamentos();
+carregarProfissionaisAdmin();
 </script>
 </body>
 </html>
