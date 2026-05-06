@@ -1,4 +1,17 @@
 // ================================
+// ANTI-FOUC — usa opacity, não visibility
+// opacity:0 esconde visualmente mas NÃO bloqueia cliques
+// ================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.style.opacity = '0';
+  document.body.style.transition = 'opacity 0.3s ease';
+});
+
+const timeoutSeguranca = setTimeout(() => {
+  document.body.style.opacity = '1';
+}, 2000);
+
+// ================================
 // CONFIG BASE
 // ================================
 const BASE_URL =
@@ -80,6 +93,10 @@ async function aplicarConfig() {
 
   } catch (err) {
     console.error('Erro ao carregar config:', err);
+  } finally {
+    // Revela a página com fade suave
+    clearTimeout(timeoutSeguranca);
+    document.body.style.opacity = '1';
   }
 }
 
