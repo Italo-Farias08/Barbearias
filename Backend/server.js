@@ -7,13 +7,11 @@ const fs      = require("fs");
 
 const app = express();
 
-// ADICIONA ESSAS DUAS LINHAS AQUI
 app.set('trust proxy', 1);
 app.use(express.json({ limit: "10kb" }));
 
-// ============================================================
+
 // SEGURANÇA — rate limiting e helmet
-// ============================================================
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
 
@@ -35,9 +33,7 @@ const limiterLogin = rateLimit({
 
 app.use(cors());
 
-// ============================================================
 // WHATSAPP COM BAILEYS
-// ============================================================
 let waSocket    = null;
 let waConectado = false;
 
@@ -106,9 +102,7 @@ async function iniciarWhatsApp() {
 
 iniciarWhatsApp();
 
-// ============================================================
 // LEMBRETE VIA WHATSAPP
-// ============================================================
 async function enviarLembrete(ag) {
   if (!waSocket || !waConectado) {
     console.log(`⚠️  WhatsApp offline — lembrete não enviado para ${ag.nome}`);
@@ -134,9 +128,7 @@ async function enviarLembrete(ag) {
   }
 }
 
-// ============================================================
 // JOB DE LEMBRETES — a cada 60s, dispara ~1h antes
-// ============================================================
 async function verificarLembretes() {
   try {
     const agora = new Date();
@@ -177,18 +169,15 @@ async function verificarLembretes() {
 setInterval(verificarLembretes, 60 * 1000);
 verificarLembretes();
 
-// ============================================================
 // STATUS WHATSAPP
-// ============================================================
 app.get("/whatsapp-status", (req, res) => {
   res.json({ conectado: waConectado });
 });
 
 app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
 
-// ============================================================
 // HELPERS
-// ============================================================
+
 function slugValido(slug) {
   return /^[a-z0-9-]+$/.test(slug);
 }
@@ -205,9 +194,9 @@ async function podeUsarSistema(slug) {
   return barb.ativo && hoje <= vencimento;
 }
 
-// ============================================================
+
 // MIDDLEWARES
-// ============================================================
+
 async function resolveBarbearia(req, res, next) {
   const { slug } = req.params;
 
@@ -241,9 +230,8 @@ async function verificarAssinatura(req, res, next) {
 
 app.use("/api/:slug", resolveBarbearia);
 
-// ============================================================
 // CONFIG PÚBLICA DA BARBEARIA
-// ============================================================
+
 app.get("/api/:slug/config", async (req, res) => {
   try {
     const result = await db.query(
@@ -260,9 +248,8 @@ app.get("/api/:slug/config", async (req, res) => {
   }
 });
 
-// ============================================================
 // LOGIN
-// ============================================================
+
 app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   const { username, password } = req.body;
 
@@ -302,9 +289,8 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   }
 });
 
-// ============================================================
 // AGENDAR
-// ============================================================
+
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
@@ -382,9 +368,8 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // LISTAR AGENDAMENTOS
-// ============================================================
+
 app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -403,9 +388,8 @@ app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // HORÁRIOS OCUPADOS POR DATA
-// ============================================================
+
 app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   const { data } = req.params;
   const { profissional_id } = req.query;
@@ -433,9 +417,8 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   }
 });
 
-// ============================================================
 // HORÁRIOS DA BARBEARIA (configuração)
-// ============================================================
+
 app.get("/api/:slug/horarios", async (req, res) => {
   try {
     const result = await db.query(
@@ -449,7 +432,7 @@ app.get("/api/:slug/horarios", async (req, res) => {
         ? JSON.parse(row.dias_semana)
         : row.dias_semana;
 
-      // ✅ Inclui pausa de almoço no retorno
+      // Inclui pausa de almoço no retorno
       config.pausa_inicio = row.pausa_inicio || null;
       config.pausa_fim    = row.pausa_fim    || null;
 
@@ -467,7 +450,7 @@ app.get("/api/:slug/horarios", async (req, res) => {
         : { aberto: true, hora_inicio: hi, hora_fim: hf };
     }
 
-    // ✅ Inclui pausa no fallback também
+    // Inclui pausa no fallback também
     fallback.pausa_inicio = (row && row.pausa_inicio) || null;
     fallback.pausa_fim    = (row && row.pausa_fim)    || null;
 
@@ -479,9 +462,8 @@ app.get("/api/:slug/horarios", async (req, res) => {
   }
 });
 
-// ============================================================
 // SALVAR HORÁRIOS POR DIA DA SEMANA
-// ============================================================
+
 app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   const { pausa_inicio, pausa_fim, ...diasConfig } = req.body;
 
@@ -504,9 +486,8 @@ app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // CONCLUIR AGENDAMENTO
-// ============================================================
+
 app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -523,9 +504,8 @@ app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req,
   }
 });
 
-// ============================================================
 // APAGAR CONCLUÍDOS
-// ============================================================
+
 app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req, res) => {
   try {
     const r = await db.query(
@@ -540,9 +520,8 @@ app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req
   }
 });
 
-// ============================================================
 // CANCELAR AGENDAMENTO
-// ============================================================
+
 app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -558,9 +537,8 @@ app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) 
   }
 });
 
-// ============================================================
 // GASTOS
-// ============================================================
+
 app.post("/api/:slug/gastos", verificarAssinatura, async (req, res) => {
   const { descricao, valor } = req.body;
   if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
@@ -607,9 +585,8 @@ app.delete("/api/:slug/gastos/:id", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // LUCRO REAL
-// ============================================================
+
 app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   try {
     const ganhos = await db.query(
@@ -630,9 +607,8 @@ app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // SERVIÇOS
-// ============================================================
+
 app.get("/api/:slug/servicos", async (req, res) => {
   try {
     const result = await db.query(
@@ -646,9 +622,8 @@ app.get("/api/:slug/servicos", async (req, res) => {
   }
 });
 
-// ============================================================
 // PROFISSIONAIS
-// ============================================================
+
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
     const result = await db.query(
@@ -665,9 +640,8 @@ app.get("/api/:slug/profissionais", async (req, res) => {
   }
 });
 
-// ============================================================
 // DISPONIBILIDADE DO PROFISSIONAL
-// ============================================================
+
 app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0)
@@ -696,9 +670,8 @@ app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, asy
   }
 });
 
-// ============================================================
 // PLANOS
-// ============================================================
+
 app.get("/api/:slug/planos", async (req, res) => {
   try {
     const result = await db.query(
@@ -715,9 +688,8 @@ app.get("/api/:slug/planos", async (req, res) => {
   }
 });
 
-// ============================================================
 // ASSINAR
-// ============================================================
+
 app.post("/api/:slug/assinar", async (req, res) => {
   const { nome, telefone, plano_id } = req.body;
 
@@ -746,9 +718,8 @@ app.post("/api/:slug/assinar", async (req, res) => {
   }
 });
 
-// ============================================================
 // LISTAR ASSINANTES
-// ============================================================
+
 app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -773,9 +744,8 @@ app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ============================================================
 // APAGAR ASSINANTES CANCELADOS
-// ============================================================
+
 app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, res) => {
   try {
     const r = await db.query(
@@ -789,9 +759,8 @@ app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, 
   }
 });
 
-// ============================================================
 // AÇÕES DO ASSINANTE
-// ============================================================
+
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
   const id   = Number(req.params.id);
   const acao = req.params.acao;
@@ -855,9 +824,8 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
   }
 });
 
-// ============================================================
 // SERVIÇOS DESTAQUE
-// ============================================================
+
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
     const result = await db.query(
@@ -939,7 +907,7 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
   }
 });
 
-// BANCO + START //
+// BANCO + START
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
