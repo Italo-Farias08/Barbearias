@@ -54,6 +54,23 @@ header{position:sticky;top:0;z-index:200;display:flex;justify-content:space-betw
 .horario.selecionado{background:var(--gold);border-color:var(--gold);color:var(--dark);font-weight:500;}
 .horario.selecionado::after{display:none;}
 
+/* ── PAUSA ALMOÇO ── */
+.aviso-pausa{
+  grid-column: 1 / -1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 16px;
+  background:var(--dark3);
+  border:1px solid rgba(201,168,76,.2);
+  border-left:3px solid rgba(201,168,76,.5);
+  color:var(--muted);
+  font-size:11px;
+  letter-spacing:.15em;
+  margin:4px 0;
+}
+.aviso-pausa svg{ flex-shrink:0; opacity:.6; }
+
 /* ── PROFISSIONAIS ── */
 #profissionais{display:flex;gap:16px;flex-wrap:wrap;}
 .prof-card{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 16px;background:var(--dark3);border:1px solid var(--border-dim);cursor:pointer;transition:border-color .25s,background .25s;position:relative;width:140px;text-align:center;}
@@ -73,43 +90,13 @@ header{position:sticky;top:0;z-index:200;display:flex;justify-content:space-betw
 .prof-especialidade{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
 
 /* ── INDISPONÍVEL ── */
-.prof-card.indisponivel{
-  opacity:.45;
-  cursor:not-allowed;
-  pointer-events:none;
-}
-.prof-card.indisponivel .prof-anel{
-  filter:grayscale(80%);
-  border-color:rgba(224,80,80,.3);
-}
-.prof-card.indisponivel .prof-nome{ color:var(--muted); }
-.prof-indisponivel-tag{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  font-size:8px;
-  letter-spacing:.2em;
-  text-transform:uppercase;
-  color:#e05050;
-  border:1px solid rgba(224,80,80,.3);
-  padding:3px 8px;
-}
+.prof-card.indisponivel{opacity:.45;cursor:not-allowed;pointer-events:none;}
+.prof-card.indisponivel .prof-anel{filter:grayscale(80%);border-color:rgba(224,80,80,.3);}
+.prof-card.indisponivel .prof-nome{color:var(--muted);}
+.prof-indisponivel-tag{display:inline-flex;align-items:center;gap:5px;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#e05050;border:1px solid rgba(224,80,80,.3);padding:3px 8px;}
 
 /* ── AVISO TODOS FECHADOS ── */
-.aviso-fechado{
-  width:100%;
-  padding:20px 24px;
-  background:var(--dark3);
-  border:1px solid rgba(224,80,80,.25);
-  border-left:3px solid #e05050;
-  color:#e05050;
-  font-size:12px;
-  letter-spacing:.15em;
-  margin-top:12px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
+.aviso-fechado{width:100%;padding:20px 24px;background:var(--dark3);border:1px solid rgba(224,80,80,.25);border-left:3px solid #e05050;color:#e05050;font-size:12px;letter-spacing:.15em;margin-top:12px;display:flex;align-items:center;gap:12px;}
 
 .loading-txt{color:var(--muted);font-size:13px;letter-spacing:.15em;padding:20px 0;display:flex;align-items:center;gap:10px;}
 .loading-txt::before{content:'';display:block;width:16px;height:16px;border:1px solid var(--gold);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;}
@@ -337,7 +324,6 @@ async function carregarProfissionais(){
     const disponiveis   = list.filter(p => p.disponivel !== false);
     const indisponiveis = list.filter(p => p.disponivel === false);
 
-    // Disponíveis primeiro, pausados depois
     [...disponiveis, ...indisponiveis].forEach(prof => {
       const pausado = prof.disponivel === false;
       const card=document.createElement('div');
@@ -358,13 +344,11 @@ async function carregarProfissionais(){
       wrap.appendChild(card);
     });
 
-    // Auto-seleciona se só tem 1 disponível
     if(disponiveis.length===1){
       const unico=wrap.querySelector('.prof-card:not(.indisponivel)');
       if(unico) selecionarProfissional(unico,disponiveis[0]);
     }
 
-    // Aviso se todos pausados
     if(disponiveis.length===0){
       const aviso=document.createElement('div');
       aviso.className='aviso-fechado';
@@ -416,10 +400,23 @@ function gerarHorariosDoDia(data){
   const [hi,mi]=diaCfg.hora_inicio.substring(0,5).split(':');
   const [hf,mf]=diaCfg.hora_fim.substring(0,5).split(':');
   const intv=Number(configHorarios.intervalo_minutos||30);
+
+  // ✅ Pausa de almoço
+  const pausaInicio = configHorarios.pausa_inicio || null; // ex: "12:00"
+  const pausaFim    = configHorarios.pausa_fim    || null; // ex: "15:00"
+
   const base=new Date(2000,0,1,+hi,+mi,0);
   const fim=new Date(2000,0,1,+hf,+mf,0);
   while(base<=fim){
-    horarios.push(`${String(base.getHours()).padStart(2,'0')}:${String(base.getMinutes()).padStart(2,'0')}`);
+    const hStr=`${String(base.getHours()).padStart(2,'0')}:${String(base.getMinutes()).padStart(2,'0')}`;
+
+    // Pula horários dentro da pausa de almoço
+    if(pausaInicio && pausaFim && hStr >= pausaInicio && hStr < pausaFim){
+      base.setMinutes(base.getMinutes()+intv);
+      continue;
+    }
+
+    horarios.push(hStr);
     base.setMinutes(base.getMinutes()+intv);
   }
 }
@@ -432,7 +429,20 @@ function renderizarHorarios(ocupados){
     dataSelecionada.getFullYear()===agora.getFullYear()&&
     dataSelecionada.getMonth()===agora.getMonth()&&
     dataSelecionada.getDate()===agora.getDate();
+
+  // ✅ Mostra aviso de pausa se existir
+  const pausaInicio = configHorarios && configHorarios.pausa_inicio;
+  const pausaFim    = configHorarios && configHorarios.pausa_fim;
+
+  // Renderiza horários antes da pausa
+  let mostrouAviso = false;
+
   horarios.forEach(h=>{
+    // Insere aviso de pausa antes do primeiro horário após a pausa
+    if(!mostrouAviso && pausaInicio && pausaFim && h >= pausaFim){
+      mostrouAviso = true;
+    }
+
     const el=document.createElement('div'); el.className='horario'; el.textContent=h;
     let passou=false;
     if(ehHoje){
@@ -446,7 +456,30 @@ function renderizarHorarios(ocupados){
       el.onclick=()=>selecionarHorario(el);
     }
     div.appendChild(el);
+
+    // Insere aviso de pausa APÓS o último horário antes da pausa
+    if(pausaInicio && pausaFim){
+      const proxH = new Date(2000,0,1,...h.split(':').map(Number));
+      proxH.setMinutes(proxH.getMinutes() + Number(configHorarios.intervalo_minutos||30));
+      const proxStr = `${String(proxH.getHours()).padStart(2,'0')}:${String(proxH.getMinutes()).padStart(2,'0')}`;
+      if(h < pausaInicio && proxStr >= pausaInicio){
+        const aviso = document.createElement('div');
+        aviso.className = 'aviso-pausa';
+        aviso.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          Pausa para almoço — ${pausaInicio} às ${pausaFim}
+        `;
+        div.appendChild(aviso);
+      }
+    }
   });
+
+  if(horarios.length===0){
+    div.innerHTML='<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Fechado neste dia.</span>';
+  }
 }
 
 async function carregarHorariosOcupados(dataFormatada){

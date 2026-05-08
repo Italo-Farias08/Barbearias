@@ -332,6 +332,18 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   const profId       = profissional_id ? Number(profissional_id) : null;
 
   try {
+    // Verifica se o horário está na pausa de almoço
+    const horariosCfg = await db.query(
+      `SELECT pausa_inicio, pausa_fim FROM horarios_barbearia WHERE barbearia_id = $1`,
+      [barbearia_id]
+    );
+    if (horariosCfg.rows.length > 0) {
+      const { pausa_inicio, pausa_fim } = horariosCfg.rows[0];
+      if (pausa_inicio && pausa_fim && horarioLimpo >= pausa_inicio && horarioLimpo < pausa_fim) {
+        return res.status(400).json({ erro: `Horário indisponível — pausa das ${pausa_inicio} às ${pausa_fim}.` });
+      }
+    }
+
     if (profId) {
       const profCheck = await db.query(
         `SELECT disponivel FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
@@ -433,12 +445,20 @@ app.get("/api/:slug/horarios", async (req, res) => {
     const row = result.rows[0];
 
     if (row && row.dias_semana) {
-      return res.json(row.dias_semana);
+      const config = typeof row.dias_semana === "string"
+        ? JSON.parse(row.dias_semana)
+        : row.dias_semana;
+
+      // ✅ Inclui pausa de almoço no retorno
+      config.pausa_inicio = row.pausa_inicio || null;
+      config.pausa_fim    = row.pausa_fim    || null;
+
+      return res.json(config);
     }
 
-    const hi   = (row && row.hora_inicio)        ? row.hora_inicio        : "08:00";
-    const hf   = (row && row.hora_fim)           ? row.hora_fim           : "21:00";
-    const intv = (row && row.intervalo_minutos)  ? row.intervalo_minutos  : 30;
+    const hi   = (row && row.hora_inicio)       ? row.hora_inicio       : "08:00";
+    const hf   = (row && row.hora_fim)          ? row.hora_fim          : "21:00";
+    const intv = (row && row.intervalo_minutos) ? row.intervalo_minutos : 30;
 
     const fallback = { intervalo_minutos: intv };
     for (let d = 0; d <= 6; d++) {
@@ -446,6 +466,11 @@ app.get("/api/:slug/horarios", async (req, res) => {
         ? { aberto: false }
         : { aberto: true, hora_inicio: hi, hora_fim: hf };
     }
+
+    // ✅ Inclui pausa no fallback também
+    fallback.pausa_inicio = (row && row.pausa_inicio) || null;
+    fallback.pausa_fim    = (row && row.pausa_fim)    || null;
+
     res.json(fallback);
 
   } catch (err) {
@@ -458,19 +483,19 @@ app.get("/api/:slug/horarios", async (req, res) => {
 // SALVAR HORÁRIOS POR DIA DA SEMANA
 // ============================================================
 app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
-  const config = req.body;
+  const { pausa_inicio, pausa_fim, ...diasConfig } = req.body;
 
-  if (!config || typeof config !== "object") {
+  if (!diasConfig || typeof diasConfig !== "object") {
     return res.status(400).json({ erro: "Config inválida" });
   }
 
   try {
     await db.query(
-      `INSERT INTO horarios_barbearia (barbearia_id, dias_semana)
-       VALUES ($1, $2)
+      `INSERT INTO horarios_barbearia (barbearia_id, dias_semana, pausa_inicio, pausa_fim)
+       VALUES ($1, $2, $3, $4)
        ON CONFLICT (barbearia_id)
-       DO UPDATE SET dias_semana = $2`,
-      [req.barbearia.id, JSON.stringify(config)]
+       DO UPDATE SET dias_semana = $2, pausa_inicio = $3, pausa_fim = $4`,
+      [req.barbearia.id, JSON.stringify(diasConfig), pausa_inicio || null, pausa_fim || null]
     );
     res.json({ sucesso: true });
   } catch (err) {
@@ -831,7 +856,7 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
 });
 
 // ============================================================
-// SERVIÇOS DESTAQUE (home)
+// SERVIÇOS DESTAQUE
 // ============================================================
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
@@ -914,9 +939,7 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
   }
 });
 
-// ===========================================================
-// BANCO + START
-// ===========================================================
+// BANCO + START //
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
