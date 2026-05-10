@@ -33,6 +33,10 @@ const limiterLogin = rateLimit({
 
 app.use(cors());
 
+// ARQUIVOS ESTÁTICOS
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..', 'projeto')));
+
 // WHATSAPP COM BAILEYS
 let waSocket    = null;
 let waConectado = false;
@@ -906,8 +910,6 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
     res.json({ erro: "Erro ao atualizar" });
   }
 });
-const path = require('path');
-app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
 // BANCO + START
 db.query("SELECT NOW()")
