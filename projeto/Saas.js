@@ -14,7 +14,7 @@ const timeoutSeguranca = setTimeout(() => {
 // ================================
 // CONFIG BASE
 // ================================
-const BASE_URL = 'https://barbearias-production.up.railway.app';
+const BASE_URL = 'https://vtrip.com.br';
 
 // ================================
 // SLUG
