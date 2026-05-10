@@ -27,9 +27,8 @@ function getSlug() {
 const BARBER_SLUG = getSlug();
 const API = `${BASE_URL}/api/${BARBER_SLUG}`;
 
-// ================================
 // CONFIG DA BARBEARIA
-// ================================
+
 async function aplicarConfig() {
   try {
     const res    = await fetch(`${API}/config`);
