@@ -910,6 +910,14 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
     res.json({ erro: "Erro ao atualizar" });
   }
 });
+app.get("/debug-path", (req, res) => {
+  const path = require('path');
+  const fs = require('fs');
+  const dir = path.join(__dirname, '..', 'projeto');
+  const existe = fs.existsSync(dir);
+  const arquivos = existe ? fs.readdirSync(dir) : [];
+  res.json({ dir, existe, arquivos });
+});
 
 // BANCO + START
 db.query("SELECT NOW()")
