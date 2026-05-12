@@ -8,303 +8,288 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="painel.css">
 <style>
-/* ══════════════════════════════════
-   FILTROS
-══════════════════════════════════ */
-.filtros-wrap {
+
+/* ── ABAS DE PERÍODO ── */
+.periodo-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
+  gap: 1px;
+  background: rgba(255,255,255,0.06);
   margin-bottom: 32px;
 }
-.filtro-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.filtro-label {
-  font-size: 9px;
-  letter-spacing: .25em;
+.periodo-tab {
+  flex: 1;
+  padding: 14px 10px;
+  text-align: center;
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--muted);
-}
-.filtro-input, .filtro-select {
   background: var(--dark2);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--cream);
-  font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  padding: 10px 14px;
-  outline: none;
-  transition: border-color .2s;
-  min-width: 140px;
-}
-.filtro-input:focus, .filtro-select:focus {
-  border-color: var(--gold);
-}
-.filtro-select option { background: #1a1a18; }
-
-.btn-filtrar {
-  align-self: flex-end;
-  background: transparent;
-  border: 1px solid rgba(201,168,76,.4);
-  color: var(--gold);
-  font-family: 'Barlow', sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  padding: 11px 22px;
+  border: none;
   cursor: pointer;
-  transition: all .3s;
+  transition: all .2s;
 }
-.btn-filtrar:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+.periodo-tab.ativo { background: var(--gold); color: var(--dark); }
+.periodo-tab:hover:not(.ativo) { background: var(--dark3); color: var(--cream); }
 
-/* ══════════════════════════════════
-   CARDS DE PROFISSIONAL
-══════════════════════════════════ */
-.comissao-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: rgba(255,255,255,0.06);
-  margin-bottom: 48px;
-}
-
-.comissao-card {
-  background: var(--dark2);
-  padding: 28px 32px;
-  position: relative;
-  border-left: 2px solid transparent;
-  transition: background .3s, border-color .3s;
-  animation: fadeUp .5s ease both;
-}
-.comissao-card:hover { background: var(--dark3); border-left-color: var(--gold); }
-
-.card-top {
-  display: flex;
+/* ── SELETOR DE DATA CUSTOM ── */
+.data-picker-wrap {
+  display: none;
+  gap: 10px;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 22px;
-}
-.prof-avatar-lg {
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  border: 2px solid rgba(201,168,76,.25);
-  background: var(--dark3);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Playfair Display', serif;
-  font-size: 22px; font-weight: 700; color: var(--gold);
-  overflow: hidden; flex-shrink: 0;
-}
-.prof-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
-
-.prof-nome-lg {
-  font-family: 'Playfair Display', serif;
-  font-size: 18px; font-weight: 700; color: var(--cream);
-}
-.prof-config-tag {
-  font-size: 10px; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--muted); margin-top: 3px;
-}
-
-/* Grade de métricas */
-.metricas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 1px;
-  background: rgba(255,255,255,0.06);
-  margin-bottom: 20px;
-}
-.metrica {
-  background: var(--dark);
-  padding: 16px 18px;
-  text-align: center;
-}
-.metrica-val {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px; font-weight: 700;
-  color: var(--cream);
-  line-height: 1;
-}
-.metrica-val.gold { color: var(--gold); }
-.metrica-val.green { color: var(--green); }
-.metrica-lbl {
-  font-size: 8px; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--muted);
-  margin-top: 5px;
-}
-
-/* Config inline de comissão */
-.config-comissao {
-  display: flex;
+  margin-bottom: 24px;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-  margin-bottom: 20px;
-  padding: 18px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
 }
-.config-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.config-field label {
-  font-size: 9px; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--muted);
-}
-.config-field input {
-  background: var(--dark);
+.data-picker-wrap.visivel { display: flex; }
+.data-picker-wrap input {
+  background: var(--dark2);
   border: 1px solid rgba(255,255,255,0.1);
   color: var(--cream);
   font-family: 'Barlow', sans-serif;
   font-size: 14px;
-  padding: 9px 12px;
-  width: 110px;
+  padding: 10px 14px;
   outline: none;
   transition: border-color .2s;
 }
-.config-field input:focus { border-color: var(--gold); }
-.btn-salvar-config {
+.data-picker-wrap input:focus { border-color: var(--gold); }
+.btn-buscar {
   background: transparent;
   border: 1px solid rgba(201,168,76,.4);
   color: var(--gold);
   font-family: 'Barlow', sans-serif;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  padding: 10px 18px;
-  cursor: pointer;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 11px 22px; cursor: pointer;
   transition: all .3s;
 }
-.btn-salvar-config:hover { background: var(--gold); color: var(--dark); }
-.btn-salvar-config:disabled { opacity: .35; cursor: not-allowed; }
+.btn-buscar:hover { background: var(--gold); color: var(--dark); }
 
-/* Ajustes manuais */
-.ajustes-wrap {
-  border-top: 1px solid rgba(255,255,255,0.06);
-  padding-top: 18px;
+/* ── RESUMO GERAL ── */
+.resumo-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: rgba(255,255,255,0.06);
+  margin-bottom: 40px;
 }
-.ajustes-titulo {
-  font-size: 9px; letter-spacing: .28em;
+.resumo-celula {
+  background: var(--dark2);
+  padding: 24px 20px;
+  text-align: center;
+}
+.resumo-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-weight: 700;
+  line-height: 1; color: var(--cream);
+}
+.resumo-num.dourado  { color: var(--gold); }
+.resumo-num.verde    { color: var(--green); }
+.resumo-num.vermelho { color: var(--red); }
+.resumo-leg {
+  font-size: 9px; letter-spacing: .22em;
   text-transform: uppercase; color: var(--muted);
-  margin-bottom: 12px;
+  margin-top: 6px;
 }
-.ajuste-item {
+
+/* ── CARD DO BARBEIRO ── */
+.barb-card {
+  background: var(--dark2);
+  margin-bottom: 2px;
+  border-left: 3px solid transparent;
+  transition: border-color .3s;
+  animation: fadeUp .4s ease both;
+}
+.barb-card:hover { border-left-color: var(--gold); }
+
+.barb-header {
   display: flex;
   align-items: center;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.barb-avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: var(--dark3);
+  border: 2px solid rgba(201,168,76,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; color: var(--gold);
+  overflow: hidden; flex-shrink: 0;
+}
+.barb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.barb-info { flex: 1; }
+.barb-nome {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700; color: var(--cream);
+}
+.barb-sub {
+  font-size: 10px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--muted); margin-top: 2px;
+}
+.barb-pagar { text-align: right; }
+.barb-pagar-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--green); line-height: 1;
+}
+.barb-pagar-leg {
+  font-size: 8px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted); margin-top: 3px;
+}
+.barb-chevron {
+  color: var(--muted); font-size: 18px;
+  margin-left: 8px; transition: transform .3s; flex-shrink: 0;
+}
+.barb-card.aberto .barb-chevron { transform: rotate(180deg); }
+
+/* ── DETALHE EXPANSÍVEL ── */
+.barb-detalhe {
+  display: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 0 24px 24px;
+}
+.barb-card.aberto .barb-detalhe { display: block; }
+
+.detalhe-linha {
+  display: flex;
   justify-content: space-between;
-  padding: 9px 0;
+  align-items: center;
+  padding: 12px 0;
   border-bottom: 1px solid rgba(255,255,255,0.04);
-  gap: 12px;
+  font-size: 13px; color: var(--cream);
+}
+.detalhe-linha:last-of-type { border-bottom: none; }
+.detalhe-label { color: var(--muted); font-size: 12px; }
+.detalhe-val { font-weight: 500; }
+.detalhe-val.verde    { color: var(--green); }
+.detalhe-val.vermelho { color: var(--red); }
+.detalhe-val.dourado  { color: var(--gold); }
+
+/* ── BOTÕES DE SEÇÃO ── */
+.toggle-secao {
+  display: flex; gap: 8px;
+  margin-top: 18px; flex-wrap: wrap;
+}
+.btn-secao {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--muted);
+  font-family: 'Barlow', sans-serif;
+  font-size: 9px; font-weight: 500;
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: 7px 14px; cursor: pointer;
+  transition: all .2s;
+}
+.btn-secao.ativo  { border-color: var(--gold); color: var(--gold); }
+.btn-secao:hover:not(.ativo) { border-color: rgba(255,255,255,.2); color: var(--cream); }
+
+.secao-bloco { display: none; margin-top: 16px; }
+.secao-bloco.visivel { display: block; }
+
+/* ── AJUSTES ── */
+.ajustes-titulo-s {
+  font-size: 9px; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.ajuste-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
   animation: fadeUp .3s ease both;
 }
-.ajuste-desc { font-size: 13px; color: var(--cream); flex: 1; }
-.ajuste-val {
-  font-family: 'Playfair Display', serif;
-  font-size: 15px; font-weight: 700;
-}
-.ajuste-val.pos { color: var(--green); }
-.ajuste-val.neg { color: var(--red); }
-.btn-del-ajuste {
+.ajuste-row-desc { flex: 1; font-size: 13px; color: var(--cream); }
+.ajuste-row-val  { font-family:'Playfair Display',serif; font-size:14px; font-weight:700; }
+.ajuste-row-val.pos { color: var(--green); }
+.ajuste-row-val.neg { color: var(--red); }
+.btn-rm {
   background: none; border: none;
-  color: var(--muted); font-size: 16px;
-  cursor: pointer; padding: 0 4px;
+  color: rgba(255,255,255,0.2); font-size: 18px;
+  cursor: pointer; padding: 0 2px; line-height: 1;
   transition: color .2s;
-  line-height: 1;
 }
-.btn-del-ajuste:hover { color: var(--red); }
+.btn-rm:hover { color: var(--red); }
 
-.form-ajuste {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-end;
-  margin-top: 14px;
-  padding: 14px;
-  background: rgba(255,255,255,0.025);
-  border: 1px dashed rgba(255,255,255,0.08);
+.form-novo-ajuste {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 14px; align-items: flex-end;
 }
-.form-ajuste input {
+.form-novo-ajuste input {
   background: var(--dark);
   border: 1px solid rgba(255,255,255,0.1);
   color: var(--cream);
   font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  padding: 9px 12px;
-  outline: none;
-  transition: border-color .2s;
+  font-size: 13px; padding: 9px 12px;
+  outline: none; transition: border-color .2s;
 }
-.form-ajuste input:focus { border-color: var(--gold); }
-.form-ajuste input.desc-input { flex: 1; min-width: 160px; }
-.form-ajuste input.val-input  { width: 100px; }
-.btn-add-ajuste {
+.form-novo-ajuste input:focus { border-color: var(--gold); }
+.inp-desc-aj { flex: 1; min-width: 150px; }
+.inp-val-aj  { width: 110px; }
+.btn-add-aj {
   background: transparent;
   border: 1px solid rgba(21,255,0,.3);
   color: var(--green);
   font-family: 'Barlow', sans-serif;
   font-size: 9px; font-weight: 500;
-  letter-spacing: .2em; text-transform: uppercase;
-  padding: 10px 16px; cursor: pointer;
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: 10px 14px; cursor: pointer;
   transition: all .3s; white-space: nowrap;
 }
-.btn-add-ajuste:hover { background: var(--green); color: var(--dark); }
-.btn-add-ajuste:disabled { opacity: .35; cursor: not-allowed; }
+.btn-add-aj:hover { background: var(--green); color: var(--dark); }
+.btn-add-aj:disabled { opacity: .35; cursor: not-allowed; }
 
-/* Totalizador geral */
-.resumo-geral {
-  background: var(--dark2);
-  border: 1px solid rgba(201,168,76,.15);
-  padding: 28px 32px;
-  margin-bottom: 40px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  align-items: center;
-  animation: fadeUp .5s ease both;
+/* ── CONFIG % ── */
+.config-section {
+  display: flex; flex-wrap: wrap;
+  gap: 10px; align-items: flex-end;
 }
-.resumo-item { text-align: center; flex: 1; min-width: 120px; }
-.resumo-val {
-  font-family: 'Playfair Display', serif;
-  font-size: 28px; font-weight: 700;
-  line-height: 1;
-}
-.resumo-val.gold { color: var(--gold); }
-.resumo-val.green { color: var(--green); }
-.resumo-lbl {
-  font-size: 9px; letter-spacing: .25em;
+.config-section label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 9px; letter-spacing: .2em;
   text-transform: uppercase; color: var(--muted);
-  margin-top: 6px;
 }
-.resumo-divider {
-  width: 1px; height: 50px;
-  background: rgba(255,255,255,0.08);
+.config-section input {
+  background: var(--dark);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--cream);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px; padding: 9px 12px; width: 100px;
+  outline: none; transition: border-color .2s;
 }
+.config-section input:focus { border-color: var(--gold); }
+.btn-salvar-pct {
+  background: transparent;
+  border: 1px solid rgba(201,168,76,.4);
+  color: var(--gold);
+  font-family: 'Barlow', sans-serif;
+  font-size: 9px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 10px 16px; cursor: pointer; transition: all .3s;
+}
+.btn-salvar-pct:hover { background: var(--gold); color: var(--dark); }
+.btn-salvar-pct:disabled { opacity: .35; cursor: not-allowed; }
 
-/* Estados */
-.loading-state, .empty {
-  padding: 48px 32px;
-  text-align: center;
-  color: var(--muted);
-  font-size: 13px;
-  letter-spacing: .05em;
+/* ── ESTADOS ── */
+.loading-state {
+  padding: 48px 32px; text-align: center;
+  color: var(--muted); font-size: 13px;
 }
 .spin {
   width: 20px; height: 20px;
   border: 2px solid rgba(201,168,76,.15);
   border-top-color: var(--gold);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin .8s linear infinite;
   margin: 0 auto 12px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 </style>
 </head>
@@ -319,10 +304,7 @@
     </span>
   </a>
   <div class="header-right">
-    <div class="admin-badge">
-      <div class="badge-dot"></div>
-      Painel Admin
-    </div>
+    <div class="admin-badge"><div class="badge-dot"></div>Painel Admin</div>
     <a href="login.html" class="btn-sair" onclick="localStorage.removeItem('token')">Sair</a>
   </div>
 </header>
@@ -338,35 +320,34 @@
 
 <div class="main-wrap">
 
-  <!-- FILTROS -->
-  <div class="sec-label">Filtrar período</div>
-  <div class="filtros-wrap">
-    <div class="filtro-group">
-      <span class="filtro-label">Mês</span>
-      <input type="month" id="filtroMes" class="filtro-input">
-    </div>
-    <div class="filtro-group">
-      <span class="filtro-label">Dia específico</span>
-      <input type="date"  id="filtroData" class="filtro-input">
-    </div>
-    <div class="filtro-group">
-      <span class="filtro-label">Profissional</span>
-      <select id="filtroProfissional" class="filtro-select">
-        <option value="">Todos</option>
-      </select>
-    </div>
-    <button class="btn-filtrar" id="btnFiltrar">Gerar relatório</button>
+  <!-- PERÍODO -->
+  <div class="sec-label">Período</div>
+  <div class="periodo-tabs">
+    <button class="periodo-tab ativo" data-periodo="mes">Este mês</button>
+    <button class="periodo-tab" data-periodo="semana">Esta semana</button>
+    <button class="periodo-tab" data-periodo="hoje">Hoje</button>
+    <button class="periodo-tab" data-periodo="custom">Escolher data</button>
   </div>
 
-  <!-- RESUMO GERAL -->
-  <div class="sec-label">Resumo do período</div>
-  <div class="resumo-geral" id="resumoGeral">
-    <div class="loading-state"><div class="spin"></div>Carregando...</div>
+  <div class="data-picker-wrap" id="customPicker">
+    <input type="date" id="filtroData">
+    <button class="btn-buscar" id="btnBuscar">Buscar</button>
   </div>
 
-  <!-- CARDS DE PROFISSIONAIS -->
-  <div class="sec-label" style="margin-top:40px;">Detalhamento por profissional</div>
-  <div class="comissao-grid" id="comissaoGrid">
+  <!-- RESUMO -->
+  <div class="sec-label">Resumo</div>
+  <div class="resumo-box" id="resumoBox">
+    <div class="resumo-celula" style="grid-column:1/-1">
+      <div class="loading-state"><div class="spin"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- BARBEIROS -->
+  <div class="sec-label">
+    Por barbeiro
+    <span style="color:var(--muted);font-size:10px;letter-spacing:.1em;font-weight:400;margin-left:8px;">toque para ver detalhes</span>
+  </div>
+  <div id="barbGrid">
     <div class="loading-state"><div class="spin"></div>Carregando...</div>
   </div>
 
@@ -391,290 +372,314 @@
 <script>
 /* ── PARTÍCULAS ── */
 (function(){
-  const canvas=document.getElementById('particles'),ctx=canvas.getContext('2d');
-  ctx.filter='blur(1.5px)';
-  let W,H,pts=[];
-  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
-  resize();window.addEventListener('resize',resize);
-  function rand(a,b){return a+Math.random()*(b-a);}
-  for(let i=0;i<50;i++)
-    pts.push({x:rand(0,1),y:rand(0,1),size:rand(.6,2),speed:rand(.00008,.00018),alpha:rand(.05,.18),drift:rand(-.0001,.0001)});
+  const c=document.getElementById('particles'),x=c.getContext('2d');
+  x.filter='blur(1.5px)';
+  let W,H,p=[];
+  function r(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  r();addEventListener('resize',r);
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  for(let i=0;i<50;i++) p.push({x:rnd(0,1),y:rnd(0,1),s:rnd(.6,2),v:rnd(.00008,.00018),a:rnd(.05,.18),d:rnd(-.0001,.0001)});
   (function draw(){
-    ctx.clearRect(0,0,W,H);
-    pts.forEach(p=>{
-      p.y-=p.speed;p.x+=p.drift;
-      if(p.y<0){p.y=1;p.x=rand(0,1);}
-      if(p.x<0||p.x>1)p.x=rand(0,1);
-      ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
-      ctx.fillStyle=`rgba(240,240,240,${p.alpha})`;ctx.fill();
+    x.clearRect(0,0,W,H);
+    p.forEach(o=>{
+      o.y-=o.v;o.x+=o.d;
+      if(o.y<0){o.y=1;o.x=rnd(0,1);}
+      if(o.x<0||o.x>1)o.x=rnd(0,1);
+      x.beginPath();x.arc(o.x*W,o.y*H,o.s,0,Math.PI*2);
+      x.fillStyle=`rgba(240,240,240,${o.a})`;x.fill();
     });
     requestAnimationFrame(draw);
   })();
 })();
 
 /* ── TOAST ── */
-function toast(texto, cor){
+function toast(txt,cor){
   cor=cor||'#c9a84c';
   const el=document.createElement('div');
-  el.className='toast';el.textContent=texto;el.style.background=cor;
+  el.className='toast';el.textContent=txt;el.style.background=cor;
   document.body.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));
   setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),500);},2800);
 }
 
-/* ── UTILS ── */
-function fmt(v){ return 'R$ '+Number(v).toFixed(2).replace('.',','); }
-function mesAtual(){ return new Date().toISOString().substring(0,7); }
+const fmt = v => 'R$ '+Number(v).toFixed(2).replace('.',',');
 
 /* ── ESTADO ── */
-let profissionaisCache = [];
-let mesRef = mesAtual();
+let periodoAtivo = 'mes';
+let dataCustom   = '';
+let mesRef       = '';
 
-/* ── INIT FILTROS ── */
-document.getElementById('filtroMes').value = mesRef;
+function periodoParaParams(){
+  const hoje = new Date();
+  const pad  = n=>String(n).padStart(2,'0');
+  const iso  = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-/* Popula select de profissionais */
-async function carregarProfissionaisSelect(){
-  try {
-    const res  = await fetch(`${API}/profissionais`);
-    const list = await res.json();
-    profissionaisCache = list;
-    const sel = document.getElementById('filtroProfissional');
-    list.forEach(p=>{
-      const opt=document.createElement('option');
-      opt.value=p.id; opt.textContent=p.nome;
-      sel.appendChild(opt);
-    });
-  } catch(e){ console.error(e); }
+  if(periodoAtivo==='hoje')   return `data=${iso(hoje)}`;
+  if(periodoAtivo==='custom') return `data=${dataCustom}`;
+  if(periodoAtivo==='semana'){
+    const seg=new Date(hoje);
+    const dia=hoje.getDay();
+    seg.setDate(hoje.getDate()-(dia===0?6:dia-1));
+    return `data=${iso(seg)}&data_fim=${iso(hoje)}`;
+  }
+  return `mes=${hoje.getFullYear()}-${pad(hoje.getMonth()+1)}`;
 }
 
-/* ── CARREGAR RELATÓRIO ── */
+function calcMesRef(){
+  const hoje=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  if(periodoAtivo==='custom') return dataCustom.substring(0,7);
+  return `${hoje.getFullYear()}-${pad(hoje.getMonth()+1)}`;
+}
+
+/* ── ABAS ── */
+document.querySelectorAll('.periodo-tab').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.periodo-tab').forEach(b=>b.classList.remove('ativo'));
+    this.classList.add('ativo');
+    periodoAtivo=this.dataset.periodo;
+    const picker=document.getElementById('customPicker');
+    if(periodoAtivo==='custom'){
+      picker.classList.add('visivel');
+    } else {
+      picker.classList.remove('visivel');
+      carregarRelatorio();
+    }
+  });
+});
+
+document.getElementById('btnBuscar').addEventListener('click',()=>{
+  dataCustom=document.getElementById('filtroData').value;
+  if(!dataCustom){toast('Escolha uma data','#e05050');return;}
+  carregarRelatorio();
+});
+
+/* ── CARREGAR ── */
 async function carregarRelatorio(){
-  const mes   = document.getElementById('filtroMes').value;
-  const data  = document.getElementById('filtroData').value;
-  const profId= document.getElementById('filtroProfissional').value;
+  const params=periodoParaParams();
+  mesRef=calcMesRef();
 
-  let url = `${API}/comissoes/relatorio?`;
-  if (data)   url += `data=${data}&`;
-  else if(mes) url += `mes=${mes}&`;
-  if (profId) url += `profissional_id=${profId}&`;
+  document.getElementById('resumoBox').innerHTML=
+    '<div class="resumo-celula" style="grid-column:1/-1"><div class="loading-state"><div class="spin"></div>Carregando...</div></div>';
+  document.getElementById('barbGrid').innerHTML=
+    '<div class="loading-state"><div class="spin"></div>Carregando...</div>';
 
-  // Guarda mês de referência para ajustes manuais
-  mesRef = data ? data.substring(0,7) : (mes || mesAtual());
-
-  const grid    = document.getElementById('comissaoGrid');
-  const resumo  = document.getElementById('resumoGeral');
-  grid.innerHTML   = '<div class="loading-state"><div class="spin"></div>Carregando...</div>';
-  resumo.innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando...</div>';
-
-  try {
-    const res  = await fetch(url);
-    const json = await res.json();
+  try{
+    const res=await fetch(`${API}/comissoes/relatorio?${params}`);
+    const json=await res.json();
     renderResumo(json);
-    renderCards(json);
-  } catch(e){
-    grid.innerHTML   = '<div class="loading-state">⚠️ Erro ao carregar relatório</div>';
-    resumo.innerHTML = '';
+    renderBarbeiros(json);
+  }catch(e){
+    document.getElementById('barbGrid').innerHTML=
+      '<div class="loading-state">⚠️ Erro ao carregar</div>';
   }
 }
 
-/* ── RESUMO GERAL ── */
+/* ── RESUMO ── */
 function renderResumo(json){
-  const rel = json.relatorio || [];
-  const totalCortes    = rel.reduce((s,p)=>s+p.total_cortes,0);
-  const totalFaturamento = rel.reduce((s,p)=>s+p.faturamento,0);
-  const totalComissao  = rel.reduce((s,p)=>s+p.comissao_final,0);
-  const totalBarbearia = totalFaturamento - totalComissao;
+  const rel=json.relatorio||[];
+  const cortes     =rel.reduce((s,p)=>s+Number(p.total_cortes),0);
+  const faturamento=rel.reduce((s,p)=>s+Number(p.faturamento),0);
+  const comissoes  =rel.reduce((s,p)=>s+Number(p.comissao_final),0);
+  const barbearia  =faturamento-comissoes;
 
-  document.getElementById('resumoGeral').innerHTML = `
-    <div class="resumo-item">
-      <div class="resumo-val">${totalCortes}</div>
-      <div class="resumo-lbl">Cortes concluídos</div>
+  document.getElementById('resumoBox').innerHTML=`
+    <div class="resumo-celula">
+      <div class="resumo-num">${cortes}</div>
+      <div class="resumo-leg">Cortes feitos</div>
     </div>
-    <div class="resumo-divider"></div>
-    <div class="resumo-item">
-      <div class="resumo-val gold">${fmt(totalFaturamento)}</div>
-      <div class="resumo-lbl">Faturamento bruto</div>
+    <div class="resumo-celula">
+      <div class="resumo-num dourado">${fmt(faturamento)}</div>
+      <div class="resumo-leg">Faturamento</div>
     </div>
-    <div class="resumo-divider"></div>
-    <div class="resumo-item">
-      <div class="resumo-val" style="color:var(--red)">${fmt(totalComissao)}</div>
-      <div class="resumo-lbl">Total comissões</div>
+    <div class="resumo-celula">
+      <div class="resumo-num vermelho">${fmt(comissoes)}</div>
+      <div class="resumo-leg">Total a pagar</div>
     </div>
-    <div class="resumo-divider"></div>
-    <div class="resumo-item">
-      <div class="resumo-val green">${fmt(totalBarbearia)}</div>
-      <div class="resumo-lbl">Fica na barbearia</div>
+    <div class="resumo-celula">
+      <div class="resumo-num verde">${fmt(barbearia)}</div>
+      <div class="resumo-leg">Fica na barbearia</div>
     </div>
   `;
 }
 
-/* ── CARDS DE PROFISSIONAIS ── */
-function renderCards(json){
-  const grid = document.getElementById('comissaoGrid');
-  const rel  = json.relatorio || [];
-  grid.innerHTML = '';
+/* ── CARDS DOS BARBEIROS ── */
+function renderBarbeiros(json){
+  const grid=document.getElementById('barbGrid');
+  const rel=json.relatorio||[];
+  grid.innerHTML='';
 
-  if(rel.length === 0){
-    grid.innerHTML = '<div class="loading-state">Nenhum dado encontrado para o período.</div>';
+  if(!rel.length){
+    grid.innerHTML='<div class="loading-state">Nenhum dado neste período.</div>';
     return;
   }
 
-  rel.forEach((prof, i) => {
-    const card = document.createElement('div');
-    card.className = 'comissao-card';
-    card.style.animationDelay = (i*0.07)+'s';
+  rel.forEach((prof,i)=>{
+    const card=document.createElement('div');
+    card.className='barb-card';
+    card.style.animationDelay=(i*.07)+'s';
 
-    const inicial = prof.profissional_nome.trim().charAt(0).toUpperCase();
-    const fotoHtml = prof.foto_url
-      ? `<img src="${prof.foto_url}" alt="${prof.profissional_nome}" onerror="this.parentElement.textContent='${inicial}'">`
-      : inicial;
+    const inicial=prof.profissional_nome.trim().charAt(0).toUpperCase();
+    const fotoHtml=prof.foto_url
+      ?`<img src="${prof.foto_url}" alt="${prof.profissional_nome}" onerror="this.parentElement.textContent='${inicial}'">`
+      :inicial;
 
-    // Lista de ajustes
-    const ajustesHtml = (prof.ajustes||[]).map(aj => `
-      <div class="ajuste-item" data-id="${aj.id}">
-        <span class="ajuste-desc">${aj.descricao}</span>
-        <span class="ajuste-val ${Number(aj.valor)>=0?'pos':'neg'}">${Number(aj.valor)>=0?'+':''}${fmt(aj.valor)}</span>
-        <button class="btn-del-ajuste" title="Remover ajuste" data-ajuste-id="${aj.id}" data-prof-id="${prof.profissional_id}">×</button>
+    const configTag=prof.percentual>0||Number(prof.valor_fixo)>0
+      ?`${prof.percentual}%${Number(prof.valor_fixo)>0?' + R$'+Number(prof.valor_fixo).toFixed(2)+'/corte':''}`
+      :'Sem comissão configurada';
+
+    const ajustesHtml=(prof.ajustes||[]).map(aj=>`
+      <div class="ajuste-row">
+        <span class="ajuste-row-desc">${aj.descricao}</span>
+        <span class="ajuste-row-val ${Number(aj.valor)>=0?'pos':'neg'}">${Number(aj.valor)>=0?'+':''}${fmt(aj.valor)}</span>
+        <button class="btn-rm" data-ajuste-id="${aj.id}">×</button>
       </div>
     `).join('');
 
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="prof-avatar-lg">${fotoHtml}</div>
-        <div>
-          <div class="prof-nome-lg">${prof.profissional_nome}</div>
-          <div class="prof-config-tag">${prof.percentual}% + R$${Number(prof.valor_fixo).toFixed(2).replace('.',',')} por corte</div>
+    card.innerHTML=`
+      <div class="barb-header">
+        <div class="barb-avatar">${fotoHtml}</div>
+        <div class="barb-info">
+          <div class="barb-nome">${prof.profissional_nome}</div>
+          <div class="barb-sub">${prof.total_cortes} corte${prof.total_cortes!==1?'s':''} · ${configTag}</div>
         </div>
+        <div class="barb-pagar">
+          <div class="barb-pagar-val">${fmt(prof.comissao_final)}</div>
+          <div class="barb-pagar-leg">A pagar</div>
+        </div>
+        <span class="barb-chevron">▾</span>
       </div>
 
-      <div class="metricas-grid">
-        <div class="metrica">
-          <div class="metrica-val">${prof.total_cortes}</div>
-          <div class="metrica-lbl">Cortes</div>
+      <div class="barb-detalhe">
+        <div class="detalhe-linha">
+          <span class="detalhe-label">Faturamento gerado</span>
+          <span class="detalhe-val dourado">${fmt(prof.faturamento)}</span>
         </div>
-        <div class="metrica">
-          <div class="metrica-val gold">${fmt(prof.faturamento)}</div>
-          <div class="metrica-lbl">Faturamento</div>
+        <div class="detalhe-linha">
+          <span class="detalhe-label">Comissão base</span>
+          <span class="detalhe-val">${fmt(prof.comissao_base)}</span>
         </div>
-        <div class="metrica">
-          <div class="metrica-val">${fmt(prof.comissao_base)}</div>
-          <div class="metrica-lbl">Comissão base</div>
+        <div class="detalhe-linha">
+          <span class="detalhe-label">Ajustes manuais</span>
+          <span class="detalhe-val ${Number(prof.total_ajustes)>=0?'verde':'vermelho'}">${Number(prof.total_ajustes)>=0?'+':''}${fmt(prof.total_ajustes)}</span>
         </div>
-        <div class="metrica">
-          <div class="metrica-val ${Number(prof.total_ajustes)>=0?'green':''}" style="${Number(prof.total_ajustes)<0?'color:var(--red)':''}">
-            ${Number(prof.total_ajustes)>=0?'+':''}${fmt(prof.total_ajustes)}
+        <div class="detalhe-linha" style="border-top:1px solid rgba(255,255,255,0.08);margin-top:4px;padding-top:14px;">
+          <span class="detalhe-label" style="font-size:13px;color:var(--cream);">Total a pagar</span>
+          <span class="detalhe-val verde" style="font-size:18px;">${fmt(prof.comissao_final)}</span>
+        </div>
+
+        <div class="toggle-secao">
+          <button class="btn-secao" data-sec="ajustes">＋ Bônus / Desconto</button>
+          <button class="btn-secao" data-sec="config">⚙ Alterar %</button>
+        </div>
+
+        <!-- AJUSTES -->
+        <div class="secao-bloco" data-bloco="ajustes">
+          <div class="ajustes-titulo-s">Ajustes de ${mesRef}</div>
+          <div class="lista-ajustes-inner">
+            ${ajustesHtml||'<div style="color:var(--muted);font-size:12px;padding:6px 0;">Nenhum ajuste ainda</div>'}
           </div>
-          <div class="metrica-lbl">Ajustes</div>
+          <div class="form-novo-ajuste">
+            <input type="text"   class="inp-desc-aj" placeholder="Ex: Bônus semana, Desconto produto...">
+            <input type="number" class="inp-val-aj"  placeholder="Valor (ex: -10)" step="0.01">
+            <button class="btn-add-aj">Adicionar</button>
+          </div>
         </div>
-        <div class="metrica">
-          <div class="metrica-val green">${fmt(prof.comissao_final)}</div>
-          <div class="metrica-lbl">A pagar</div>
-        </div>
-      </div>
 
-      <!-- Config de comissão -->
-      <div class="config-comissao">
-        <div class="config-field">
-          <label>% Comissão</label>
-          <input type="number" class="inp-pct" value="${prof.percentual}" min="0" max="100" step="0.5" placeholder="0">
-        </div>
-        <div class="config-field">
-          <label>R$ fixo / corte</label>
-          <input type="number" class="inp-fixo" value="${Number(prof.valor_fixo).toFixed(2)}" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <button class="btn-salvar-config" data-prof-id="${prof.profissional_id}">Salvar configuração</button>
-      </div>
-
-      <!-- Ajustes manuais -->
-      <div class="ajustes-wrap">
-        <div class="ajustes-titulo">Ajustes manuais — ${mesRef}</div>
-        <div class="lista-ajustes">${ajustesHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0;">Nenhum ajuste neste período</div>'}</div>
-        <div class="form-ajuste">
-          <input type="text"   class="desc-input" placeholder="Descrição (ex: Bônus semana)">
-          <input type="number" class="val-input"  placeholder="Valor (- para desconto)" step="0.01">
-          <button class="btn-add-ajuste" data-prof-id="${prof.profissional_id}">+ Adicionar</button>
+        <!-- CONFIG % -->
+        <div class="secao-bloco" data-bloco="config">
+          <div class="config-section">
+            <label>% por corte
+              <input type="number" class="inp-pct" value="${prof.percentual}" min="0" max="100" step="0.5">
+            </label>
+            <label>R$ fixo por corte
+              <input type="number" class="inp-fixo" value="${Number(prof.valor_fixo).toFixed(2)}" min="0" step="0.01">
+            </label>
+            <button class="btn-salvar-pct">Salvar</button>
+          </div>
         </div>
       </div>
     `;
 
     grid.appendChild(card);
 
-    // Salvar config
-    card.querySelector('.btn-salvar-config').addEventListener('click', async function(){
-      const btn = this;
-      const pct  = card.querySelector('.inp-pct').value;
-      const fixo = card.querySelector('.inp-fixo').value;
-      btn.disabled = true;
-      try {
-        const r = await fetch(`${API}/comissoes/config/${prof.profissional_id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ percentual: pct, valor_fixo: fixo })
-        });
-        const d = await r.json();
-        if(d.sucesso) toast('✓ Configuração salva!');
-        else toast(d.erro||'Erro ao salvar','#e05050');
-      } catch { toast('Erro ao salvar','#e05050'); }
-      btn.disabled = false;
+    /* Abrir/fechar card */
+    card.querySelector('.barb-header').addEventListener('click',()=>{
+      card.classList.toggle('aberto');
     });
 
-    // Adicionar ajuste
-    card.querySelector('.btn-add-ajuste').addEventListener('click', async function(){
-      const btn  = this;
-      const desc = card.querySelector('.desc-input').value.trim();
-      const val  = card.querySelector('.val-input').value;
-      if(!desc){ toast('Informe a descrição','#e05050'); return; }
-      if(!val || isNaN(Number(val))){ toast('Informe o valor','#e05050'); return; }
-      btn.disabled = true;
-      try {
-        const r = await fetch(`${API}/comissoes/ajuste`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            profissional_id: prof.profissional_id,
-            descricao: desc,
-            valor: Number(val),
-            referencia_mes: mesRef
+    /* Toggle seções */
+    card.querySelectorAll('.btn-secao').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const sec=btn.dataset.sec;
+        const bloco=card.querySelector(`[data-bloco="${sec}"]`);
+        const jaAberto=bloco.classList.contains('visivel');
+        card.querySelectorAll('.secao-bloco').forEach(b=>b.classList.remove('visivel'));
+        card.querySelectorAll('.btn-secao').forEach(b=>b.classList.remove('ativo'));
+        if(!jaAberto){ bloco.classList.add('visivel'); btn.classList.add('ativo'); }
+      });
+    });
+
+    /* Salvar % */
+    card.querySelector('.btn-salvar-pct').addEventListener('click',async function(e){
+      e.stopPropagation();
+      const btn=this; btn.disabled=true;
+      try{
+        const r=await fetch(`${API}/comissoes/config/${prof.profissional_id}`,{
+          method:'PUT',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            percentual:card.querySelector('.inp-pct').value,
+            valor_fixo:card.querySelector('.inp-fixo').value
           })
         });
-        const d = await r.json();
-        if(d.sucesso){ toast('✓ Ajuste adicionado!'); carregarRelatorio(); }
+        const d=await r.json();
+        if(d.sucesso){toast('✓ Comissão salva!');carregarRelatorio();}
         else toast(d.erro||'Erro','#e05050');
-      } catch { toast('Erro','#e05050'); }
-      btn.disabled = false;
+      }catch{toast('Erro','#e05050');}
+      btn.disabled=false;
     });
 
-    // Deletar ajuste (delegação)
-    card.querySelectorAll('.btn-del-ajuste').forEach(btn => {
-      btn.addEventListener('click', async function(){
-        const ajId = this.dataset.ajusteId;
-        if(!ajId) return;
-        this.disabled = true;
-        try {
-          const r = await fetch(`${API}/comissoes/ajuste/${ajId}`, { method: 'DELETE' });
-          const d = await r.json();
-          if(d.sucesso){ toast('Ajuste removido','#e05050'); carregarRelatorio(); }
+    /* Adicionar ajuste */
+    card.querySelector('.btn-add-aj').addEventListener('click',async function(e){
+      e.stopPropagation();
+      const btn=this;
+      const desc=card.querySelector('.inp-desc-aj').value.trim();
+      const val=card.querySelector('.inp-val-aj').value;
+      if(!desc){toast('Informe a descrição','#e05050');return;}
+      if(!val||isNaN(Number(val))){toast('Informe o valor','#e05050');return;}
+      btn.disabled=true;
+      try{
+        const r=await fetch(`${API}/comissoes/ajuste`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            profissional_id:prof.profissional_id,
+            descricao:desc,valor:Number(val),referencia_mes:mesRef
+          })
+        });
+        const d=await r.json();
+        if(d.sucesso){toast('✓ Ajuste adicionado!');carregarRelatorio();}
+        else toast(d.erro||'Erro','#e05050');
+      }catch{toast('Erro','#e05050');}
+      btn.disabled=false;
+    });
+
+    /* Remover ajuste */
+    card.querySelectorAll('.btn-rm').forEach(btn=>{
+      btn.addEventListener('click',async function(e){
+        e.stopPropagation();
+        this.disabled=true;
+        try{
+          const r=await fetch(`${API}/comissoes/ajuste/${this.dataset.ajusteId}`,{method:'DELETE'});
+          const d=await r.json();
+          if(d.sucesso){toast('Ajuste removido','#e05050');carregarRelatorio();}
           else toast(d.erro||'Erro','#e05050');
-        } catch { toast('Erro','#e05050'); this.disabled=false; }
+        }catch{toast('Erro','#e05050');this.disabled=false;}
       });
     });
   });
 }
 
-/* ── BOTÃO FILTRAR ── */
-document.getElementById('btnFiltrar').addEventListener('click', carregarRelatorio);
-
-/* Limpa mês se data for preenchida e vice-versa */
-document.getElementById('filtroData').addEventListener('change', function(){
-  if(this.value) document.getElementById('filtroMes').value = '';
-});
-document.getElementById('filtroMes').addEventListener('change', function(){
-  if(this.value) document.getElementById('filtroData').value = '';
-});
-
-/* ── INIT ── */
-carregarProfissionaisSelect();
 carregarRelatorio();
 </script>
 </body>
