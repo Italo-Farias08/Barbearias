@@ -918,6 +918,241 @@ app.get("/debug-path", (req, res) => {
   const arquivos = existe ? fs.readdirSync(dir) : [];
   res.json({ dir, existe, arquivos });
 });
+// ============================================================
+// ROTAS DE COMISSÃO — adicione no seu server.js
+// Cole logo antes da linha: db.query("SELECT NOW()")
+// ============================================================
+
+// ── GET /api/:slug/comissoes/config
+// Retorna % e valor fixo de todos os profissionais
+app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, nome, foto_url, especialidade,
+              COALESCE(comissao_percentual, 0) AS comissao_percentual,
+              COALESCE(comissao_valor_fixo,  0) AS comissao_valor_fixo
+       FROM profissionais
+       WHERE barbearia_id = $1 AND ativo = true
+       ORDER BY ordem`,
+      [req.barbearia.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao buscar configurações de comissão" });
+  }
+});
+
+// ── PUT /api/:slug/comissoes/config/:profissional_id
+// Salva % e valor fixo de um profissional
+app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, async (req, res) => {
+  const profId = Number(req.params.profissional_id);
+  if (!Number.isInteger(profId) || profId <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+
+  const { percentual, valor_fixo } = req.body;
+  const pct = Number(percentual);
+  const vfx = Number(valor_fixo);
+
+  if (isNaN(pct) || pct < 0 || pct > 100)
+    return res.status(400).json({ erro: "Percentual inválido (0–100)" });
+  if (isNaN(vfx) || vfx < 0)
+    return res.status(400).json({ erro: "Valor fixo inválido" });
+
+  try {
+    const result = await db.query(
+      `UPDATE profissionais
+       SET comissao_percentual = $1, comissao_valor_fixo = $2
+       WHERE id = $3 AND barbearia_id = $4
+       RETURNING id, nome, comissao_percentual, comissao_valor_fixo`,
+      [pct, vfx, profId, req.barbearia.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ erro: "Profissional não encontrado" });
+    res.json({ sucesso: true, profissional: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao salvar comissão" });
+  }
+});
+
+// ── GET /api/:slug/comissoes/relatorio?mes=2025-07&data=2025-07-15&profissional_id=1
+// mes       → filtro por mês completo (YYYY-MM)       [opcional]
+// data      → filtro por dia exato  (YYYY-MM-DD)       [opcional]
+// profissional_id → filtra 1 profissional              [opcional]
+// Se nenhum filtro → retorna o mês atual
+app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) => {
+  const { mes, data, profissional_id } = req.query;
+
+  // Define período
+  let dataInicio, dataFim, referenciaAjustes;
+  if (data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    dataInicio = data;
+    dataFim    = data;
+    referenciaAjustes = data.substring(0, 7); // mês do dia
+  } else {
+    const periodo = (mes && /^\d{4}-\d{2}$/.test(mes))
+      ? mes
+      : new Date().toISOString().substring(0, 7);
+    referenciaAjustes = periodo;
+    dataInicio = `${periodo}-01`;
+    // último dia do mês
+    const [y, m] = periodo.split("-").map(Number);
+    const ultimo = new Date(y, m, 0).getDate();
+    dataFim = `${periodo}-${String(ultimo).padStart(2, "0")}`;
+  }
+
+  const params = [req.barbearia.id, dataInicio, dataFim];
+  let filtroProf = "";
+  if (profissional_id && !isNaN(Number(profissional_id))) {
+    filtroProf = " AND p.id = $4";
+    params.push(Number(profissional_id));
+  }
+
+  try {
+    // Agendamentos concluídos no período, agrupados por profissional
+    const agResult = await db.query(
+      `SELECT
+         p.id                                    AS profissional_id,
+         p.nome                                  AS profissional_nome,
+         p.foto_url,
+         COALESCE(p.comissao_percentual, 0)      AS percentual,
+         COALESCE(p.comissao_valor_fixo,  0)     AS valor_fixo,
+         COUNT(a.id)                             AS total_cortes,
+         COALESCE(SUM(a.valor), 0)               AS faturamento
+       FROM profissionais p
+       LEFT JOIN agendamentos a
+         ON a.profissional_id = p.id
+        AND a.barbearia_id    = $1
+        AND a.status          = 'concluido'
+        AND a.data BETWEEN $2 AND $3
+       WHERE p.barbearia_id = $1 AND p.ativo = true
+       ${filtroProf}
+       GROUP BY p.id, p.nome, p.foto_url, p.comissao_percentual, p.comissao_valor_fixo
+       ORDER BY p.ordem`,
+      params
+    );
+
+    // Ajustes manuais no mesmo período
+    const ajParams = [req.barbearia.id, referenciaAjustes];
+    let filtroAjProf = "";
+    if (profissional_id && !isNaN(Number(profissional_id))) {
+      filtroAjProf = " AND profissional_id = $3";
+      ajParams.push(Number(profissional_id));
+    }
+
+    const ajResult = await db.query(
+      `SELECT profissional_id, descricao, valor, criado_em
+       FROM comissao_ajustes
+       WHERE barbearia_id = $1 AND referencia_mes = $2
+       ${filtroAjProf}
+       ORDER BY criado_em DESC`,
+      ajParams
+    );
+
+    // Agrupa ajustes por profissional
+    const ajustesPorProf = {};
+    ajResult.rows.forEach(aj => {
+      if (!ajustesPorProf[aj.profissional_id]) ajustesPorProf[aj.profissional_id] = [];
+      ajustesPorProf[aj.profissional_id].push(aj);
+    });
+
+    // Monta resultado final
+    const relatorio = agResult.rows.map(prof => {
+      const faturamento  = Number(prof.faturamento);
+      const totalCortes  = Number(prof.total_cortes);
+      const percentual   = Number(prof.percentual);
+      const valorFixo    = Number(prof.valor_fixo);
+      const ajustes      = ajustesPorProf[prof.profissional_id] || [];
+      const totalAjustes = ajustes.reduce((s, a) => s + Number(a.valor), 0);
+
+      // Comissão = (faturamento × %) + (valor_fixo × cortes) + ajustes manuais
+      const comissaoBase = (faturamento * percentual / 100) + (valorFixo * totalCortes);
+      const comissaoFinal = comissaoBase + totalAjustes;
+
+      return {
+        profissional_id:   prof.profissional_id,
+        profissional_nome: prof.profissional_nome,
+        foto_url:          prof.foto_url,
+        percentual,
+        valor_fixo:        valorFixo,
+        total_cortes:      totalCortes,
+        faturamento,
+        comissao_base:     Number(comissaoBase.toFixed(2)),
+        total_ajustes:     Number(totalAjustes.toFixed(2)),
+        comissao_final:    Number(comissaoFinal.toFixed(2)),
+        ajustes
+      };
+    });
+
+    res.json({
+      periodo: { inicio: dataInicio, fim: dataFim, referencia: referenciaAjustes },
+      relatorio
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao gerar relatório" });
+  }
+});
+
+// ── POST /api/:slug/comissoes/ajuste
+// Adiciona bônus ou desconto manual a um profissional
+// Body: { profissional_id, descricao, valor, referencia_mes }
+// valor positivo = bônus, negativo = desconto
+app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) => {
+  const { profissional_id, descricao, valor, referencia_mes } = req.body;
+
+  const profId = Number(profissional_id);
+  if (!Number.isInteger(profId) || profId <= 0)
+    return res.status(400).json({ erro: "Profissional inválido" });
+  if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0)
+    return res.status(400).json({ erro: "Descrição inválida" });
+  if (isNaN(Number(valor)))
+    return res.status(400).json({ erro: "Valor inválido" });
+  if (!referencia_mes || !/^\d{4}-\d{2}$/.test(referencia_mes))
+    return res.status(400).json({ erro: "Mês de referência inválido (YYYY-MM)" });
+
+  try {
+    // Confirma que o profissional pertence à barbearia
+    const check = await db.query(
+      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
+      [profId, req.barbearia.id]
+    );
+    if (check.rows.length === 0)
+      return res.status(404).json({ erro: "Profissional não encontrado" });
+
+    await db.query(
+      `INSERT INTO comissao_ajustes
+         (barbearia_id, profissional_id, descricao, valor, referencia_mes)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [req.barbearia.id, profId, descricao.trim(), Number(valor), referencia_mes]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao salvar ajuste" });
+  }
+});
+
+// ── DELETE /api/:slug/comissoes/ajuste/:id
+// Remove um ajuste manual
+app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+
+  try {
+    await db.query(
+      `DELETE FROM comissao_ajustes WHERE id = $1 AND barbearia_id = $2`,
+      [id, req.barbearia.id]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao deletar ajuste" });
+  }
+});
 
 // BANCO + START
 db.query("SELECT NOW()")
