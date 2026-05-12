@@ -910,6 +910,7 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
     res.json({ erro: "Erro ao atualizar" });
   }
 });
+
 app.get("/debug-path", (req, res) => {
   const path = require('path');
   const fs = require('fs');
@@ -918,13 +919,12 @@ app.get("/debug-path", (req, res) => {
   const arquivos = existe ? fs.readdirSync(dir) : [];
   res.json({ dir, existe, arquivos });
 });
+
 // ============================================================
-// ROTAS DE COMISSÃO — adicione no seu server.js
-// Cole logo antes da linha: db.query("SELECT NOW()")
+// ROTAS DE COMISSÃO
 // ============================================================
 
 // ── GET /api/:slug/comissoes/config
-// Retorna % e valor fixo de todos os profissionais
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -944,7 +944,6 @@ app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => 
 });
 
 // ── PUT /api/:slug/comissoes/config/:profissional_id
-// Salva % e valor fixo de um profissional
 app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.profissional_id);
   if (!Number.isInteger(profId) || profId <= 0)
@@ -976,27 +975,29 @@ app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, asy
   }
 });
 
-// ── GET /api/:slug/comissoes/relatorio?mes=2025-07&data=2025-07-15&profissional_id=1
-// mes       → filtro por mês completo (YYYY-MM)       [opcional]
-// data      → filtro por dia exato  (YYYY-MM-DD)       [opcional]
-// profissional_id → filtra 1 profissional              [opcional]
-// Se nenhum filtro → retorna o mês atual
+// ── GET /api/:slug/comissoes/relatorio
 app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) => {
-  const { mes, data, profissional_id } = req.query;
+  const { mes, data, data_fim, profissional_id } = req.query;
 
-  // Define período
   let dataInicio, dataFim, referenciaAjustes;
-  if (data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+
+  if (data_fim && /^\d{4}-\d{2}-\d{2}$/.test(data_fim) && data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    // Intervalo de datas (ex: semana)
+    dataInicio = data;
+    dataFim    = data_fim;
+    referenciaAjustes = data.substring(0, 7);
+  } else if (data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    // Dia exato
     dataInicio = data;
     dataFim    = data;
-    referenciaAjustes = data.substring(0, 7); // mês do dia
+    referenciaAjustes = data.substring(0, 7);
   } else {
+    // Mês completo
     const periodo = (mes && /^\d{4}-\d{2}$/.test(mes))
       ? mes
       : new Date().toISOString().substring(0, 7);
     referenciaAjustes = periodo;
     dataInicio = `${periodo}-01`;
-    // último dia do mês
     const [y, m] = periodo.split("-").map(Number);
     const ultimo = new Date(y, m, 0).getDate();
     dataFim = `${periodo}-${String(ultimo).padStart(2, "0")}`;
@@ -1010,7 +1011,6 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
   }
 
   try {
-    // Agendamentos concluídos no período, agrupados por profissional
     const agResult = await db.query(
       `SELECT
          p.id                                    AS profissional_id,
@@ -1033,7 +1033,6 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       params
     );
 
-    // Ajustes manuais no mesmo período
     const ajParams = [req.barbearia.id, referenciaAjustes];
     let filtroAjProf = "";
     if (profissional_id && !isNaN(Number(profissional_id))) {
@@ -1041,8 +1040,9 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       ajParams.push(Number(profissional_id));
     }
 
+    // ✅ CORREÇÃO: adicionado "id" no SELECT para o botão de remover funcionar
     const ajResult = await db.query(
-      `SELECT profissional_id, descricao, valor, criado_em
+      `SELECT id, profissional_id, descricao, valor, criado_em
        FROM comissao_ajustes
        WHERE barbearia_id = $1 AND referencia_mes = $2
        ${filtroAjProf}
@@ -1050,14 +1050,12 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       ajParams
     );
 
-    // Agrupa ajustes por profissional
     const ajustesPorProf = {};
     ajResult.rows.forEach(aj => {
       if (!ajustesPorProf[aj.profissional_id]) ajustesPorProf[aj.profissional_id] = [];
       ajustesPorProf[aj.profissional_id].push(aj);
     });
 
-    // Monta resultado final
     const relatorio = agResult.rows.map(prof => {
       const faturamento  = Number(prof.faturamento);
       const totalCortes  = Number(prof.total_cortes);
@@ -1066,8 +1064,7 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       const ajustes      = ajustesPorProf[prof.profissional_id] || [];
       const totalAjustes = ajustes.reduce((s, a) => s + Number(a.valor), 0);
 
-      // Comissão = (faturamento × %) + (valor_fixo × cortes) + ajustes manuais
-      const comissaoBase = (faturamento * percentual / 100) + (valorFixo * totalCortes);
+      const comissaoBase  = (faturamento * percentual / 100) + (valorFixo * totalCortes);
       const comissaoFinal = comissaoBase + totalAjustes;
 
       return {
@@ -1097,9 +1094,6 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
 });
 
 // ── POST /api/:slug/comissoes/ajuste
-// Adiciona bônus ou desconto manual a um profissional
-// Body: { profissional_id, descricao, valor, referencia_mes }
-// valor positivo = bônus, negativo = desconto
 app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) => {
   const { profissional_id, descricao, valor, referencia_mes } = req.body;
 
@@ -1114,7 +1108,6 @@ app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) =>
     return res.status(400).json({ erro: "Mês de referência inválido (YYYY-MM)" });
 
   try {
-    // Confirma que o profissional pertence à barbearia
     const check = await db.query(
       `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
       [profId, req.barbearia.id]
@@ -1136,7 +1129,6 @@ app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) =>
 });
 
 // ── DELETE /api/:slug/comissoes/ajuste/:id
-// Remove um ajuste manual
 app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0)
