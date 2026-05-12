@@ -18,10 +18,10 @@
 
 .prof-item {
   background: var(--dark2);
-  padding: 22px 32px;
+  padding: 22px 24px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
   position: relative;
   border-left: 2px solid transparent;
   transition: background .3s, border-color .3s;
@@ -40,7 +40,7 @@
 .prof-item:hover::after { width: 24px; height: 24px; border-color: var(--gold); }
 
 .prof-avatar {
-  width: 48px; height: 48px;
+  width: 44px; height: 44px;
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,0.1);
   overflow: hidden;
@@ -48,7 +48,7 @@
   background: var(--dark3);
   display: flex; align-items: center; justify-content: center;
   font-family: 'Playfair Display', serif;
-  font-size: 20px; font-weight: 700;
+  font-size: 18px; font-weight: 700;
   color: var(--gold);
   transition: border-color .3s;
 }
@@ -59,7 +59,7 @@
 .prof-info { flex: 1; min-width: 0; }
 .prof-nome-txt {
   font-family: 'Playfair Display', serif;
-  font-size: 16px; font-weight: 700; color: var(--cream);
+  font-size: 15px; font-weight: 700; color: var(--cream);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .prof-esp-txt {
@@ -67,25 +67,25 @@
   text-transform: uppercase; color: var(--muted); margin-top: 2px;
 }
 .status-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 9px; letter-spacing: .28em; text-transform: uppercase;
-  border: 1px solid; padding: 3px 9px; margin-top: 7px;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 8px; letter-spacing: .22em; text-transform: uppercase;
+  border: 1px solid; padding: 3px 8px; margin-top: 6px;
 }
 .status-badge.on  { color: var(--green); border-color: rgba(21,255,0,.3); }
 .status-badge.off { color: var(--red);   border-color: rgba(224,80,80,.3); }
 .status-badge::before {
-  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
 }
 .status-badge.on::before  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.5s ease infinite; }
 .status-badge.off::before { background: var(--red); }
 
 .btn-toggle {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 6px;
   border: none;
   font-family: 'Barlow', sans-serif;
-  font-size: 10px; font-weight: 500;
-  letter-spacing: .2em; text-transform: uppercase;
-  padding: 12px 18px;
+  font-size: 9px; font-weight: 500;
+  letter-spacing: .15em; text-transform: uppercase;
+  padding: 10px 12px;
   cursor: pointer;
   transition: all .3s;
   white-space: nowrap; flex-shrink: 0;
@@ -101,6 +101,69 @@
 }
 .btn-toggle.ativar:hover { background: var(--green); color: var(--dark); border-color: var(--green); }
 .btn-toggle:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── MENU INFERIOR — TAB BAR MOBILE ── */
+.menu-botoes {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: var(--dark2);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.menu-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 2px;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: 'Barlow', sans-serif;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  border-right: 1px solid rgba(255,255,255,0.05);
+  transition: color .2s, background .2s;
+  min-width: 0;
+  text-align: center;
+  line-height: 1.2;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-btn:last-child { border-right: none; }
+.menu-btn:hover,
+.menu-btn:active { color: var(--gold); background: rgba(201,168,76,0.06); }
+
+.menu-icon {
+  font-size: 20px;
+  line-height: 1;
+  display: block;
+}
+
+.menu-label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 2px;
+}
+
+/* Telas muito pequenas: só ícone */
+@media (max-width: 359px) {
+  .menu-label { display: none; }
+  .menu-btn   { padding: 14px 2px; }
+}
+
+/* Garante que o conteúdo não suma atrás do menu fixo */
+.main-wrap {
+  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+}
 </style>
 </head>
 <body>
@@ -141,29 +204,29 @@
   <div class="sec-label">Lista de agendamentos</div>
   <div id="lista"></div>
 
-  <!-- ── SEÇÃO DE PROFISSIONAIS ── -->
   <div class="sec-label" style="margin-top:56px;">Disponibilidade dos profissionais</div>
   <div class="prof-grid" id="profGrid">
     <div class="loading-state"><div class="spin"></div>Carregando profissionais...</div>
   </div>
 </div>
 
+<!-- ── MENU TAB BAR ── -->
 <div class="menu-botoes">
   <a href="painel_planos.html" class="menu-btn">
     <span class="menu-icon">💳</span>
-    Assinaturas
+    <span class="menu-label">Assinaturas</span>
   </a>
-  <a href="lucro.html" class="menu-btn lucro">
+  <a href="lucro.html" class="menu-btn">
     <span class="menu-icon">💰</span>
-    Lucros
+    <span class="menu-label">Lucros</span>
   </a>
-  <a href="concluidos.html" class="menu-btn concluidos">
+  <a href="concluidos.html" class="menu-btn">
     <span class="menu-icon">✔</span>
-    Concluídos
+    <span class="menu-label">Concluídos</span>
   </a>
   <a href="comissao.html" class="menu-btn">
     <span class="menu-icon">✂️</span>
-    Comissões
+    <span class="menu-label">Comissões</span>
   </a>
 </div>
 
@@ -362,7 +425,6 @@ async function carregarProfissionaisAdmin(){
       item.className = `prof-item ${disponivel ? 'disponivel' : 'indisponivel'}`;
       item.style.animationDelay = (i * 0.07) + 's';
 
-      // Avatar
       const avatarEl = document.createElement('div');
       avatarEl.className = 'prof-avatar';
       if(prof.foto_url){
@@ -374,7 +436,6 @@ async function carregarProfissionaisAdmin(){
         avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase();
       }
 
-      // Info
       const infoEl = document.createElement('div');
       infoEl.className = 'prof-info';
       infoEl.innerHTML = `
@@ -385,7 +446,6 @@ async function carregarProfissionaisAdmin(){
         </div>
       `;
 
-      // Botão
       const btn = document.createElement('button');
       btn.className = `btn-toggle ${disponivel ? 'pausar' : 'ativar'}`;
       btn.innerHTML = disponivel
@@ -416,7 +476,6 @@ async function alternarDisponibilidade(id, disponivel_atual, itemEl, btn, infoEl
     });
     if(!r.ok) throw new Error();
 
-    // Atualiza visual
     itemEl.classList.toggle('disponivel',    novoStatus);
     itemEl.classList.toggle('indisponivel', !novoStatus);
 
@@ -429,7 +488,6 @@ async function alternarDisponibilidade(id, disponivel_atual, itemEl, btn, infoEl
       ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
       : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
 
-    // Troca o listener pro novo estado
     const novoBtnClone = btn.cloneNode(true);
     btn.parentNode.replaceChild(novoBtnClone, btn);
     novoBtnClone.innerHTML = btn.innerHTML;

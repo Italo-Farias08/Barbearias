@@ -64,6 +64,9 @@
   padding: 11px 22px; cursor: pointer;
   transition: all .3s;
 }
+.sec-label{
+    padding-left: 20px;
+}
 .btn-buscar:hover { background: var(--gold); color: var(--dark); }
 
 /* ── RESUMO GERAL ── */
@@ -228,7 +231,11 @@
 }
 .form-novo-ajuste input:focus { border-color: var(--gold); }
 .inp-desc-aj { flex: 1; min-width: 150px; }
-.inp-val-aj  { width: 110px; }
+
+.inp-val-aj  {
+     width: 110px;
+     font-size: 16px;
+    }
 .btn-add-aj {
   background: transparent;
   border: 1px solid rgba(21,255,0,.3);
@@ -257,7 +264,7 @@
   border: 1px solid rgba(255,255,255,0.1);
   color: var(--cream);
   font-family: 'Barlow', sans-serif;
-  font-size: 14px; padding: 9px 12px; width: 100px;
+  font-size: 16px; padding: 9px 12px; width: 100px;
   outline: none; transition: border-color .2s;
 }
 .config-section input:focus { border-color: var(--gold); }
