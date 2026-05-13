@@ -335,12 +335,27 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
     }
 
     if (profId) {
+      // Verifica disponibilidade geral do profissional
       const profCheck = await db.query(
         `SELECT disponivel FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
         [profId, barbearia_id]
       );
       if (profCheck.rows.length > 0 && profCheck.rows[0].disponivel === false) {
         return res.json({ erro: "Este profissional não está aceitando agendamentos no momento." });
+      }
+
+      // ── NOVO: verifica se a data cai em alguma pausa cadastrada ──
+      const pausaCheck = await db.query(
+        `SELECT id FROM profissional_pausas
+         WHERE profissional_id = $1
+           AND barbearia_id    = $2
+           AND $3 BETWEEN data_inicio AND data_fim`,
+        [profId, barbearia_id, data]
+      );
+      if (pausaCheck.rows.length > 0) {
+        return res.status(400).json({
+          erro: "Este profissional está de folga nesta data. Escolha outro dia ou outro profissional."
+        });
       }
     }
 
@@ -436,7 +451,6 @@ app.get("/api/:slug/horarios", async (req, res) => {
         ? JSON.parse(row.dias_semana)
         : row.dias_semana;
 
-      // Inclui pausa de almoço no retorno
       config.pausa_inicio = row.pausa_inicio || null;
       config.pausa_fim    = row.pausa_fim    || null;
 
@@ -454,7 +468,6 @@ app.get("/api/:slug/horarios", async (req, res) => {
         : { aberto: true, hora_inicio: hi, hora_fim: hf };
     }
 
-    // Inclui pausa no fallback também
     fallback.pausa_inicio = (row && row.pausa_inicio) || null;
     fallback.pausa_fim    = (row && row.pausa_fim)    || null;
 
@@ -626,8 +639,11 @@ app.get("/api/:slug/servicos", async (req, res) => {
   }
 });
 
+// ============================================================
 // PROFISSIONAIS
+// ============================================================
 
+// Listar profissionais — inclui pausas ativas/futuras no retorno
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
     const result = await db.query(
@@ -637,14 +653,45 @@ app.get("/api/:slug/profissionais", async (req, res) => {
        ORDER BY ordem`,
       [req.barbearia.id]
     );
-    res.json(result.rows);
+
+    const profissionais = result.rows;
+
+    if (profissionais.length === 0) return res.json([]);
+
+    // Busca todas as pausas futuras/ativas de uma vez (evita N queries)
+    const hoje = new Date().toISOString().split("T")[0];
+    const ids  = profissionais.map(p => p.id);
+
+    const pausasResult = await db.query(
+      `SELECT id, profissional_id, data_inicio, data_fim
+       FROM profissional_pausas
+       WHERE barbearia_id = $1
+         AND profissional_id = ANY($2::int[])
+         AND data_fim >= $3
+       ORDER BY data_inicio`,
+      [req.barbearia.id, ids, hoje]
+    );
+
+    // Agrupa pausas por profissional
+    const pausasPorProf = {};
+    pausasResult.rows.forEach(p => {
+      if (!pausasPorProf[p.profissional_id]) pausasPorProf[p.profissional_id] = [];
+      pausasPorProf[p.profissional_id].push(p);
+    });
+
+    const retorno = profissionais.map(p => ({
+      ...p,
+      pausas: pausasPorProf[p.id] || []
+    }));
+
+    res.json(retorno);
   } catch (err) {
     console.error(err);
     res.json([]);
   }
 });
 
-// DISPONIBILIDADE DO PROFISSIONAL
+// DISPONIBILIDADE GERAL DO PROFISSIONAL (liga/desliga total)
 
 app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
@@ -671,6 +718,115 @@ app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, asy
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro ao atualizar disponibilidade" });
+  }
+});
+
+// ============================================================
+// PAUSAS POR DATA DO PROFISSIONAL
+// ============================================================
+
+// GET — lista todas as pausas ativas/futuras de um profissional
+app.get("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
+  const profId = Number(req.params.id);
+  if (!Number.isInteger(profId) || profId <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+
+  try {
+    const hoje = new Date().toISOString().split("T")[0];
+
+    const result = await db.query(
+      `SELECT id, profissional_id, data_inicio, data_fim, criado_em
+       FROM profissional_pausas
+       WHERE profissional_id = $1
+         AND barbearia_id    = $2
+         AND data_fim        >= $3
+       ORDER BY data_inicio`,
+      [profId, req.barbearia.id, hoje]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao buscar pausas" });
+  }
+});
+
+// POST — cria uma nova pausa por data
+app.post("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
+  const profId = Number(req.params.id);
+  if (!Number.isInteger(profId) || profId <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+
+  const { data_inicio, data_fim } = req.body;
+
+  if (!data_inicio || !/^\d{4}-\d{2}-\d{2}$/.test(data_inicio))
+    return res.status(400).json({ erro: "data_inicio inválida" });
+  if (!data_fim || !/^\d{4}-\d{2}-\d{2}$/.test(data_fim))
+    return res.status(400).json({ erro: "data_fim inválida" });
+  if (data_fim < data_inicio)
+    return res.status(400).json({ erro: "data_fim deve ser igual ou posterior a data_inicio" });
+
+  try {
+    // Verifica se o profissional pertence a esta barbearia
+    const profCheck = await db.query(
+      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
+      [profId, req.barbearia.id]
+    );
+    if (profCheck.rows.length === 0)
+      return res.status(404).json({ erro: "Profissional não encontrado" });
+
+    // Verifica sobreposição com pausas já existentes
+    const sobreposicao = await db.query(
+      `SELECT id FROM profissional_pausas
+       WHERE profissional_id = $1
+         AND barbearia_id    = $2
+         AND data_inicio     <= $4
+         AND data_fim        >= $3`,
+      [profId, req.barbearia.id, data_inicio, data_fim]
+    );
+    if (sobreposicao.rows.length > 0)
+      return res.status(409).json({ erro: "Já existe uma pausa cadastrada neste período." });
+
+    const insert = await db.query(
+      `INSERT INTO profissional_pausas
+         (profissional_id, barbearia_id, data_inicio, data_fim)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, profissional_id, data_inicio, data_fim, criado_em`,
+      [profId, req.barbearia.id, data_inicio, data_fim]
+    );
+
+    res.status(201).json({ sucesso: true, pausa: insert.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao salvar pausa" });
+  }
+});
+
+// DELETE — remove uma pausa específica
+app.delete("/api/:slug/profissionais/:profId/pausas/:pausaId", verificarAssinatura, async (req, res) => {
+  const profId  = Number(req.params.profId);
+  const pausaId = Number(req.params.pausaId);
+
+  if (!Number.isInteger(profId)  || profId  <= 0) return res.status(400).json({ erro: "profId inválido" });
+  if (!Number.isInteger(pausaId) || pausaId <= 0) return res.status(400).json({ erro: "pausaId inválido" });
+
+  try {
+    const result = await db.query(
+      `DELETE FROM profissional_pausas
+       WHERE id              = $1
+         AND profissional_id = $2
+         AND barbearia_id    = $3
+       RETURNING id`,
+      [pausaId, profId, req.barbearia.id]
+    );
+
+    if (result.rows.length === 0)
+      return res.status(404).json({ erro: "Pausa não encontrada" });
+
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao remover pausa" });
   }
 });
 
@@ -924,7 +1080,6 @@ app.get("/debug-path", (req, res) => {
 // ROTAS DE COMISSÃO
 // ============================================================
 
-// ── GET /api/:slug/comissoes/config
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -943,7 +1098,6 @@ app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => 
   }
 });
 
-// ── PUT /api/:slug/comissoes/config/:profissional_id
 app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.profissional_id);
   if (!Number.isInteger(profId) || profId <= 0)
@@ -975,24 +1129,20 @@ app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, asy
   }
 });
 
-// ── GET /api/:slug/comissoes/relatorio
 app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) => {
   const { mes, data, data_fim, profissional_id } = req.query;
 
   let dataInicio, dataFim, referenciaAjustes;
 
   if (data_fim && /^\d{4}-\d{2}-\d{2}$/.test(data_fim) && data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    // Intervalo de datas (ex: semana)
     dataInicio = data;
     dataFim    = data_fim;
     referenciaAjustes = data.substring(0, 7);
   } else if (data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    // Dia exato
     dataInicio = data;
     dataFim    = data;
     referenciaAjustes = data.substring(0, 7);
   } else {
-    // Mês completo
     const periodo = (mes && /^\d{4}-\d{2}$/.test(mes))
       ? mes
       : new Date().toISOString().substring(0, 7);
@@ -1040,7 +1190,6 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       ajParams.push(Number(profissional_id));
     }
 
-    // ✅ CORREÇÃO: adicionado "id" no SELECT para o botão de remover funcionar
     const ajResult = await db.query(
       `SELECT id, profissional_id, descricao, valor, criado_em
        FROM comissao_ajustes
@@ -1093,7 +1242,6 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
   }
 });
 
-// ── POST /api/:slug/comissoes/ajuste
 app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) => {
   const { profissional_id, descricao, valor, referencia_mes } = req.body;
 
@@ -1128,7 +1276,6 @@ app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) =>
   }
 });
 
-// ── DELETE /api/:slug/comissoes/ajuste/:id
 app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0)
@@ -1142,7 +1289,7 @@ app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, r
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ erro: "Erro ao deletar ajuste" });
+    res.json({ erro: "Erro ao deletar ajuste" });
   }
 });
 
