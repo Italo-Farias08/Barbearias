@@ -133,8 +133,6 @@
   from { transform: translateY(28px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-
-/* cantos decorativos */
 .modal-box::before, .modal-box::after,
 .modal-box .corner-bl, .modal-box .corner-br {
   content: '';
@@ -187,11 +185,15 @@
 }
 .field-input::placeholder { color: rgba(255,255,255,.2); }
 .field-input:focus, .field-select:focus { border-color: rgba(201,168,76,.6); }
-.field-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%23888' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: calc(100% - 12px) 50%; padding-right: 32px; }
+.field-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%23888' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 12px) 50%;
+  padding-right: 32px;
+}
 .field-select option { background: #1a1a18; color: var(--cream); }
-
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
 .modal-divider { height: 1px; background: rgba(255,255,255,.07); margin: 0 0 18px; }
 
 .btn-registrar {
@@ -264,7 +266,6 @@
 
 <div class="main-wrap">
 
-  <!-- ── BOTÃO WALK-IN ── -->
   <div class="btn-walkin-wrap">
     <button class="btn-walkin" onclick="abrirWalkin()">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -291,9 +292,7 @@
   <a href="comissao.html" class="menu-btn"><span class="menu-icon">✂️</span><span class="menu-label">Comissões</span></a>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     MODAL — ATENDIMENTO SEM AGENDAMENTO (WALK-IN)
-══════════════════════════════════════════════════ -->
+<!-- ── MODAL WALK-IN ── -->
 <div id="walkinOverlay" onclick="fecharWalkinFora(event)">
   <div class="modal-box" id="walkinBox">
     <div class="corner-bl"></div>
@@ -308,7 +307,6 @@
     </div>
 
     <div class="modal-body">
-
       <div class="field-group">
         <label class="field-label" for="wk-nome">Nome do cliente</label>
         <input id="wk-nome" class="field-input" type="text" placeholder="Ex: João Silva" autocomplete="off">
@@ -347,7 +345,6 @@
           Registrar atendimento
         </div>
       </button>
-
     </div>
   </div>
 </div>
@@ -388,7 +385,7 @@ function toast(texto, cor){
 }
 
 const lista=document.getElementById('lista');
-let _profissionais=[];   // cache para o select do modal
+let _profissionais=[];
 
 function formatarData(dataStr){
   const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -402,11 +399,8 @@ function atualizarStats(pendentes){
   document.getElementById('statValor').textContent='R$'+totalValor;
 }
 
-/* ════════════════════════════════
-   MODAL — WALK-IN
-════════════════════════════════ */
+/* ── MODAL WALK-IN ── */
 function abrirWalkin(){
-  /* preenche data/hora atual como padrão */
   const agora=new Date();
   const pad=n=>String(n).padStart(2,'0');
   document.getElementById('wk-data').value=
@@ -414,7 +408,6 @@ function abrirWalkin(){
   document.getElementById('wk-horario').value=
     `${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
 
-  /* popula profissionais */
   const sel=document.getElementById('wk-prof');
   sel.innerHTML='<option value="">Selecione o profissional...</option>';
   _profissionais.forEach(p=>{
@@ -429,7 +422,6 @@ function abrirWalkin(){
 
 function fecharWalkin(){
   document.getElementById('walkinOverlay').classList.remove('open');
-  /* limpa campos */
   ['wk-nome','wk-valor'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('wk-prof').value='';
 }
@@ -439,11 +431,11 @@ function fecharWalkinFora(e){
 }
 
 async function registrarWalkin(){
-  const nome    =document.getElementById('wk-nome').value.trim();
-  const data    =document.getElementById('wk-data').value;
-  const horario =document.getElementById('wk-horario').value;
-  const profId  =document.getElementById('wk-prof').value;
-  const valor   =parseFloat(document.getElementById('wk-valor').value)||0;
+  const nome   =document.getElementById('wk-nome').value.trim();
+  const data   =document.getElementById('wk-data').value;
+  const horario=document.getElementById('wk-horario').value;
+  const profId =document.getElementById('wk-prof').value;
+  const valor  =parseFloat(document.getElementById('wk-valor').value)||0;
 
   if(!nome)    { toast('Informe o nome do cliente','#e05050'); return; }
   if(!data)    { toast('Informe a data','#e05050'); return; }
@@ -454,39 +446,32 @@ async function registrarWalkin(){
   btn.disabled=true;
 
   try{
-    const r=await fetch(`${API}/agendamentos`,{
+    const r=await fetch(`${API}/agendar`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        nome,
-        data,
-        horario,
+        nome, data, horario,
         profissional_id: profId,
         valor,
-        status: 'concluido',   // walk-in já entra como concluído diretamente
         walkin: true
       })
     });
-    if(!r.ok) throw new Error();
+    const json=await r.json();
+    if(json.erro) throw new Error(json.erro);
     toast('✓ Atendimento registrado!');
     fecharWalkin();
     carregarAgendamentos();
-  }catch{
-    toast('Erro ao registrar','#e05050');
+  }catch(e){
+    toast(e.message||'Erro ao registrar','#e05050');
   }finally{
     btn.disabled=false;
   }
 }
 
-/* ════════════════════════════════
-   AGENDAMENTOS
-════════════════════════════════ */
+/* ── AGENDAMENTOS ── */
 async function carregarAgendamentos(){
   lista.innerHTML='<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
   try{
-    const slug=localStorage.getItem("slug");
-    if(!slug){ window.location.href="/login.html"; return; }
-
     const [resAg,resProf]=await Promise.all([
       fetch(`${API}/agendamentos`),
       fetch(`${API}/profissionais`)
@@ -497,7 +482,7 @@ async function carregarAgendamentos(){
     try{
       const profs=await resProf.json();
       if(Array.isArray(profs)){
-        _profissionais=profs;               // ← salva para o modal
+        _profissionais=profs;
         profs.forEach(p=>{ mapaProf[p.id]=p; });
       }
     }catch(e){}
@@ -607,9 +592,7 @@ async function carregarAgendamentos(){
   }
 }
 
-/* ════════════════════════════════
-   PROFISSIONAIS — TOGGLE
-════════════════════════════════ */
+/* ── PROFISSIONAIS — TOGGLE ── */
 async function carregarProfissionaisAdmin(){
   const grid=document.getElementById('profGrid');
   try{
@@ -688,8 +671,11 @@ async function alternarDisponibilidade(id,disponivel_atual,itemEl,btn,infoEl){
   }
 }
 
-carregarAgendamentos();
-carregarProfissionaisAdmin();
+/* ── INIT — espera o Saas.js montar o API ── */
+window.addEventListener('load', () => {
+  carregarAgendamentos();
+  carregarProfissionaisAdmin();
+});
 </script>
 </body>
 </html>
