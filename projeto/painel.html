@@ -48,6 +48,7 @@
 .prof-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prof-item.disponivel .prof-avatar  { border-color: rgba(21,255,0,.35); }
 .prof-item.indisponivel .prof-avatar { border-color: rgba(224,80,80,.35); filter: grayscale(60%); }
+.prof-item.pausado-data .prof-avatar { border-color: rgba(201,168,76,.45); }
 .prof-info { flex: 1; min-width: 0; }
 .prof-nome-txt {
   font-family: 'Playfair Display', serif;
@@ -62,20 +63,46 @@
 }
 .status-badge.on  { color: var(--green); border-color: rgba(21,255,0,.3); }
 .status-badge.off { color: var(--red);   border-color: rgba(224,80,80,.3); }
+.status-badge.paused { color: var(--gold); border-color: rgba(201,168,76,.4); }
 .status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .status-badge.on::before  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.5s ease infinite; }
 .status-badge.off::before { background: var(--red); }
+.status-badge.paused::before { background: var(--gold); box-shadow: 0 0 6px rgba(201,168,76,.6); animation: blink 2s ease infinite; }
+
+/* ── DATAS DE PAUSA PILL ── */
+.pausa-datas-wrap {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+}
+.pausa-data-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 8px; letter-spacing: .15em; text-transform: uppercase;
+  border: 1px solid rgba(201,168,76,.35); padding: 2px 7px;
+  color: rgba(255,255,255,.45);
+}
+.pausa-data-pill .pill-remove {
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,.3); font-size: 10px; padding: 0; line-height: 1;
+  transition: color .2s;
+}
+.pausa-data-pill .pill-remove:hover { color: var(--red); }
+
+/* ── BOTÕES DE AÇÃO DO PROFISSIONAL ── */
+.prof-actions {
+  display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
 .btn-toggle {
   display: flex; align-items: center; gap: 6px;
   border: none; font-family: 'Barlow', sans-serif;
   font-size: 9px; font-weight: 500; letter-spacing: .15em; text-transform: uppercase;
-  padding: 10px 12px; cursor: pointer; transition: all .3s;
-  white-space: nowrap; flex-shrink: 0;
+  padding: 9px 12px; cursor: pointer; transition: all .3s;
+  white-space: nowrap;
 }
-.btn-toggle.pausar { background: transparent; color: var(--red); border: 1px solid rgba(224,80,80,.35); }
-.btn-toggle.pausar:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-toggle.pausar { background: transparent; color: var(--gold); border: 1px solid rgba(201,168,76,.4); }
+.btn-toggle.pausar:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
 .btn-toggle.ativar { background: transparent; color: var(--green); border: 1px solid rgba(21,255,0,.3); }
 .btn-toggle.ativar:hover { background: var(--green); color: var(--dark); border-color: var(--green); }
+.btn-toggle.desativar-total { background: transparent; color: rgba(224,80,80,.8); border: 1px solid rgba(224,80,80,.25); }
+.btn-toggle.desativar-total:hover { background: var(--red); color: #fff; border-color: var(--red); }
 .btn-toggle:disabled { opacity: .35; cursor: not-allowed; }
 
 /* ── BOTÃO ATENDIMENTO RÁPIDO ── */
@@ -92,7 +119,7 @@
   padding: 10px 16px;
   background: transparent;
   color: var(--gold);
-  border: 1px solid rgba(208, 208, 208, 0.5);
+  border: 1px solid rgba(201,168,76,.4);
   cursor: pointer;
   position: relative;
   transition: background .3s, color .3s;
@@ -111,8 +138,8 @@
 .btn-walkin:hover { color: var(--dark); }
 .btn-walkin svg, .btn-walkin span { position: relative; z-index: 1; }
 
-/* ── MODAL OVERLAY ── */
-#walkinOverlay {
+/* ── MODAL OVERLAY BASE ── */
+.modal-overlay {
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(0,0,0,.75);
   backdrop-filter: blur(4px);
@@ -122,13 +149,13 @@
   transition: opacity .3s ease;
 }
 @media (min-width: 540px) {
-  #walkinOverlay { align-items: center; padding: 24px; }
+  .modal-overlay { align-items: center; padding: 24px; }
 }
-#walkinOverlay.open { opacity: 1; pointer-events: all; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
 
 .modal-box {
   background: #111110;
-  border: 1px solid rgba(208, 208, 208, 0.25);
+  border: 1px solid rgba(201,168,76,.3);
   border-bottom: none;
   width: 100%; max-width: 480px;
   max-height: 92vh;
@@ -137,7 +164,7 @@
   animation: slideUp .35s ease both;
 }
 @media (min-width: 540px) {
-  .modal-box { border-bottom: 1px solid rgba(190, 190, 190, 0.25); }
+  .modal-box { border-bottom: 1px solid rgba(201,168,76,.3); }
 }
 @keyframes slideUp {
   from { transform: translateY(28px); opacity: 0; }
@@ -169,7 +196,7 @@
 .modal-title em { font-style: italic; color: var(--gold); }
 .btn-fechar {
   background: none; border: none; cursor: pointer;
-  color: var(--muted); font-size: 20px; padding: 4px; line-height: 1;
+  color: rgba(255,255,255,.25); font-size: 20px; padding: 4px; line-height: 1;
   transition: color .2s; flex-shrink: 0; margin-left: 16px;
 }
 .btn-fechar:hover { color: var(--cream); }
@@ -178,23 +205,23 @@
 
 .field-group { margin-bottom: 18px; }
 .field-label {
-  display: block; font-family: 'Barlow', sans-serif; font-size: 16px;
+  display: block; font-family: 'Barlow', sans-serif; font-size: 10px;
   font-weight: 500; letter-spacing: .25em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 8px;
+  color: rgba(255,255,255,.35); margin-bottom: 8px;
 }
 .field-input, .field-select {
   width: 100%; box-sizing: border-box;
   background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.1);
   color: var(--cream);
-  font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 300;
+  font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 300;
   padding: 12px 14px;
   outline: none;
   transition: border-color .25s;
   -webkit-appearance: none; appearance: none;
 }
 .field-input::placeholder { color: rgba(255,255,255,.2); }
-.field-input:focus, .field-select:focus { border-color: rgba(209, 209, 209, 0.6); }
+.field-input:focus, .field-select:focus { border-color: rgba(201,168,76,.5); }
 .field-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%23888' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -205,6 +232,15 @@
 .field-select option { background: #1a1a18; color: var(--cream); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .modal-divider { height: 1px; background: rgba(255,255,255,.07); margin: 0 0 18px; }
+
+/* ── NOTA INFORMATIVA ── */
+.modal-note {
+  font-family: 'Barlow', sans-serif; font-size: 11px; font-weight: 300;
+  color: rgba(255,255,255,.3); line-height: 1.65; margin: 0 0 20px;
+  padding: 12px 14px;
+  border-left: 2px solid rgba(201,168,76,.35);
+  background: rgba(201,168,76,.04);
+}
 
 .btn-registrar {
   width: 100%;
@@ -219,6 +255,18 @@
 .btn-registrar:not(:disabled):hover { opacity: .88; }
 .btn-registrar-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
 
+/* ── BOTÃO SECUNDÁRIO (cancelar modal) ── */
+.btn-secundario {
+  width: 100%;
+  font-family: 'Barlow', sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .25em; text-transform: uppercase;
+  padding: 13px; cursor: pointer; margin-top: 10px;
+  background: transparent; color: rgba(255,255,255,.3);
+  border: 1px solid rgba(255,255,255,.1);
+  transition: color .25s, border-color .25s;
+}
+.btn-secundario:hover { color: rgba(255,255,255,.6); border-color: rgba(255,255,255,.22); }
+
 /* ── MENU INFERIOR ── */
 .menu-botoes {
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -228,7 +276,7 @@
 }
 .menu-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px; padding: 10px 2px; text-decoration: none; color: var(--muted);
+  gap: 4px; padding: 10px 2px; text-decoration: none; color: rgba(255,255,255,.3);
   font-family: 'Barlow', sans-serif; font-size: 8px; font-weight: 500;
   letter-spacing: .1em; text-transform: uppercase;
   border-right: 1px solid rgba(255,255,255,0.05);
@@ -236,11 +284,15 @@
   line-height: 1.2; -webkit-tap-highlight-color: transparent;
 }
 .menu-btn:last-child { border-right: none; }
-.menu-btn:hover, .menu-btn:active { color: var(--gold); background: rgba(201,168,76,0.06); }
+.menu-btn:hover, .menu-btn:active { color: var(--gold); background: rgba(201,168,76,.06); }
 .menu-icon { font-size: 20px; line-height: 1; display: block; }
 .menu-label { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 2px; }
 @media (max-width: 359px) { .menu-label { display: none; } .menu-btn { padding: 14px 2px; } }
 .main-wrap { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; } 50% { opacity: .35; }
+}
 </style>
 </head>
 <body>
@@ -302,8 +354,10 @@
   <a href="comissao.html" class="menu-btn"><span class="menu-icon">✂️</span><span class="menu-label">Comissões</span></a>
 </div>
 
-<!-- ── MODAL WALK-IN ── -->
-<div id="walkinOverlay" onclick="fecharWalkinFora(event)">
+<!-- ══════════════════════════════════════════════
+     MODAL — ATENDIMENTO SEM AGENDAMENTO (WALK-IN)
+     ══════════════════════════════════════════════ -->
+<div id="walkinOverlay" class="modal-overlay" onclick="fecharWalkinFora(event)">
   <div class="modal-box" id="walkinBox">
     <div class="corner-bl"></div>
     <div class="corner-br"></div>
@@ -359,9 +413,76 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     MODAL — PAUSA POR DATA
+     ══════════════════════════════════════════════ -->
+<div id="pausaOverlay" class="modal-overlay" onclick="fecharPausaFora(event)">
+  <div class="modal-box" id="pausaBox">
+    <div class="corner-bl"></div>
+    <div class="corner-br"></div>
+
+    <div class="modal-header">
+      <div>
+        <div class="modal-eyebrow">Pausa por data</div>
+        <div class="modal-title">Pausar <em>agendamentos</em></div>
+      </div>
+      <button class="btn-fechar" onclick="fecharPausa()">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <div id="pausaProfNome" style="
+        font-family:'Playfair Display',serif;font-size:13px;font-weight:700;
+        color:rgba(255,255,255,.45);letter-spacing:.04em;margin-bottom:16px;
+      "></div>
+
+      <div class="modal-note">
+        Bloqueie agendamentos apenas nas datas selecionadas. Os outros dias continuam abertos normalmente para os clientes.
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="pausa-inicio">Data de início</label>
+          <input id="pausa-inicio" class="field-input" type="date">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="pausa-fim">Data de retorno</label>
+          <input id="pausa-fim" class="field-input" type="date">
+        </div>
+      </div>
+
+      <p style="font-family:'Barlow',sans-serif;font-size:11px;color:rgba(255,255,255,.22);margin:-4px 0 22px;line-height:1.6;">
+        Para bloquear apenas um dia, deixe as duas datas iguais.
+      </p>
+
+      <!-- Pills das pausas já cadastradas -->
+      <div id="pausasExistentes" style="display:none;margin-bottom:20px;">
+        <div style="font-family:'Barlow',sans-serif;font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:8px;">Pausas agendadas</div>
+        <div id="pausasPills" class="pausa-datas-wrap"></div>
+      </div>
+
+      <div class="modal-divider"></div>
+
+      <button class="btn-registrar" id="pausaBtnConfirmar" onclick="confirmarPausa()">
+        <div class="btn-registrar-inner">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="3" y="2" width="3" height="10" rx="1" fill="currentColor"/>
+            <rect x="8" y="2" width="3" height="10" rx="1" fill="currentColor"/>
+          </svg>
+          Confirmar pausa
+        </div>
+      </button>
+
+      <button class="btn-secundario" onclick="fecharPausa()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script src="Saas.js"></script>
 <script>
-/* PARTÍCULAS */
+/* ══════════════════════════════
+   PARTÍCULAS
+══════════════════════════════ */
 (function(){
   const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
   ctx.filter='blur(1.5px)';
@@ -384,146 +505,267 @@
   })();
 })();
 
-/* TOAST */
+/* ══════════════════════════════
+   TOAST
+══════════════════════════════ */
 function toast(texto, cor){
-  cor=cor||'#c9a84c';
-  const el=document.createElement('div');
-  el.className='toast'; el.textContent=texto; el.style.background=cor;
+  cor = cor || 'var(--gold)';
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = texto;
+  el.style.background = cor;
   document.body.appendChild(el);
-  requestAnimationFrame(()=>el.classList.add('show'));
-  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),500); },2800);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 500); }, 2800);
 }
 
-const lista=document.getElementById('lista');
-let _profissionais=[];
+/* ══════════════════════════════
+   HELPERS
+══════════════════════════════ */
+const lista = document.getElementById('lista');
+let _profissionais = [];
 
-function formatarData(dataStr){
-  const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const [y,m,d]=dataStr.split('-');
+function formatarData(dataStr) {
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const [y,m,d] = dataStr.split('-');
   return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
 }
 
-function atualizarStats(pendentes){
-  const totalValor=pendentes.reduce((s,a)=>s+(Number(a.valor)||0),0);
-  document.getElementById('statTotal').textContent=pendentes.length;
-  document.getElementById('statValor').textContent='R$'+totalValor;
+function dataHoje() {
+  const agora = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}`;
 }
 
-/* ── MODAL WALK-IN ── */
-function abrirWalkin(){
-  const agora=new Date();
-  const pad=n=>String(n).padStart(2,'0');
-  document.getElementById('wk-data').value=
-    `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}`;
-  document.getElementById('wk-horario').value=
-    `${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
+function atualizarStats(pendentes) {
+  const totalValor = pendentes.reduce((s,a) => s + (Number(a.valor)||0), 0);
+  document.getElementById('statTotal').textContent = pendentes.length;
+  document.getElementById('statValor').textContent  = 'R$' + totalValor;
+}
 
-  const sel=document.getElementById('wk-prof');
-  sel.innerHTML='<option value="">Selecione o profissional...</option>';
-  _profissionais.forEach(p=>{
-    const opt=document.createElement('option');
-    opt.value=p.id; opt.textContent=p.nome;
+/* ══════════════════════════════
+   MODAL WALK-IN
+══════════════════════════════ */
+function abrirWalkin() {
+  const agora = new Date();
+  const pad   = n => String(n).padStart(2,'0');
+  document.getElementById('wk-data').value    = `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}`;
+  document.getElementById('wk-horario').value = `${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
+
+  const sel = document.getElementById('wk-prof');
+  sel.innerHTML = '<option value="">Selecione o profissional...</option>';
+  _profissionais.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = p.nome;
     sel.appendChild(opt);
   });
 
   document.getElementById('walkinOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('wk-nome').focus(),150);
+  setTimeout(() => document.getElementById('wk-nome').focus(), 150);
 }
 
-function fecharWalkin(){
+function fecharWalkin() {
   document.getElementById('walkinOverlay').classList.remove('open');
-  ['wk-nome','wk-valor'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('wk-prof').value='';
+  ['wk-nome','wk-valor'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('wk-prof').value = '';
 }
 
-function fecharWalkinFora(e){
-  if(e.target===document.getElementById('walkinOverlay')) fecharWalkin();
+function fecharWalkinFora(e) {
+  if (e.target === document.getElementById('walkinOverlay')) fecharWalkin();
 }
 
-async function registrarWalkin(){
-  const nome   =document.getElementById('wk-nome').value.trim();
-  const data   =document.getElementById('wk-data').value;
-  const horario=document.getElementById('wk-horario').value;
-  const profId =document.getElementById('wk-prof').value;
-  const valor  =parseFloat(document.getElementById('wk-valor').value)||0;
+async function registrarWalkin() {
+  const nome    = document.getElementById('wk-nome').value.trim();
+  const data    = document.getElementById('wk-data').value;
+  const horario = document.getElementById('wk-horario').value;
+  const profId  = document.getElementById('wk-prof').value;
+  const valor   = parseFloat(document.getElementById('wk-valor').value) || 0;
 
-  if(!nome)    { toast('Informe o nome do cliente','#e05050'); return; }
-  if(!data)    { toast('Informe a data','#e05050'); return; }
-  if(!horario) { toast('Informe o horário','#e05050'); return; }
-  if(!profId)  { toast('Selecione o profissional','#e05050'); return; }
+  if (!nome)    { toast('Informe o nome do cliente','#e05050'); return; }
+  if (!data)    { toast('Informe a data','#e05050'); return; }
+  if (!horario) { toast('Informe o horário','#e05050'); return; }
+  if (!profId)  { toast('Selecione o profissional','#e05050'); return; }
 
-  const btn=document.getElementById('wkBtnRegistrar');
-  btn.disabled=true;
+  const btn = document.getElementById('wkBtnRegistrar');
+  btn.disabled = true;
 
-  try{
-    const r=await fetch(`${API}/agendar`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        nome, data, horario,
-        profissional_id: profId,
-        valor,
-        walkin: true
-      })
+  try {
+    const r = await fetch(`${API}/agendar`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ nome, data, horario, profissional_id: profId, valor, walkin: true })
     });
-    const json=await r.json();
-    if(json.erro) throw new Error(json.erro);
+    const json = await r.json();
+    if (json.erro) throw new Error(json.erro);
     toast('✓ Atendimento registrado!');
     fecharWalkin();
     carregarAgendamentos();
-  }catch(e){
-    toast(e.message||'Erro ao registrar','#e05050');
-  }finally{
-    btn.disabled=false;
+  } catch(e) {
+    toast(e.message || 'Erro ao registrar','#e05050');
+  } finally {
+    btn.disabled = false;
   }
 }
 
-/* ── AGENDAMENTOS ── */
-async function carregarAgendamentos(){
-  lista.innerHTML='<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
-  try{
-    const [resAg,resProf]=await Promise.all([
+/* ══════════════════════════════
+   MODAL PAUSA POR DATA
+══════════════════════════════ */
+let _pausaAtual = { profId: null, profNome: '', pausas: [] };
+
+async function abrirModalPausa(profId, profNome) {
+  _pausaAtual.profId   = profId;
+  _pausaAtual.profNome = profNome;
+  _pausaAtual.pausas   = [];
+
+  document.getElementById('pausaProfNome').textContent = profNome;
+
+  const hoje = dataHoje();
+  document.getElementById('pausa-inicio').value = hoje;
+  document.getElementById('pausa-fim').value    = hoje;
+
+  // Carrega pausas já cadastradas deste profissional
+  try {
+    const r = await fetch(`${API}/profissionais/${profId}/pausas`);
+    if (r.ok) {
+      const dados = await r.json();
+      _pausaAtual.pausas = Array.isArray(dados) ? dados : [];
+    }
+  } catch(e) { /* endpoint pode não existir ainda, ignora */ }
+
+  renderizarPills();
+  document.getElementById('pausaOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('pausa-inicio').focus(), 150);
+}
+
+function fecharPausa() {
+  document.getElementById('pausaOverlay').classList.remove('open');
+  _pausaAtual = { profId: null, profNome: '', pausas: [] };
+}
+
+function fecharPausaFora(e) {
+  if (e.target === document.getElementById('pausaOverlay')) fecharPausa();
+}
+
+function renderizarPills() {
+  const wrap  = document.getElementById('pausasExistentes');
+  const pills = document.getElementById('pausasPills');
+  pills.innerHTML = '';
+
+  const ativas = _pausaAtual.pausas.filter(p => p.data_fim >= dataHoje());
+
+  if (ativas.length === 0) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'block';
+  ativas.forEach(p => {
+    const pill = document.createElement('div');
+    pill.className = 'pausa-data-pill';
+    const label = p.data_inicio === p.data_fim
+      ? formatarData(p.data_inicio)
+      : `${formatarData(p.data_inicio)} → ${formatarData(p.data_fim)}`;
+    pill.innerHTML = `
+      <span>${label}</span>
+      <button class="pill-remove" title="Remover pausa" onclick="removerPausa('${p.id}', this)">✕</button>
+    `;
+    pills.appendChild(pill);
+  });
+}
+
+async function removerPausa(pausaId, btnEl) {
+  btnEl.disabled = true;
+  try {
+    const r = await fetch(`${API}/profissionais/${_pausaAtual.profId}/pausas/${pausaId}`, { method:'DELETE' });
+    if (!r.ok) throw new Error();
+    _pausaAtual.pausas = _pausaAtual.pausas.filter(p => p.id !== pausaId);
+    renderizarPills();
+    toast('Pausa removida');
+    carregarProfissionaisAdmin(); // atualiza a grade
+  } catch {
+    toast('Erro ao remover pausa','#e05050');
+    btnEl.disabled = false;
+  }
+}
+
+async function confirmarPausa() {
+  const inicio = document.getElementById('pausa-inicio').value;
+  const fim    = document.getElementById('pausa-fim').value;
+
+  if (!inicio) { toast('Informe a data de início','#e05050'); return; }
+  if (!fim)    { toast('Informe a data de retorno','#e05050'); return; }
+  if (fim < inicio) { toast('A data de retorno deve ser igual ou posterior à de início','#e05050'); return; }
+
+  const btn = document.getElementById('pausaBtnConfirmar');
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API}/profissionais/${_pausaAtual.profId}/pausas`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ data_inicio: inicio, data_fim: fim })
+    });
+    const json = await r.json();
+    if (json.erro) throw new Error(json.erro);
+
+    const label = inicio === fim
+      ? formatarData(inicio)
+      : `${formatarData(inicio)} até ${formatarData(fim)}`;
+    toast(`✓ Pausa registrada: ${label}`);
+    fecharPausa();
+    carregarProfissionaisAdmin();
+  } catch(e) {
+    toast(e.message || 'Erro ao registrar pausa','#e05050');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ══════════════════════════════
+   AGENDAMENTOS
+══════════════════════════════ */
+async function carregarAgendamentos() {
+  lista.innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
+  try {
+    const [resAg, resProf] = await Promise.all([
       fetch(`${API}/agendamentos`),
       fetch(`${API}/profissionais`)
     ]);
-    const dados=await resAg.json();
+    const dados = await resAg.json();
 
-    let mapaProf={};
-    try{
-      const profs=await resProf.json();
-      if(Array.isArray(profs)){
-        _profissionais=profs;
-        profs.forEach(p=>{ mapaProf[p.id]=p; });
+    let mapaProf = {};
+    try {
+      const profs = await resProf.json();
+      if (Array.isArray(profs)) {
+        _profissionais = profs;
+        profs.forEach(p => { mapaProf[p.id] = p; });
       }
-    }catch(e){}
+    } catch(e) {}
 
-    lista.innerHTML='';
-    const pendentes=dados.filter(a=>(a.status||'pendente')==='pendente');
+    lista.innerHTML = '';
+    const pendentes = dados.filter(a => (a.status||'pendente') === 'pendente');
     atualizarStats(pendentes);
 
-    if(pendentes.length===0){
-      lista.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">Nenhum agendamento pendente</div></div>`;
+    if (pendentes.length === 0) {
+      lista.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">Nenhum agendamento pendente</div></div>`;
       return;
     }
 
-    pendentes.forEach((item,i)=>{
-      const card=document.createElement('div');
+    pendentes.forEach((item, i) => {
+      const card = document.createElement('div');
       card.classList.add('card');
-      card.style.animationDelay=(i*0.06)+'s';
+      card.style.animationDelay = (i * 0.06) + 's';
 
-      const horario=(item.horario||'').toString().substring(0,5);
-      const dataFmt=item.data?formatarData(item.data):'—';
-      const prof=item.profissional_id?mapaProf[item.profissional_id]:null;
-      const nomeProfissional=prof?prof.nome:'—';
-      const fotoProfissional=prof?prof.foto_url:null;
-      const inicialProf=nomeProfissional!=='—'?nomeProfissional.trim().charAt(0).toUpperCase():'?';
-      const fotoHtml=fotoProfissional
-        ?`<img src="${fotoProfissional}" alt="${nomeProfissional}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<span style=\\'line-height:28px;font-weight:700;color:#ffc926;font-size:13px;\\'>${inicialProf}</span>'">`
-        :`<span style="line-height:28px;font-weight:700;color:#ffc926;font-size:13px;">${inicialProf}</span>`;
+      const horario     = (item.horario||'').toString().substring(0,5);
+      const dataFmt     = item.data ? formatarData(item.data) : '—';
+      const prof        = item.profissional_id ? mapaProf[item.profissional_id] : null;
+      const nomeProfissional = prof ? prof.nome : '—';
+      const fotoProfissional = prof ? prof.foto_url : null;
+      const inicialProf = nomeProfissional !== '—' ? nomeProfissional.trim().charAt(0).toUpperCase() : '?';
+      const fotoHtml    = fotoProfissional
+        ? `<img src="${fotoProfissional}" alt="${nomeProfissional}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<span style=\\'line-height:28px;font-weight:700;color:#c9a84c;font-size:13px;\\'>${inicialProf}</span>'">`
+        : `<span style="line-height:28px;font-weight:700;color:#c9a84c;font-size:13px;">${inicialProf}</span>`;
 
-      const info=document.createElement('div');
+      const info = document.createElement('div');
       info.classList.add('info');
-      info.innerHTML=`
+      info.innerHTML = `
         <div class="info-item"><span class="info-label">Cliente</span><span class="info-val"><strong>${item.nome||'—'}</strong></span></div>
         <div class="info-item">
           <span class="info-label">Profissional</span>
@@ -537,54 +779,54 @@ async function carregarAgendamentos(){
         <div class="info-item"><span class="info-label">Status</span><span class="info-val"><span class="status-tag pendente">Pendente</span></span></div>
       `;
 
-      const valor=document.createElement('div');
-      valor.className='valor-tag';
-      valor.textContent='R$'+(item.valor||0);
+      const valor = document.createElement('div');
+      valor.className = 'valor-tag';
+      valor.textContent = 'R$' + (item.valor||0);
 
-      const actions=document.createElement('div');
-      actions.className='card-actions';
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
 
-      const btnC=document.createElement('button');
-      btnC.className='btn-concluir';
-      btnC.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Concluir';
-      btnC.addEventListener('click',async()=>{
-        btnC.disabled=true; btnX.disabled=true;
-        try{
-          const r=await fetch(`${API}/agendamentos/concluir/${item.id}`,{method:'PUT'});
-          if(!r.ok) throw new Error();
+      const btnC = document.createElement('button');
+      btnC.className = 'btn-concluir';
+      btnC.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Concluir';
+      btnC.addEventListener('click', async () => {
+        btnC.disabled = true; btnX.disabled = true;
+        try {
+          const r = await fetch(`${API}/agendamentos/concluir/${item.id}`, {method:'PUT'});
+          if (!r.ok) throw new Error();
           toast('✓ Agendamento concluído!');
           carregarAgendamentos();
-        }catch{
+        } catch {
           toast('Erro ao concluir','#e05050');
-          btnC.disabled=false; btnX.disabled=false;
+          btnC.disabled = false; btnX.disabled = false;
         }
       });
 
-      const btnX=document.createElement('button');
-      btnX.className='btn-cancelar';
-      btnX.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Cancelar';
-      btnX.addEventListener('click',async()=>{
-        btnC.disabled=true; btnX.disabled=true;
-        try{
-          const r=await fetch(`${API}/agendamentos/${item.id}`,{method:'DELETE'});
-          if(!r.ok) throw new Error();
+      const btnX = document.createElement('button');
+      btnX.className = 'btn-cancelar';
+      btnX.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Cancelar';
+      btnX.addEventListener('click', async () => {
+        btnC.disabled = true; btnX.disabled = true;
+        try {
+          const r = await fetch(`${API}/agendamentos/${item.id}`, {method:'DELETE'});
+          if (!r.ok) throw new Error();
           toast('Agendamento cancelado','#e05050');
           carregarAgendamentos();
-        }catch{
+        } catch {
           toast('Erro ao cancelar','#e05050');
-          btnC.disabled=false; btnX.disabled=false;
+          btnC.disabled = false; btnX.disabled = false;
         }
       });
 
-      const btnLembrete=document.createElement('button');
-      btnLembrete.className='btn-lembrete';
-      btnLembrete.innerHTML='📲 Lembrar';
-      btnLembrete.addEventListener('click',()=>{
-        let telefone=(item.telefone||'').replace(/\D/g,'');
-        if(!telefone){ toast('Cliente sem telefone','#e05050'); return; }
-        if(!telefone.startsWith('55')) telefone='55'+telefone;
-        const mensagem=`CONFIRMAÇÃO DE HORÁRIO\n\nOlá, ${item.nome}.\n\nSeu atendimento na barbearia está agendado para:\n\nData: ${dataFmt}\nHorário: ${horario}\nProfissional: ${nomeProfissional}\n\nTrabalhamos com horários organizados, então pedimos pontualidade.\n\nEm caso de imprevisto, entre em contato.\n\nSerá um prazer atendê-lo.`;
-        window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`,'_blank');
+      const btnLembrete = document.createElement('button');
+      btnLembrete.className = 'btn-lembrete';
+      btnLembrete.innerHTML = '📲 Lembrar';
+      btnLembrete.addEventListener('click', () => {
+        let telefone = (item.telefone||'').replace(/\D/g,'');
+        if (!telefone) { toast('Cliente sem telefone','#e05050'); return; }
+        if (!telefone.startsWith('55')) telefone = '55' + telefone;
+        const mensagem = `CONFIRMAÇÃO DE HORÁRIO\n\nOlá, ${item.nome}.\n\nSeu atendimento na barbearia está agendado para:\n\nData: ${dataFmt}\nHorário: ${horario}\nProfissional: ${nomeProfissional}\n\nTrabalhamos com horários organizados, então pedimos pontualidade.\n\nEm caso de imprevisto, entre em contato.\n\nSerá um prazer atendê-lo.`;
+        window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
       });
 
       actions.appendChild(btnLembrete);
@@ -596,92 +838,165 @@ async function carregarAgendamentos(){
       lista.appendChild(card);
     });
 
-  }catch(err){
-    console.error('Erro geral:',err);
-    lista.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar agendamentos</div></div>`;
+  } catch(err) {
+    console.error('Erro geral:', err);
+    lista.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar agendamentos</div></div>`;
   }
 }
 
-/* ── PROFISSIONAIS — TOGGLE ── */
-async function carregarProfissionaisAdmin(){
-  const grid=document.getElementById('profGrid');
-  try{
-    const res=await fetch(`${API}/profissionais`);
-    const list=await res.json();
-    grid.innerHTML='';
-    if(!Array.isArray(list)||list.length===0){
-      grid.innerHTML=`<div class="empty"><div class="empty-icon">👤</div><div class="empty-txt">Nenhum profissional cadastrado</div></div>`;
+/* ══════════════════════════════
+   PROFISSIONAIS — DISPONIBILIDADE
+══════════════════════════════ */
+async function carregarProfissionaisAdmin() {
+  const grid = document.getElementById('profGrid');
+  try {
+    const res  = await fetch(`${API}/profissionais`);
+    const list = await res.json();
+    grid.innerHTML = '';
+
+    if (!Array.isArray(list) || list.length === 0) {
+      grid.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-txt">Nenhum profissional cadastrado</div></div>`;
       return;
     }
-    list.forEach((prof,i)=>{
-      const disponivel=prof.disponivel!==false;
-      const item=document.createElement('div');
-      item.className=`prof-item ${disponivel?'disponivel':'indisponivel'}`;
-      item.style.animationDelay=(i*0.07)+'s';
-      const avatarEl=document.createElement('div');
-      avatarEl.className='prof-avatar';
-      if(prof.foto_url){
-        const img=document.createElement('img');
-        img.src=prof.foto_url; img.alt=prof.nome;
-        img.onerror=()=>{ avatarEl.textContent=prof.nome.trim().charAt(0).toUpperCase(); };
+
+    list.forEach((prof, i) => {
+      const disponivel  = prof.disponivel !== false;
+      // Verifica se há pausa ativa hoje
+      const hoje        = dataHoje();
+      const pausaAtiva  = Array.isArray(prof.pausas)
+        ? prof.pausas.some(p => p.data_inicio <= hoje && p.data_fim >= hoje)
+        : false;
+
+      const item = document.createElement('div');
+      item.className = `prof-item ${pausaAtiva ? 'pausado-data' : (disponivel ? 'disponivel' : 'indisponivel')}`;
+      item.style.animationDelay = (i * 0.07) + 's';
+
+      // Avatar
+      const avatarEl = document.createElement('div');
+      avatarEl.className = 'prof-avatar';
+      if (prof.foto_url) {
+        const img = document.createElement('img');
+        img.src = prof.foto_url; img.alt = prof.nome;
+        img.onerror = () => { avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase(); };
         avatarEl.appendChild(img);
-      }else{ avatarEl.textContent=prof.nome.trim().charAt(0).toUpperCase(); }
-      const infoEl=document.createElement('div');
-      infoEl.className='prof-info';
-      infoEl.innerHTML=`
+      } else {
+        avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase();
+      }
+
+      // Determina texto e classe do badge de status
+      let badgeClasse, badgeTxt;
+      if (pausaAtiva) {
+        badgeClasse = 'paused';
+        badgeTxt    = 'Pausado hoje';
+      } else if (disponivel) {
+        badgeClasse = 'on';
+        badgeTxt    = 'Aceitando agendamentos';
+      } else {
+        badgeClasse = 'off';
+        badgeTxt    = 'Agendamentos desativados';
+      }
+
+      // Monta pills de pausas futuras para exibição inline
+      const pausasFuturas = Array.isArray(prof.pausas)
+        ? prof.pausas.filter(p => p.data_fim >= hoje)
+        : [];
+      const pillsHtml = pausasFuturas.map(p => {
+        const label = p.data_inicio === p.data_fim
+          ? formatarData(p.data_inicio)
+          : `${formatarData(p.data_inicio)} → ${formatarData(p.data_fim)}`;
+        return `<span style="font-size:8px;letter-spacing:.12em;color:rgba(255,255,255,.3);border:1px solid rgba(201,168,76,.25);padding:2px 7px;">${label}</span>`;
+      }).join('');
+
+      // Info
+      const infoEl = document.createElement('div');
+      infoEl.className = 'prof-info';
+      infoEl.innerHTML = `
         <div class="prof-nome-txt">${prof.nome}</div>
-        ${prof.especialidade?`<div class="prof-esp-txt">${prof.especialidade}</div>`:''}
-        <div class="status-badge ${disponivel?'on':'off'}">
-          ${disponivel?'Aceitando agendamentos':'Agendamentos pausados'}
-        </div>
+        ${prof.especialidade ? `<div class="prof-esp-txt">${prof.especialidade}</div>` : ''}
+        <div class="status-badge ${badgeClasse}">${badgeTxt}</div>
+        ${pausasFuturas.length > 0 ? `<div class="pausa-datas-wrap" style="margin-top:6px;">${pillsHtml}</div>` : ''}
       `;
-      const btn=document.createElement('button');
-      btn.className=`btn-toggle ${disponivel?'pausar':'ativar'}`;
-      btn.innerHTML=disponivel
-        ?`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
-        :`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
-      btn.addEventListener('click',()=>alternarDisponibilidade(prof.id,disponivel,item,btn,infoEl));
+
+      // Ações
+      const actionsEl = document.createElement('div');
+      actionsEl.className = 'prof-actions';
+
+      // Botão "Pausar por data" — sempre visível se disponível
+      if (disponivel) {
+        const btnPausarData = document.createElement('button');
+        btnPausarData.className = 'btn-toggle pausar';
+        btnPausarData.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/>
+            <rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/>
+          </svg> Pausar dia`;
+        btnPausarData.addEventListener('click', () => abrirModalPausa(prof.id, prof.nome));
+        actionsEl.appendChild(btnPausarData);
+
+        // Botão "Desativar total" — desativa completamente
+        const btnDesativar = document.createElement('button');
+        btnDesativar.className = 'btn-toggle desativar-total';
+        btnDesativar.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg> Desativar`;
+        btnDesativar.addEventListener('click', () =>
+          alternarDisponibilidade(prof.id, true, item, infoEl, actionsEl)
+        );
+        actionsEl.appendChild(btnDesativar);
+
+      } else {
+        // Se está desativado, só mostra "Ativar"
+        const btnAtivar = document.createElement('button');
+        btnAtivar.className = 'btn-toggle ativar';
+        btnAtivar.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 2l7 4-7 4V2z" fill="currentColor"/>
+          </svg> Ativar`;
+        btnAtivar.addEventListener('click', () =>
+          alternarDisponibilidade(prof.id, false, item, infoEl, actionsEl)
+        );
+        actionsEl.appendChild(btnAtivar);
+      }
+
       item.appendChild(avatarEl);
       item.appendChild(infoEl);
-      item.appendChild(btn);
+      item.appendChild(actionsEl);
       grid.appendChild(item);
     });
-  }catch(err){
-    grid.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar profissionais</div></div>`;
+
+  } catch(err) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar profissionais</div></div>`;
   }
 }
 
-async function alternarDisponibilidade(id,disponivel_atual,itemEl,btn,infoEl){
-  btn.disabled=true;
-  const novoStatus=!disponivel_atual;
-  try{
-    const r=await fetch(`${API}/profissionais/${id}/disponibilidade`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({disponivel:novoStatus})
+/* Ativa / desativa completamente (sem data) */
+async function alternarDisponibilidade(id, disponivel_atual, itemEl, infoEl, actionsEl) {
+  const novoStatus = !disponivel_atual;
+  // Desabilita todos os botões temporariamente
+  actionsEl.querySelectorAll('button').forEach(b => b.disabled = true);
+
+  try {
+    const r = await fetch(`${API}/profissionais/${id}/disponibilidade`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ disponivel: novoStatus })
     });
-    if(!r.ok) throw new Error();
-    itemEl.classList.toggle('disponivel', novoStatus);
-    itemEl.classList.toggle('indisponivel',!novoStatus);
-    const badge=infoEl.querySelector('.status-badge');
-    badge.className=`status-badge ${novoStatus?'on':'off'}`;
-    badge.textContent=novoStatus?'Aceitando agendamentos':'Agendamentos pausados';
-    btn.className=`btn-toggle ${novoStatus?'pausar':'ativar'}`;
-    btn.innerHTML=novoStatus
-      ?`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
-      :`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
-    const clone=btn.cloneNode(true);
-    btn.parentNode.replaceChild(clone,btn);
-    clone.innerHTML=btn.innerHTML;
-    clone.addEventListener('click',()=>alternarDisponibilidade(id,novoStatus,itemEl,clone,infoEl));
-    toast(novoStatus?'✓ Agendamentos ativados!':'⏸ Agendamentos pausados', novoStatus?'#15ff00':'#e05050');
-  }catch{
+    if (!r.ok) throw new Error();
+    toast(
+      novoStatus ? '✓ Agendamentos ativados!' : '⏸ Profissional desativado',
+      novoStatus ? 'var(--green)' : '#e05050'
+    );
+    carregarProfissionaisAdmin(); // re-renderiza tudo
+  } catch {
     toast('Erro ao atualizar','#e05050');
-    btn.disabled=false;
+    actionsEl.querySelectorAll('button').forEach(b => b.disabled = false);
   }
 }
 
-/* ── INIT — espera o Saas.js montar o API ── */
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
 window.addEventListener('load', () => {
   carregarAgendamentos();
   carregarProfissionaisAdmin();
