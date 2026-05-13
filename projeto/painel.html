@@ -15,7 +15,6 @@
   gap: 1px;
   background: rgba(255,255,255,0.08);
 }
-
 .prof-item {
   background: var(--dark2);
   padding: 22px 24px;
@@ -38,34 +37,24 @@
   transition: width .35s, height .35s, border-color .35s;
 }
 .prof-item:hover::after { width: 24px; height: 24px; border-color: var(--gold); }
-
 .prof-avatar {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.1);
-  overflow: hidden;
-  flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.1); overflow: hidden; flex-shrink: 0;
   background: var(--dark3);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Playfair Display', serif;
-  font-size: 18px; font-weight: 700;
-  color: var(--gold);
+  font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--gold);
   transition: border-color .3s;
 }
 .prof-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prof-item.disponivel .prof-avatar  { border-color: rgba(21,255,0,.35); }
 .prof-item.indisponivel .prof-avatar { border-color: rgba(224,80,80,.35); filter: grayscale(60%); }
-
 .prof-info { flex: 1; min-width: 0; }
 .prof-nome-txt {
   font-family: 'Playfair Display', serif;
   font-size: 15px; font-weight: 700; color: var(--cream);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.prof-esp-txt {
-  font-size: 9px; letter-spacing: .25em;
-  text-transform: uppercase; color: var(--muted); margin-top: 2px;
-}
+.prof-esp-txt { font-size: 9px; letter-spacing: .25em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 .status-badge {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 8px; letter-spacing: .22em; text-transform: uppercase;
@@ -73,97 +62,173 @@
 }
 .status-badge.on  { color: var(--green); border-color: rgba(21,255,0,.3); }
 .status-badge.off { color: var(--red);   border-color: rgba(224,80,80,.3); }
-.status-badge::before {
-  content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
-}
+.status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .status-badge.on::before  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.5s ease infinite; }
 .status-badge.off::before { background: var(--red); }
-
 .btn-toggle {
   display: flex; align-items: center; gap: 6px;
-  border: none;
-  font-family: 'Barlow', sans-serif;
-  font-size: 9px; font-weight: 500;
-  letter-spacing: .15em; text-transform: uppercase;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: all .3s;
+  border: none; font-family: 'Barlow', sans-serif;
+  font-size: 9px; font-weight: 500; letter-spacing: .15em; text-transform: uppercase;
+  padding: 10px 12px; cursor: pointer; transition: all .3s;
   white-space: nowrap; flex-shrink: 0;
 }
-.btn-toggle.pausar {
-  background: transparent; color: var(--red);
-  border: 1px solid rgba(224,80,80,.35);
-}
+.btn-toggle.pausar { background: transparent; color: var(--red); border: 1px solid rgba(224,80,80,.35); }
 .btn-toggle.pausar:hover { background: var(--red); color: #fff; border-color: var(--red); }
-.btn-toggle.ativar {
-  background: transparent; color: var(--green);
-  border: 1px solid rgba(21,255,0,.3);
-}
+.btn-toggle.ativar { background: transparent; color: var(--green); border: 1px solid rgba(21,255,0,.3); }
 .btn-toggle.ativar:hover { background: var(--green); color: var(--dark); border-color: var(--green); }
 .btn-toggle:disabled { opacity: .35; cursor: not-allowed; }
 
-/* ── MENU INFERIOR — TAB BAR MOBILE ── */
-.menu-botoes {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+/* ── BOTÃO ATENDIMENTO RÁPIDO ── */
+.btn-walkin-wrap {
   display: flex;
-  background: var(--dark2);
-  border-top: 1px solid rgba(255,255,255,0.07);
-  z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+.btn-walkin {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: 'Barlow', sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 13px 22px;
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid rgba(201,168,76,.5);
+  cursor: pointer;
+  position: relative;
+  transition: background .3s, color .3s;
+  overflow: hidden;
+}
+.btn-walkin::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .35s ease;
+  z-index: 0;
+}
+.btn-walkin:hover::before { transform: scaleX(1); }
+.btn-walkin:hover { color: var(--dark); }
+.btn-walkin svg, .btn-walkin span { position: relative; z-index: 1; }
+
+/* ── MODAL OVERLAY ── */
+#walkinOverlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s ease;
+}
+#walkinOverlay.open { opacity: 1; pointer-events: all; }
+
+.modal-box {
+  background: #111110;
+  border: 1px solid rgba(201,168,76,.25);
+  width: 100%; max-width: 480px;
+  position: relative;
+  animation: slideUp .35s ease both;
+}
+@keyframes slideUp {
+  from { transform: translateY(28px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
+/* cantos decorativos */
+.modal-box::before, .modal-box::after,
+.modal-box .corner-bl, .modal-box .corner-br {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+}
+.modal-box::before  { top:0;    left:0;   border-top:  1px solid var(--gold); border-left:  1px solid var(--gold); }
+.modal-box::after   { top:0;    right:0;  border-top:  1px solid var(--gold); border-right: 1px solid var(--gold); }
+.modal-box .corner-bl { bottom:0; left:0;   border-bottom: 1px solid var(--gold); border-left:  1px solid var(--gold); }
+.modal-box .corner-br { bottom:0; right:0;  border-bottom: 1px solid var(--gold); border-right: 1px solid var(--gold); }
+
+.modal-header {
+  padding: 28px 28px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.modal-eyebrow {
+  font-family: 'Barlow', sans-serif; font-size: 8px; font-weight: 500;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px;
+}
+.modal-title {
+  font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+  color: var(--cream); line-height: 1.15;
+}
+.modal-title em { font-style: italic; color: var(--gold); }
+.btn-fechar {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 20px; padding: 4px; line-height: 1;
+  transition: color .2s; flex-shrink: 0; margin-left: 16px;
+}
+.btn-fechar:hover { color: var(--cream); }
+
+.modal-body { padding: 24px 28px 28px; }
+
+.field-group { margin-bottom: 18px; }
+.field-label {
+  display: block; font-family: 'Barlow', sans-serif; font-size: 8px;
+  font-weight: 500; letter-spacing: .25em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.field-input, .field-select {
+  width: 100%; box-sizing: border-box;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--cream);
+  font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 300;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color .25s;
+  -webkit-appearance: none; appearance: none;
+}
+.field-input::placeholder { color: rgba(255,255,255,.2); }
+.field-input:focus, .field-select:focus { border-color: rgba(201,168,76,.6); }
+.field-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%23888' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: calc(100% - 12px) 50%; padding-right: 32px; }
+.field-select option { background: #1a1a18; color: var(--cream); }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.modal-divider { height: 1px; background: rgba(255,255,255,.07); margin: 0 0 18px; }
+
+.btn-registrar {
+  width: 100%;
+  font-family: 'Barlow', sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .25em; text-transform: uppercase;
+  padding: 16px; cursor: pointer;
+  background: var(--gold); color: var(--dark);
+  border: none; position: relative; overflow: hidden;
+  transition: opacity .3s;
+}
+.btn-registrar:disabled { opacity: .4; cursor: not-allowed; }
+.btn-registrar:not(:disabled):hover { opacity: .88; }
+.btn-registrar-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+/* ── MENU INFERIOR ── */
+.menu-botoes {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; background: var(--dark2);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  z-index: 100; padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 .menu-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 2px;
-  text-decoration: none;
-  color: var(--muted);
-  font-family: 'Barlow', sans-serif;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 10px 2px; text-decoration: none; color: var(--muted);
+  font-family: 'Barlow', sans-serif; font-size: 8px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
   border-right: 1px solid rgba(255,255,255,0.05);
-  transition: color .2s, background .2s;
-  min-width: 0;
-  text-align: center;
-  line-height: 1.2;
-  -webkit-tap-highlight-color: transparent;
+  transition: color .2s, background .2s; min-width: 0; text-align: center;
+  line-height: 1.2; -webkit-tap-highlight-color: transparent;
 }
 .menu-btn:last-child { border-right: none; }
-.menu-btn:hover,
-.menu-btn:active { color: var(--gold); background: rgba(201,168,76,0.06); }
-
-.menu-icon {
-  font-size: 20px;
-  line-height: 1;
-  display: block;
-}
-
-.menu-label {
-  display: block;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  padding: 0 2px;
-}
-
-/* Telas muito pequenas: só ícone */
-@media (max-width: 359px) {
-  .menu-label { display: none; }
-  .menu-btn   { padding: 14px 2px; }
-}
-
-/* Garante que o conteúdo não suma atrás do menu fixo */
-.main-wrap {
-  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
-}
+.menu-btn:hover, .menu-btn:active { color: var(--gold); background: rgba(201,168,76,0.06); }
+.menu-icon { font-size: 20px; line-height: 1; display: block; }
+.menu-label { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 2px; }
+@media (max-width: 359px) { .menu-label { display: none; } .menu-btn { padding: 14px 2px; } }
+.main-wrap { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 </style>
 </head>
 <body>
@@ -178,10 +243,7 @@
     </span>
   </a>
   <div class="header-right">
-    <div class="admin-badge">
-      <div class="badge-dot"></div>
-      Painel Admin
-    </div>
+    <div class="admin-badge"><div class="badge-dot"></div>Painel Admin</div>
     <a href="login.html" class="btn-sair" onclick="localStorage.removeItem('token')">Sair</a>
   </div>
 </header>
@@ -201,6 +263,17 @@
 </div>
 
 <div class="main-wrap">
+
+  <!-- ── BOTÃO WALK-IN ── -->
+  <div class="btn-walkin-wrap">
+    <button class="btn-walkin" onclick="abrirWalkin()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <span>Atendimento sem agendamento</span>
+    </button>
+  </div>
+
   <div class="sec-label">Lista de agendamentos</div>
   <div id="lista"></div>
 
@@ -212,22 +285,71 @@
 
 <!-- ── MENU TAB BAR ── -->
 <div class="menu-botoes">
-  <a href="painel_planos.html" class="menu-btn">
-    <span class="menu-icon">💳</span>
-    <span class="menu-label">Assinaturas</span>
-  </a>
-  <a href="lucro.html" class="menu-btn">
-    <span class="menu-icon">💰</span>
-    <span class="menu-label">Lucros</span>
-  </a>
-  <a href="concluidos.html" class="menu-btn">
-    <span class="menu-icon">✔</span>
-    <span class="menu-label">Concluídos</span>
-  </a>
-  <a href="comissao.html" class="menu-btn">
-    <span class="menu-icon">✂️</span>
-    <span class="menu-label">Comissões</span>
-  </a>
+  <a href="painel_planos.html" class="menu-btn"><span class="menu-icon">💳</span><span class="menu-label">Assinaturas</span></a>
+  <a href="lucro.html" class="menu-btn"><span class="menu-icon">💰</span><span class="menu-label">Lucros</span></a>
+  <a href="concluidos.html" class="menu-btn"><span class="menu-icon">✔</span><span class="menu-label">Concluídos</span></a>
+  <a href="comissao.html" class="menu-btn"><span class="menu-icon">✂️</span><span class="menu-label">Comissões</span></a>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MODAL — ATENDIMENTO SEM AGENDAMENTO (WALK-IN)
+══════════════════════════════════════════════════ -->
+<div id="walkinOverlay" onclick="fecharWalkinFora(event)">
+  <div class="modal-box" id="walkinBox">
+    <div class="corner-bl"></div>
+    <div class="corner-br"></div>
+
+    <div class="modal-header">
+      <div>
+        <div class="modal-eyebrow">Registro direto</div>
+        <div class="modal-title">Cliente <em>presencial</em></div>
+      </div>
+      <button class="btn-fechar" onclick="fecharWalkin()">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="field-group">
+        <label class="field-label" for="wk-nome">Nome do cliente</label>
+        <input id="wk-nome" class="field-input" type="text" placeholder="Ex: João Silva" autocomplete="off">
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="wk-data">Data</label>
+          <input id="wk-data" class="field-input" type="date">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="wk-horario">Horário</label>
+          <input id="wk-horario" class="field-input" type="time">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="wk-prof">Profissional</label>
+        <select id="wk-prof" class="field-select">
+          <option value="">Selecione o profissional...</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="wk-valor">Valor cobrado (R$)</label>
+        <input id="wk-valor" class="field-input" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+
+      <div class="modal-divider"></div>
+
+      <button class="btn-registrar" id="wkBtnRegistrar" onclick="registrarWalkin()">
+        <div class="btn-registrar-inner">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Registrar atendimento
+        </div>
+      </button>
+
+    </div>
+  </div>
 </div>
 
 <script src="Saas.js"></script>
@@ -257,7 +379,7 @@
 
 /* TOAST */
 function toast(texto, cor){
-  cor = cor||'#c9a84c';
+  cor=cor||'#c9a84c';
   const el=document.createElement('div');
   el.className='toast'; el.textContent=texto; el.style.background=cor;
   document.body.appendChild(el);
@@ -265,7 +387,8 @@ function toast(texto, cor){
   setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),500); },2800);
 }
 
-const lista = document.getElementById('lista');
+const lista=document.getElementById('lista');
+let _profissionais=[];   // cache para o select do modal
 
 function formatarData(dataStr){
   const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -274,33 +397,113 @@ function formatarData(dataStr){
 }
 
 function atualizarStats(pendentes){
-  const totalValor = pendentes.reduce((s,a)=>s+(Number(a.valor)||0),0);
-  document.getElementById('statTotal').textContent = pendentes.length;
-  document.getElementById('statValor').textContent = 'R$'+totalValor;
+  const totalValor=pendentes.reduce((s,a)=>s+(Number(a.valor)||0),0);
+  document.getElementById('statTotal').textContent=pendentes.length;
+  document.getElementById('statValor').textContent='R$'+totalValor;
 }
 
-/* ── AGENDAMENTOS ── */
-async function carregarAgendamentos(){
-  lista.innerHTML = '<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
-  try {
-    const slug = localStorage.getItem("slug");
-    if (!slug){ window.location.href="/login.html"; return; }
+/* ════════════════════════════════
+   MODAL — WALK-IN
+════════════════════════════════ */
+function abrirWalkin(){
+  /* preenche data/hora atual como padrão */
+  const agora=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('wk-data').value=
+    `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}`;
+  document.getElementById('wk-horario').value=
+    `${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
 
-    const [resAg, resProf] = await Promise.all([
+  /* popula profissionais */
+  const sel=document.getElementById('wk-prof');
+  sel.innerHTML='<option value="">Selecione o profissional...</option>';
+  _profissionais.forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=p.id; opt.textContent=p.nome;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById('walkinOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('wk-nome').focus(),150);
+}
+
+function fecharWalkin(){
+  document.getElementById('walkinOverlay').classList.remove('open');
+  /* limpa campos */
+  ['wk-nome','wk-valor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('wk-prof').value='';
+}
+
+function fecharWalkinFora(e){
+  if(e.target===document.getElementById('walkinOverlay')) fecharWalkin();
+}
+
+async function registrarWalkin(){
+  const nome    =document.getElementById('wk-nome').value.trim();
+  const data    =document.getElementById('wk-data').value;
+  const horario =document.getElementById('wk-horario').value;
+  const profId  =document.getElementById('wk-prof').value;
+  const valor   =parseFloat(document.getElementById('wk-valor').value)||0;
+
+  if(!nome)    { toast('Informe o nome do cliente','#e05050'); return; }
+  if(!data)    { toast('Informe a data','#e05050'); return; }
+  if(!horario) { toast('Informe o horário','#e05050'); return; }
+  if(!profId)  { toast('Selecione o profissional','#e05050'); return; }
+
+  const btn=document.getElementById('wkBtnRegistrar');
+  btn.disabled=true;
+
+  try{
+    const r=await fetch(`${API}/agendamentos`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        nome,
+        data,
+        horario,
+        profissional_id: profId,
+        valor,
+        status: 'concluido',   // walk-in já entra como concluído diretamente
+        walkin: true
+      })
+    });
+    if(!r.ok) throw new Error();
+    toast('✓ Atendimento registrado!');
+    fecharWalkin();
+    carregarAgendamentos();
+  }catch{
+    toast('Erro ao registrar','#e05050');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+/* ════════════════════════════════
+   AGENDAMENTOS
+════════════════════════════════ */
+async function carregarAgendamentos(){
+  lista.innerHTML='<div class="loading-state"><div class="spin"></div>Carregando agendamentos...</div>';
+  try{
+    const slug=localStorage.getItem("slug");
+    if(!slug){ window.location.href="/login.html"; return; }
+
+    const [resAg,resProf]=await Promise.all([
       fetch(`${API}/agendamentos`),
       fetch(`${API}/profissionais`)
     ]);
+    const dados=await resAg.json();
 
-    const dados = await resAg.json();
+    let mapaProf={};
+    try{
+      const profs=await resProf.json();
+      if(Array.isArray(profs)){
+        _profissionais=profs;               // ← salva para o modal
+        profs.forEach(p=>{ mapaProf[p.id]=p; });
+      }
+    }catch(e){}
 
-    let mapaProf = {};
-    try {
-      const profs = await resProf.json();
-      if(Array.isArray(profs)) profs.forEach(p=>{ mapaProf[p.id]=p; });
-    } catch(e){}
-
-    lista.innerHTML = '';
-    const pendentes = dados.filter(a=>(a.status||'pendente')==='pendente');
+    lista.innerHTML='';
+    const pendentes=dados.filter(a=>(a.status||'pendente')==='pendente');
     atualizarStats(pendentes);
 
     if(pendentes.length===0){
@@ -315,12 +518,10 @@ async function carregarAgendamentos(){
 
       const horario=(item.horario||'').toString().substring(0,5);
       const dataFmt=item.data?formatarData(item.data):'—';
-
       const prof=item.profissional_id?mapaProf[item.profissional_id]:null;
       const nomeProfissional=prof?prof.nome:'—';
       const fotoProfissional=prof?prof.foto_url:null;
       const inicialProf=nomeProfissional!=='—'?nomeProfissional.trim().charAt(0).toUpperCase():'?';
-
       const fotoHtml=fotoProfissional
         ?`<img src="${fotoProfissional}" alt="${nomeProfissional}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<span style=\\'line-height:28px;font-weight:700;color:#ffc926;font-size:13px;\\'>${inicialProf}</span>'">`
         :`<span style="line-height:28px;font-weight:700;color:#ffc926;font-size:13px;">${inicialProf}</span>`;
@@ -400,106 +601,90 @@ async function carregarAgendamentos(){
       lista.appendChild(card);
     });
 
-  } catch(err){
+  }catch(err){
     console.error('Erro geral:',err);
     lista.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar agendamentos</div></div>`;
   }
 }
 
-/* ── PROFISSIONAIS — TOGGLE DISPONIBILIDADE ── */
+/* ════════════════════════════════
+   PROFISSIONAIS — TOGGLE
+════════════════════════════════ */
 async function carregarProfissionaisAdmin(){
-  const grid = document.getElementById('profGrid');
-  try {
-    const res  = await fetch(`${API}/profissionais`);
-    const list = await res.json();
-    grid.innerHTML = '';
-
-    if(!Array.isArray(list) || list.length === 0){
-      grid.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-txt">Nenhum profissional cadastrado</div></div>`;
+  const grid=document.getElementById('profGrid');
+  try{
+    const res=await fetch(`${API}/profissionais`);
+    const list=await res.json();
+    grid.innerHTML='';
+    if(!Array.isArray(list)||list.length===0){
+      grid.innerHTML=`<div class="empty"><div class="empty-icon">👤</div><div class="empty-txt">Nenhum profissional cadastrado</div></div>`;
       return;
     }
-
-    list.forEach((prof, i) => {
-      const disponivel = prof.disponivel !== false;
-      const item = document.createElement('div');
-      item.className = `prof-item ${disponivel ? 'disponivel' : 'indisponivel'}`;
-      item.style.animationDelay = (i * 0.07) + 's';
-
-      const avatarEl = document.createElement('div');
-      avatarEl.className = 'prof-avatar';
+    list.forEach((prof,i)=>{
+      const disponivel=prof.disponivel!==false;
+      const item=document.createElement('div');
+      item.className=`prof-item ${disponivel?'disponivel':'indisponivel'}`;
+      item.style.animationDelay=(i*0.07)+'s';
+      const avatarEl=document.createElement('div');
+      avatarEl.className='prof-avatar';
       if(prof.foto_url){
-        const img = document.createElement('img');
-        img.src = prof.foto_url; img.alt = prof.nome;
-        img.onerror = () => { avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase(); };
+        const img=document.createElement('img');
+        img.src=prof.foto_url; img.alt=prof.nome;
+        img.onerror=()=>{ avatarEl.textContent=prof.nome.trim().charAt(0).toUpperCase(); };
         avatarEl.appendChild(img);
-      } else {
-        avatarEl.textContent = prof.nome.trim().charAt(0).toUpperCase();
-      }
-
-      const infoEl = document.createElement('div');
-      infoEl.className = 'prof-info';
-      infoEl.innerHTML = `
+      }else{ avatarEl.textContent=prof.nome.trim().charAt(0).toUpperCase(); }
+      const infoEl=document.createElement('div');
+      infoEl.className='prof-info';
+      infoEl.innerHTML=`
         <div class="prof-nome-txt">${prof.nome}</div>
-        ${prof.especialidade ? `<div class="prof-esp-txt">${prof.especialidade}</div>` : ''}
-        <div class="status-badge ${disponivel ? 'on' : 'off'}">
-          ${disponivel ? 'Aceitando agendamentos' : 'Agendamentos pausados'}
+        ${prof.especialidade?`<div class="prof-esp-txt">${prof.especialidade}</div>`:''}
+        <div class="status-badge ${disponivel?'on':'off'}">
+          ${disponivel?'Aceitando agendamentos':'Agendamentos pausados'}
         </div>
       `;
-
-      const btn = document.createElement('button');
-      btn.className = `btn-toggle ${disponivel ? 'pausar' : 'ativar'}`;
-      btn.innerHTML = disponivel
-        ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
-        : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
-
-      btn.addEventListener('click', () => alternarDisponibilidade(prof.id, disponivel, item, btn, infoEl));
-
+      const btn=document.createElement('button');
+      btn.className=`btn-toggle ${disponivel?'pausar':'ativar'}`;
+      btn.innerHTML=disponivel
+        ?`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
+        :`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
+      btn.addEventListener('click',()=>alternarDisponibilidade(prof.id,disponivel,item,btn,infoEl));
       item.appendChild(avatarEl);
       item.appendChild(infoEl);
       item.appendChild(btn);
       grid.appendChild(item);
     });
-
-  } catch(err){
-    grid.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar profissionais</div></div>`;
+  }catch(err){
+    grid.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar profissionais</div></div>`;
   }
 }
 
-async function alternarDisponibilidade(id, disponivel_atual, itemEl, btn, infoEl){
-  btn.disabled = true;
-  const novoStatus = !disponivel_atual;
-  try {
-    const r = await fetch(`${API}/profissionais/${id}/disponibilidade`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ disponivel: novoStatus })
+async function alternarDisponibilidade(id,disponivel_atual,itemEl,btn,infoEl){
+  btn.disabled=true;
+  const novoStatus=!disponivel_atual;
+  try{
+    const r=await fetch(`${API}/profissionais/${id}/disponibilidade`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({disponivel:novoStatus})
     });
     if(!r.ok) throw new Error();
-
-    itemEl.classList.toggle('disponivel',    novoStatus);
-    itemEl.classList.toggle('indisponivel', !novoStatus);
-
-    const badge = infoEl.querySelector('.status-badge');
-    badge.className = `status-badge ${novoStatus ? 'on' : 'off'}`;
-    badge.textContent = novoStatus ? 'Aceitando agendamentos' : 'Agendamentos pausados';
-
-    btn.className = `btn-toggle ${novoStatus ? 'pausar' : 'ativar'}`;
-    btn.innerHTML = novoStatus
-      ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
-      : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
-
-    const novoBtnClone = btn.cloneNode(true);
-    btn.parentNode.replaceChild(novoBtnClone, btn);
-    novoBtnClone.innerHTML = btn.innerHTML;
-    novoBtnClone.addEventListener('click', () => alternarDisponibilidade(id, novoStatus, itemEl, novoBtnClone, infoEl));
-
-    toast(
-      novoStatus ? '✓ Agendamentos ativados!' : '⏸ Agendamentos pausados',
-      novoStatus ? '#15ff00' : '#e05050'
-    );
-  } catch {
-    toast('Erro ao atualizar', '#e05050');
-    btn.disabled = false;
+    itemEl.classList.toggle('disponivel', novoStatus);
+    itemEl.classList.toggle('indisponivel',!novoStatus);
+    const badge=infoEl.querySelector('.status-badge');
+    badge.className=`status-badge ${novoStatus?'on':'off'}`;
+    badge.textContent=novoStatus?'Aceitando agendamentos':'Agendamentos pausados';
+    btn.className=`btn-toggle ${novoStatus?'pausar':'ativar'}`;
+    btn.innerHTML=novoStatus
+      ?`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="7" y="2" width="3" height="8" rx="1" fill="currentColor"/></svg> Pausar`
+      :`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg> Ativar`;
+    const clone=btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone,btn);
+    clone.innerHTML=btn.innerHTML;
+    clone.addEventListener('click',()=>alternarDisponibilidade(id,novoStatus,itemEl,clone,infoEl));
+    toast(novoStatus?'✓ Agendamentos ativados!':'⏸ Agendamentos pausados', novoStatus?'#15ff00':'#e05050');
+  }catch{
+    toast('Erro ao atualizar','#e05050');
+    btn.disabled=false;
   }
 }
 
