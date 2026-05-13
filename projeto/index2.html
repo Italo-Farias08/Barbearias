@@ -614,21 +614,27 @@ function selecionarDia(elemento, data) {
   if (pausado) {
     document.getElementById('horarios').innerHTML = `
       <div style="
-        display:flex;align-items:center;gap:12px;
+        grid-column: 1 / -1;
+        display:flex;
+        align-items:flex-start;
+        gap:12px;
         padding:16px 20px;
         background:var(--dark3);
         border:1px solid rgba(224,80,80,.25);
         border-left:3px solid #e05050;
         color:#e05050;
         font-size:12px;
-        letter-spacing:.15em;
+        letter-spacing:.1em;
+        line-height:1.6;
+        box-sizing:border-box;
         width:100%;
+        flex-wrap:nowrap;
       ">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <svg style="flex-shrink:0;margin-top:2px;" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
           <path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
-        Profissional sem atendimento neste dia. Escolha outra data ou outro profissional.
+        <span>Profissional sem atendimento neste dia. Escolha outra data ou outro profissional.</span>
       </div>`;
     return;
   }
