@@ -639,9 +639,8 @@ app.get("/api/:slug/servicos", async (req, res) => {
   }
 });
 
-// ============================================================
 // PROFISSIONAIS
-// ============================================================
+
 
 // Listar profissionais — inclui pausas ativas/futuras no retorno
 app.get("/api/:slug/profissionais", async (req, res) => {
@@ -721,9 +720,8 @@ app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, asy
   }
 });
 
-// ============================================================
 // PAUSAS POR DATA DO PROFISSIONAL
-// ============================================================
+
 
 // GET — lista todas as pausas ativas/futuras de um profissional
 app.get("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
@@ -1076,9 +1074,8 @@ app.get("/debug-path", (req, res) => {
   res.json({ dir, existe, arquivos });
 });
 
-// ============================================================
 // ROTAS DE COMISSÃO
-// ============================================================
+
 
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
