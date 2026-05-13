@@ -388,46 +388,111 @@ html,body{overflow-x:hidden;width:100%;}
 
 .about{display:grid;grid-template-columns:1fr 1fr;min-height:580px;}
 .about-img{position:relative;overflow:hidden;}
-.about-img img{width:100%;height:100%;object-fit:cover;filter:brightness(.55) saturate(.75);transition:transform 8s ease;}
+
+.about-img img{
+  width:100%;
+  height:100%;object-fit:cover;filter:brightness(.55) saturate(.75);transition:transform 8s ease;}
+
 .about-img:hover img{transform:scale(1.04);}
-.about-img::after{content:'';position:absolute;inset:20px;border:1px solid rgba(255,255,255,0.137);pointer-events:none;}
+
+.about-img::after{
+  content:'';
+  position:absolute;
+  inset:20px;border:1px solid rgba(255,255,255,0.137);
+  pointer-events:none;
+}
 
 .about-txt{
   background:var(--dark2);border-left:1px solid var(--border);
   padding:80px 72px;display:flex;flex-direction:column;justify-content:center;
 }
-.about-txt p{font-size:15px;line-height:1.9;color:var(--muted);margin:24px 0 48px;}
-.about-stats{display:flex;gap:40px;border-top:1px solid rgba(255,255,255,0.295);padding-top:36px;}
-.astat-num{font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:var(--gold);line-height:1;}
-.astat-lbl{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-top:6px;}
+.about-txt p{
+  font-size:15px;
+  line-height:1.9;
+  color:var(--muted);
+  margin:24px 0 48px;
+}
+
+.about-stats{
+  display:flex;
+  gap:40px;
+  border-top:1px solid rgba(255,255,255,0.295);
+  padding-top:36px;
+}
+
+.astat-num{
+  font-family:'Playfair Display',serif;
+  font-size:38px;
+  font-weight:700;
+  color:var(--gold);
+  line-height:1;
+}
+
+.astat-lbl{
+  font-size:9px;
+  letter-spacing:.3em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-top:6px;
+}
 
 .booking{
-  padding:120px 96px;text-align:center;
-  position:relative;overflow:hidden;
+  padding:120px 96px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
   background:var(--dark2);
   border-top:1px solid rgba(255,255,255,0.295);
   border-bottom:1px solid rgba(255,255,255,0.295);
 }
+
 .booking::before{
   content:'AGENDE';
-  position:absolute;top:50%;left:50%;
+  position:absolute;
+  top:50%;
+  left:50%;
   transform:translate(-50%,-50%);
   font-family:'Playfair Display',serif;
-  font-size:220px;font-weight:900;
+  font-size:220px;
+  font-weight:900;
   color:rgba(167,167,167,0.022);
-  white-space:nowrap;pointer-events:none;letter-spacing:.1em;
+  white-space:nowrap;
+  pointer-events:none;
+  letter-spacing:.1em;
 }
-.booking h2{font-family:'Playfair Display',serif;font-size:clamp(40px,5.5vw,80px);font-weight:700;margin:16px 0 24px;line-height:1.05;}
+
+.booking h2{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(40px,5.5vw,80px);
+  font-weight:700;
+  margin:16px 0 24px;
+  line-height:1.05;}
+
 .booking h2 em{font-style:italic;color:var(--gold);}
-.booking p{color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 52px;line-height:1.75;}
+
+.booking p{
+  color:var(--muted);
+  font-size:15px;
+  max-width:380px;
+  margin:0 auto 52px;
+  line-height:1.75;
+}
 
 .btn-gold{
-  display:inline-flex;align-items:center;gap:14px;
-  background:var(--gold);color:var(--dark);
-  text-decoration:none;font-size:11px;font-weight:500;
-  letter-spacing:.25em;text-transform:uppercase;padding:20px 48px;
+  display:inline-flex;
+  align-items:center;
+  gap:14px;
+  background:var(--gold);
+  color:var(--dark);
+  text-decoration:none;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  padding:20px 48px;
   transition:background .3s,gap .3s;
 }
+
 .btn-gold svg{transition:transform .3s;}
 
 footer{padding:64px 96px 36px;border-top:1px solid rgba(255,255,255,0.295);}

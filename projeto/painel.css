@@ -353,9 +353,10 @@ header{
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-.btn-lembrete{background:transparent;
+.btn-lembrete{
+  background:transparent;
   color: #ffc926;
-  border:1px solid #ffc92659;
+  border:1px solid #ffc9262b;
   padding: 10px;
   text-align: center;
   font-family:'Barlow',sans-serif;
