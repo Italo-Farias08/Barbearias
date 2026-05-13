@@ -580,22 +580,60 @@ function gerarProximosDias(qtd){
   }
 }
 
-function selecionarDia(elemento,data){
-  document.querySelectorAll('.dia').forEach(d=>d.classList.remove('selecionado'));
+function selecionarDia(elemento, data) {
+  document.querySelectorAll('.dia').forEach(d => d.classList.remove('selecionado'));
   elemento.classList.add('selecionado');
-  dataSelecionada=data; horarioSelecionado=null;
+  dataSelecionada = data;
+  horarioSelecionado = null;
   document.getElementById('resumo').classList.remove('visivel');
-  document.querySelector('.btn-confirmar').disabled=true;
+  document.querySelector('.btn-confirmar').disabled = true;
+
   gerarHorariosDoDia(data);
-  if(horarios.length===0){
-    document.getElementById('horarios').innerHTML='<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Fechado neste dia.</span>';
+
+  if (horarios.length === 0) {
+    document.getElementById('horarios').innerHTML =
+      '<span style="color:var(--muted);font-size:13px;letter-spacing:.1em;">Fechado neste dia.</span>';
     return;
   }
-  if(!profissionalSelecionado){
-    mostrarMensagem('⚠️ Escolha um profissional primeiro!','#e05050');
+
+  if (!profissionalSelecionado) {
+    mostrarMensagem('⚠️ Escolha um profissional primeiro!', '#e05050');
     return;
   }
-  carregarHorariosOcupados(dataLocalStr(data));
+
+  // ✅ NOVO: verifica se o profissional tem pausa nessa data
+  const dataStr = dataLocalStr(data);
+  const pausas  = profissionalSelecionado.pausas || [];
+  const pausado = pausas.some(p => {
+    // Compara como string YYYY-MM-DD
+    const ini = (p.data_inicio || '').substring(0, 10);
+    const fim = (p.data_fim    || '').substring(0, 10);
+    return dataStr >= ini && dataStr <= fim;
+  });
+
+  if (pausado) {
+    document.getElementById('horarios').innerHTML = `
+      <div style="
+        display:flex;align-items:center;gap:12px;
+        padding:16px 20px;
+        background:var(--dark3);
+        border:1px solid rgba(224,80,80,.25);
+        border-left:3px solid #e05050;
+        color:#e05050;
+        font-size:12px;
+        letter-spacing:.15em;
+        width:100%;
+      ">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Profissional sem atendimento neste dia. Escolha outra data ou outro profissional.
+      </div>`;
+    return;
+  }
+
+  carregarHorariosOcupados(dataStr);
 }
 
 function selecionarHorario(elemento){

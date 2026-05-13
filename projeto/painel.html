@@ -671,16 +671,34 @@ function renderizarPills() {
 }
 
 async function removerPausa(pausaId, btnEl) {
+  // Garante que pausaId é número
+  const idNumerico = Number(pausaId);
+  if (!idNumerico || isNaN(idNumerico)) {
+    toast('ID de pausa inválido','#e05050');
+    return;
+  }
+
   btnEl.disabled = true;
+
   try {
-    const r = await fetch(`${API}/profissionais/${_pausaAtual.profId}/pausas/${pausaId}`, { method:'DELETE' });
-    if (!r.ok) throw new Error();
-    _pausaAtual.pausas = _pausaAtual.pausas.filter(p => p.id !== pausaId);
+    const r = await fetch(`${API}/profissionais/${_pausaAtual.profId}/pausas/${idNumerico}`, {
+      method: 'DELETE'
+    });
+
+    // Tenta ler body mesmo em erro
+    let json = {};
+    try { json = await r.json(); } catch(_) {}
+
+    if (!r.ok) {
+      throw new Error(json.erro || `Erro ${r.status} ao remover pausa`);
+    }
+
+    _pausaAtual.pausas = _pausaAtual.pausas.filter(p => Number(p.id) !== idNumerico);
     renderizarPills();
     toast('Pausa removida');
-    carregarProfissionaisAdmin(); // atualiza a grade
-  } catch {
-    toast('Erro ao remover pausa','#e05050');
+    carregarProfissionaisAdmin();
+  } catch(e) {
+    toast(e.message || 'Erro ao remover pausa','#e05050');
     btnEl.disabled = false;
   }
 }
@@ -702,8 +720,12 @@ async function confirmarPausa() {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ data_inicio: inicio, data_fim: fim })
     });
-    const json = await r.json();
-    if (json.erro) throw new Error(json.erro);
+
+    const json = await r.json(); // lê o body ANTES de checar r.ok
+
+    if (!r.ok || json.erro) {
+      throw new Error(json.erro || `Erro ${r.status}`);
+    }
 
     const label = inicio === fim
       ? formatarData(inicio)
