@@ -4,7 +4,6 @@ const express = require("express");
 const cors    = require("cors");
 const db      = require("./db");
 const fs      = require("fs");
-const path    = require("path");
 
 const app = express();
 
@@ -30,6 +29,7 @@ const limiterLogin = rateLimit({
   message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
 });
 
+// CORS corrigido — aceita Vercel, domínio próprio e localhost
 const ORIGENS_PERMITIDAS = [
   "https://vtrip.com.br",
   "http://vtrip.com.br",
@@ -39,7 +39,22 @@ const ORIGENS_PERMITIDAS = [
   "http://127.0.0.1:5500"
 ];
 
-const corsOptions = {
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permite requisições sem origin (ex: Postman, curl) e origens da lista
+    if (!origin || ORIGENS_PERMITIDAS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS bloqueado para: " + origin));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+// Responde preflight OPTIONS em todas as rotas sem redirecionar
+app.options("*", cors({
   origin: function (origin, callback) {
     if (!origin || ORIGENS_PERMITIDAS.includes(origin)) {
       callback(null, true);
@@ -50,10 +65,11 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
-};
+}));
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// ARQUIVOS ESTÁTICOS
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
 // WHATSAPP COM BAILEYS
 let waSocket    = null;
@@ -1129,10 +1145,6 @@ app.get("/debug-path", (req, res) => {
   const existe = fs.existsSync(dir);
   res.json({ dir, existe, arquivos: existe ? fs.readdirSync(dir) : [] });
 });
-
-// ── ARQUIVOS ESTÁTICOS — deve ficar DEPOIS de todas as rotas ──────────────
-// Isso evita que o Express tente servir /cadastro/check-username como arquivo
-app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
 // ── BANCO + START ─────────────────────────────────────────────────────────
 
