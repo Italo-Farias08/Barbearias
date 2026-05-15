@@ -198,6 +198,24 @@ async function podeUsarSistema(slug) {
   return barb.ativo && hoje <= vencimento;
 }
 
+// ─── HELPER ONBOARDING: gera slug único a partir do nome ──────────────────
+async function gerarSlug(nome) {
+  const base = nome
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .substring(0, 40);
+
+  let slug = base;
+  let tentativa = 0;
+  while (true) {
+    const exists = await db.query("SELECT id FROM barbearias WHERE slug = $1", [slug]);
+    if (exists.rows.length === 0) return slug;
+    tentativa++;
+    slug = `${base}-${tentativa}`;
+  }
+}
 
 // MIDDLEWARES
 
@@ -344,7 +362,7 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
         return res.json({ erro: "Este profissional não está aceitando agendamentos no momento." });
       }
 
-      // ── NOVO: verifica se a data cai em alguma pausa cadastrada ──
+      // Verifica se a data cai em alguma pausa cadastrada
       const pausaCheck = await db.query(
         `SELECT id FROM profissional_pausas
          WHERE profissional_id = $1
@@ -641,7 +659,6 @@ app.get("/api/:slug/servicos", async (req, res) => {
 
 // PROFISSIONAIS
 
-
 // Listar profissionais — inclui pausas ativas/futuras no retorno
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
@@ -657,7 +674,6 @@ app.get("/api/:slug/profissionais", async (req, res) => {
 
     if (profissionais.length === 0) return res.json([]);
 
-    // Busca todas as pausas futuras/ativas de uma vez (evita N queries)
     const hoje = new Date().toISOString().split("T")[0];
     const ids  = profissionais.map(p => p.id);
 
@@ -671,7 +687,6 @@ app.get("/api/:slug/profissionais", async (req, res) => {
       [req.barbearia.id, ids, hoje]
     );
 
-    // Agrupa pausas por profissional
     const pausasPorProf = {};
     pausasResult.rows.forEach(p => {
       if (!pausasPorProf[p.profissional_id]) pausasPorProf[p.profissional_id] = [];
@@ -722,7 +737,6 @@ app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, asy
 
 // PAUSAS POR DATA DO PROFISSIONAL
 
-
 // GET — lista todas as pausas ativas/futuras de um profissional
 app.get("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.id);
@@ -765,7 +779,6 @@ app.post("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req,
     return res.status(400).json({ erro: "data_fim deve ser igual ou posterior a data_inicio" });
 
   try {
-    // Verifica se o profissional pertence a esta barbearia
     const profCheck = await db.query(
       `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
       [profId, req.barbearia.id]
@@ -773,7 +786,6 @@ app.post("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req,
     if (profCheck.rows.length === 0)
       return res.status(404).json({ erro: "Profissional não encontrado" });
 
-    // Verifica sobreposição com pausas já existentes
     const sobreposicao = await db.query(
       `SELECT id FROM profissional_pausas
        WHERE profissional_id = $1
@@ -1076,7 +1088,6 @@ app.get("/debug-path", (req, res) => {
 
 // ROTAS DE COMISSÃO
 
-
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1287,6 +1298,131 @@ app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, r
   } catch (err) {
     console.error(err);
     res.json({ erro: "Erro ao deletar ajuste" });
+  }
+});
+
+// ─── ONBOARDING PÚBLICO ────────────────────────────────────────────────────
+
+// GET /cadastro/check-username?u=fulano — verifica username em tempo real
+app.get("/cadastro/check-username", async (req, res) => {
+  const { u } = req.query;
+  if (!u || u.length < 3) return res.json({ disponivel: false });
+  try {
+    const r = await db.query("SELECT id FROM barbearias WHERE username = $1", [u.trim()]);
+    res.json({ disponivel: r.rows.length === 0 });
+  } catch {
+    res.json({ disponivel: false });
+  }
+});
+
+// POST /cadastro — cria barbearia completa (wizard de onboarding)
+app.post("/cadastro", async (req, res) => {
+  const { barbearia, horarios, servicos, profissionais, planos } = req.body;
+
+  if (!barbearia || typeof barbearia.nome !== "string" || barbearia.nome.trim().length < 2)
+    return res.status(400).json({ erro: "Nome da barbearia inválido" });
+  if (!barbearia.username || barbearia.username.length < 3)
+    return res.status(400).json({ erro: "Username deve ter ao menos 3 caracteres" });
+  if (!barbearia.password || barbearia.password.length < 6)
+    return res.status(400).json({ erro: "Senha deve ter ao menos 6 caracteres" });
+
+  try {
+    const usernameCheck = await db.query(
+      "SELECT id FROM barbearias WHERE username = $1", [barbearia.username.trim()]
+    );
+    if (usernameCheck.rows.length > 0)
+      return res.status(409).json({ erro: "Este usuário já está em uso. Escolha outro." });
+
+    const slug = await gerarSlug(barbearia.nome.trim());
+
+    // 30 dias de trial automático
+    const vencimento = new Date();
+    vencimento.setDate(vencimento.getDate() + 30);
+
+    // 1. Inserir barbearia
+    const barbResult = await db.query(
+      `INSERT INTO barbearias
+         (slug, nome, cidade, whatsapp, username, password,
+          cor_primaria, sobre, ativo, vencimento)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9)
+       RETURNING id, slug`,
+      [
+        slug,
+        barbearia.nome.trim(),
+        barbearia.cidade || "",
+        barbearia.whatsapp || "",
+        barbearia.username.trim(),
+        barbearia.password,
+        barbearia.cor_primaria || "#c8a96e",
+        barbearia.sobre || "",
+        vencimento
+      ]
+    );
+
+    const { id: barbId, slug: barbSlug } = barbResult.rows[0];
+
+    // 2. Salvar horários
+    if (horarios && typeof horarios === "object") {
+      const { pausa_inicio, pausa_fim, ...diasConfig } = horarios;
+      await db.query(
+        `INSERT INTO horarios_barbearia (barbearia_id, dias_semana, pausa_inicio, pausa_fim)
+         VALUES ($1, $2, $3, $4)`,
+        [barbId, JSON.stringify(diasConfig), pausa_inicio || null, pausa_fim || null]
+      );
+    }
+
+    // 3. Salvar serviços destaque
+    if (Array.isArray(servicos)) {
+      for (let i = 0; i < servicos.length; i++) {
+        const s = servicos[i];
+        if (!s.nome || isNaN(Number(s.preco))) continue;
+        await db.query(
+          `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [barbId, s.nome.trim(), s.descricao || "", Number(s.preco), i, s.imagem || null]
+        );
+      }
+    }
+
+    // 4. Salvar profissionais
+    if (Array.isArray(profissionais)) {
+      for (let i = 0; i < profissionais.length; i++) {
+        const p = profissionais[i];
+        if (!p.nome || p.nome.trim().length < 2) continue;
+        await db.query(
+          `INSERT INTO profissionais
+             (barbearia_id, nome, especialidade, whatsapp, ativo, disponivel, ordem)
+           VALUES ($1,$2,$3,$4,true,true,$5)`,
+          [barbId, p.nome.trim(), p.especialidade || "", p.whatsapp || "", i]
+        );
+      }
+    }
+
+    // 5. Salvar planos
+    if (Array.isArray(planos)) {
+      for (let i = 0; i < planos.length; i++) {
+        const pl = planos[i];
+        if (!pl.nome || isNaN(Number(pl.valor))) continue;
+        await db.query(
+          `INSERT INTO planos (barbearia_id, nome, descricao, cortes_mes, valor, ativo, ordem)
+           VALUES ($1,$2,$3,$4,$5,true,$6)`,
+          [barbId, pl.nome.trim(), pl.descricao || "", Number(pl.cortes_mes) || 0, Number(pl.valor), i]
+        );
+      }
+    }
+
+    console.log(`✅ Nova barbearia cadastrada via onboarding: ${barbSlug} (id ${barbId})`);
+
+    res.status(201).json({
+      sucesso: true,
+      slug: barbSlug,
+      painel: `/${barbSlug}/admin`,
+      agendamento: `/${barbSlug}`
+    });
+
+  } catch (err) {
+    console.error("Erro no cadastro:", err.message);
+    res.status(500).json({ erro: "Erro interno ao criar barbearia" });
   }
 });
 
