@@ -5,23 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastre sua Barbearia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --gold: #c8a96e;
   --gold-light: #e8c98e;
+  --gold-dim: rgba(200,169,110,0.15);
   --dark: #0f0d0b;
   --dark2: #1a1713;
   --dark3: #252118;
   --surface: #1e1a15;
-  --border: rgba(200,169,110,0.2);
+  --surface2: #221e18;
+  --border: rgba(200,169,110,0.18);
+  --border-hover: rgba(200,169,110,0.4);
   --text: #f0ead8;
-  --muted: #8a7e6a;
+  --text2: #c8bfa8;
+  --muted: #7a6e5a;
   --red: #e05a5a;
   --green: #5acd8a;
+  --blue: #5a9fcd;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--dark);
@@ -31,93 +38,105 @@ body {
   overflow-x: hidden;
 }
 
-/* BG DECORATIVO */
+/* AMBIENT BACKGROUND */
 body::before {
   content: '';
   position: fixed;
-  top: -200px; right: -200px;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(200,169,110,0.06) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
+  top: -300px; right: -300px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(200,169,110,0.05) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -200px; left: -200px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(200,169,110,0.03) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
 }
 
-/* HEADER */
+/* ── HEADER ── */
 .header {
   text-align: center;
-  padding: 48px 20px 0;
-  position: relative;
-  z-index: 1;
+  padding: 52px 20px 0;
+  position: relative; z-index: 1;
 }
-.header-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 13px;
-  letter-spacing: 6px;
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold-dim);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 11px;
+  letter-spacing: 3px;
   color: var(--gold);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  font-weight: 600;
+  margin-bottom: 20px;
 }
 .header h1 {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(28px, 5vw, 46px);
+  font-size: clamp(30px, 5.5vw, 52px);
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.08;
   color: var(--text);
+  letter-spacing: -0.5px;
 }
 .header h1 em {
   color: var(--gold);
   font-style: italic;
 }
 .header p {
-  margin-top: 12px;
+  margin-top: 14px;
   color: var(--muted);
   font-size: 15px;
   font-weight: 300;
+  letter-spacing: 0.2px;
 }
 
-/* PROGRESS */
+/* ── PROGRESS ── */
 .progress-wrap {
-  max-width: 640px;
-  margin: 40px auto 0;
-  padding: 0 20px;
-  position: relative;
-  z-index: 1;
+  max-width: 660px;
+  margin: 44px auto 0;
+  padding: 0 24px;
+  position: relative; z-index: 1;
 }
 .steps-track {
   display: flex;
   align-items: center;
-  gap: 0;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .step-dot {
-  width: 32px; height: 32px;
+  width: 34px; height: 34px;
   border-radius: 50%;
-  border: 2px solid var(--border);
+  border: 1.5px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px;
+  font-size: 12px; font-weight: 600;
   color: var(--muted);
-  font-weight: 500;
   flex-shrink: 0;
-  transition: all .3s;
-  position: relative;
-  z-index: 1;
+  transition: all .35s cubic-bezier(.4,0,.2,1);
   background: var(--dark2);
+  position: relative; z-index: 1;
 }
 .step-dot.done {
   background: var(--gold);
   border-color: var(--gold);
   color: var(--dark);
+  font-size: 14px;
 }
 .step-dot.active {
   border-color: var(--gold);
   color: var(--gold);
-  box-shadow: 0 0 0 4px rgba(200,169,110,0.15);
+  box-shadow: 0 0 0 5px rgba(200,169,110,0.12);
 }
 .step-line {
   flex: 1;
-  height: 2px;
+  height: 1.5px;
   background: var(--border);
-  transition: background .3s;
+  transition: background .35s;
 }
 .step-line.done { background: var(--gold); }
 .steps-labels {
@@ -127,66 +146,97 @@ body::before {
 .step-label {
   font-size: 10px;
   color: var(--muted);
-  letter-spacing: .5px;
+  letter-spacing: .6px;
   text-align: center;
   flex: 1;
+  text-transform: uppercase;
+  font-weight: 500;
   transition: color .3s;
 }
 .step-label.active { color: var(--gold); }
 
-/* CARD WIZARD */
+/* ── WIZARD ── */
 .wizard {
-  max-width: 640px;
-  margin: 32px auto 80px;
-  padding: 0 20px;
-  position: relative;
-  z-index: 1;
+  max-width: 660px;
+  margin: 36px auto 100px;
+  padding: 0 24px;
+  position: relative; z-index: 1;
 }
-.step-panel {
-  display: none;
-  animation: fadeUp .4s ease;
-}
-.step-panel.active { display: block; }
+.step-panel { display: none; }
+.step-panel.active { display: block; animation: fadeUp .4s cubic-bezier(.4,0,.2,1); }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── CARD ── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 36px;
+  transition: border-color .2s;
 }
+.card + .card { margin-top: 20px; }
 
 .card-title {
   font-family: 'Playfair Display', serif;
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 700;
   margin-bottom: 4px;
   display: flex;
   align-items: center;
   gap: 10px;
+  color: var(--text);
 }
 .card-title .icon { font-size: 20px; }
 .card-sub {
   color: var(--muted);
   font-size: 13px;
   margin-bottom: 28px;
+  line-height: 1.5;
 }
 
-/* FORM */
+/* tag de contexto */
+.ctx-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+  margin-bottom: 18px;
+  border: 1px solid;
+}
+.ctx-tag.agenda {
+  background: rgba(90,205,138,0.08);
+  color: var(--green);
+  border-color: rgba(90,205,138,0.25);
+}
+.ctx-tag.vitrine {
+  background: rgba(90,159,205,0.08);
+  color: var(--blue);
+  border-color: rgba(90,159,205,0.25);
+}
+
+/* ── FIELDS ── */
 .field { margin-bottom: 18px; }
 .field label {
   display: block;
-  font-size: 12px;
-  letter-spacing: .5px;
+  font-size: 11px;
+  letter-spacing: .7px;
   color: var(--muted);
   margin-bottom: 7px;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
 }
-.field input, .field textarea, .field select {
+.field input,
+.field textarea,
+.field select {
   width: 100%;
   background: var(--dark3);
   border: 1px solid var(--border);
@@ -196,31 +246,38 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   outline: none;
-  transition: border .2s;
+  transition: border .2s, box-shadow .2s;
+  -webkit-appearance: none;
 }
-.field input:focus, .field textarea:focus {
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
   border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200,169,110,0.1);
 }
-.field textarea { resize: vertical; min-height: 80px; }
+.field textarea { resize: vertical; min-height: 82px; line-height: 1.5; }
 .field .hint {
   font-size: 11px;
   color: var(--muted);
   margin-top: 5px;
 }
 .field .hint.error { color: var(--red); }
-.field .hint.ok { color: var(--green); }
+.field .hint.ok    { color: var(--green); }
 
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media(max-width:480px){ .row2 { grid-template-columns: 1fr; } }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media(max-width:520px){
+  .row2, .row3 { grid-template-columns: 1fr; }
+}
 
-/* COLOR PICKER */
+/* ── COLOR PICKER ── */
 .color-picker-wrap {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .color-picker-wrap input[type=color] {
-  width: 48px; height: 48px;
+  width: 50px; height: 50px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: none;
@@ -230,51 +287,74 @@ body::before {
 }
 .color-picker-wrap input[type=text] { flex: 1; }
 
-/* HORÁRIOS */
+/* ── DIAS HORÁRIOS ── */
 .dias-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.dia-row {
   display: grid;
-  grid-template-columns: auto 1fr 1fr auto;
+  grid-template-columns: 72px 90px 1fr 1fr;
   gap: 10px;
   align-items: center;
-  font-size: 13px;
+  padding: 10px 14px;
+  background: var(--dark3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color .2s;
 }
+.dia-row.open { border-color: rgba(200,169,110,0.3); }
 .dia-nome {
-  color: var(--muted);
-  font-size: 12px;
-  padding-right: 8px;
-  min-width: 72px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
 }
 .toggle-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   cursor: pointer;
   user-select: none;
 }
 .toggle {
-  width: 38px; height: 21px;
-  background: var(--dark3);
+  width: 40px; height: 22px;
+  background: var(--dark);
   border-radius: 20px;
   position: relative;
   border: 1px solid var(--border);
-  transition: background .2s;
+  transition: all .25s;
   flex-shrink: 0;
 }
 .toggle::after {
   content:'';
   position: absolute;
-  width: 15px; height: 15px;
+  width: 16px; height: 16px;
   background: var(--muted);
   border-radius: 50%;
   top: 2px; left: 2px;
-  transition: all .2s;
+  transition: all .25s;
 }
-.toggle.on { background: rgba(200,169,110,0.2); border-color: var(--gold); }
-.toggle.on::after { background: var(--gold); transform: translateX(17px); }
+.toggle.on {
+  background: rgba(200,169,110,0.15);
+  border-color: var(--gold);
+}
+.toggle.on::after {
+  background: var(--gold);
+  transform: translateX(18px);
+}
+.toggle-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  min-width: 44px;
+  transition: color .2s;
+}
+.toggle.on + .toggle-label { color: var(--gold); }
 
-.dia-inputs { display: contents; }
-.dia-inputs input {
-  background: var(--dark3);
+.dia-input {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 7px 10px;
@@ -283,48 +363,66 @@ body::before {
   font-size: 13px;
   outline: none;
   width: 100%;
+  transition: border .2s;
 }
-.dia-inputs input:disabled { opacity: .3; }
-.dia-inputs input:focus { border-color: var(--gold); }
-.dia-separator { color: var(--muted); text-align: center; font-size: 11px; }
+.dia-input:disabled { opacity: .25; cursor: not-allowed; }
+.dia-input:focus { border-color: var(--gold); }
 
 .pausa-row {
   margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
   display: grid;
   grid-template-columns: auto 1fr 1fr;
   gap: 10px;
   align-items: center;
   font-size: 13px;
+  background: var(--dark3);
+}
+.pausa-label {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-weight: 500;
 }
 
-/* LISTAS DINÂMICAS */
+/* ── LIST ITEMS ── */
 .list-item {
   background: var(--dark3);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   position: relative;
-  animation: fadeUp .3s ease;
+  animation: fadeUp .3s cubic-bezier(.4,0,.2,1);
+  transition: border-color .2s;
 }
+.list-item:hover { border-color: var(--border-hover); }
 .list-item .remove-btn {
   position: absolute;
   top: 12px; right: 12px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
   color: var(--muted);
   cursor: pointer;
   font-size: 18px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
   line-height: 1;
-  transition: color .2s;
 }
-.list-item .remove-btn:hover { color: var(--red); }
+.list-item .remove-btn:hover {
+  color: var(--red);
+  border-color: rgba(224,90,90,0.3);
+  background: rgba(224,90,90,0.08);
+}
 
 .add-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   background: none;
   border: 1px dashed var(--border);
@@ -332,15 +430,41 @@ body::before {
   color: var(--gold);
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
-  padding: 10px 16px;
+  font-weight: 500;
+  padding: 11px 16px;
   width: 100%;
   cursor: pointer;
   transition: all .2s;
-  margin-top: 4px;
+  margin-top: 6px;
 }
-.add-btn:hover { border-color: var(--gold); background: rgba(200,169,110,.05); }
+.add-btn:hover {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+}
 
-/* NAVIGATION */
+/* divisor entre blocos de serviço */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 20px;
+}
+.section-divider span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── NAV ── */
 .nav {
   display: flex;
   justify-content: space-between;
@@ -357,60 +481,69 @@ body::before {
   cursor: pointer;
   border: none;
   transition: all .2s;
+  letter-spacing: .2px;
 }
 .btn-back {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--muted);
 }
-.btn-back:hover { border-color: var(--gold); color: var(--gold); }
+.btn-back:hover { border-color: var(--border-hover); color: var(--text2); }
 .btn-next {
   background: var(--gold);
   color: var(--dark);
   flex: 1;
   max-width: 260px;
   margin-left: auto;
+  font-weight: 600;
 }
-.btn-next:hover { background: var(--gold-light); }
-.btn-next:disabled { opacity: .5; cursor: not-allowed; }
+.btn-next:hover { background: var(--gold-light); transform: translateY(-1px); }
+.btn-next:active { transform: translateY(0); }
 .btn-submit {
   background: var(--gold);
   color: var(--dark);
   flex: 1;
   font-size: 15px;
   font-weight: 700;
+  letter-spacing: .3px;
 }
-.btn-submit:hover { background: var(--gold-light); }
+.btn-submit:hover { background: var(--gold-light); transform: translateY(-1px); }
 
-/* SUCESSO */
+/* ── SUCCESS ── */
 .success-screen {
   display: none;
   text-align: center;
-  padding: 60px 20px 80px;
-  animation: fadeUp .5s ease;
+  padding: 80px 20px 100px;
+  animation: fadeUp .5s cubic-bezier(.4,0,.2,1);
+  position: relative; z-index: 1;
 }
 .success-screen.show { display: block; }
-.success-icon {
-  font-size: 72px;
-  margin-bottom: 24px;
-  display: block;
+.success-icon-wrap {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--gold-dim);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 28px;
+  font-size: 36px;
 }
 .success-screen h2 {
   font-family: 'Playfair Display', serif;
-  font-size: 32px;
-  margin-bottom: 12px;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 900;
+  margin-bottom: 10px;
 }
-.success-screen p { color: var(--muted); margin-bottom: 8px; }
+.success-screen > p { color: var(--muted); margin-bottom: 6px; font-size: 15px; }
 .link-box {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px 20px;
-  margin: 24px auto;
-  max-width: 400px;
+  margin: 28px auto;
+  max-width: 460px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .link-box a {
   color: var(--gold);
@@ -418,112 +551,157 @@ body::before {
   font-size: 14px;
   flex: 1;
   word-break: break-all;
+  text-align: left;
 }
 .copy-btn {
   background: var(--gold);
   border: none;
   border-radius: 8px;
   color: var(--dark);
-  padding: 7px 14px;
+  padding: 8px 16px;
   font-size: 12px;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.copy-btn:hover { background: var(--gold-light); }
+.trial-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(90,205,138,0.08);
+  border: 1px solid rgba(90,205,138,0.2);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-top: 8px;
+  letter-spacing: .4px;
 }
 .btn-painel {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 14px 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 15px 36px;
   background: var(--gold);
   color: var(--dark);
-  border-radius: 10px;
+  border-radius: 12px;
   text-decoration: none;
   font-weight: 700;
   font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  transition: all .2s;
 }
+.btn-painel:hover { background: var(--gold-light); transform: translateY(-2px); }
 
-/* LOADING */
+/* ── LOADING ── */
 .loading-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(15,13,11,.8);
+  background: rgba(15,13,11,.85);
+  backdrop-filter: blur(4px);
   z-index: 100;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 .loading-overlay.show { display: flex; }
 .spinner {
-  width: 44px; height: 44px;
-  border: 3px solid var(--border);
+  width: 48px; height: 48px;
+  border: 2.5px solid var(--border);
   border-top-color: var(--gold);
   border-radius: 50%;
-  animation: spin .8s linear infinite;
+  animation: spin .75s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: .5px;
+}
 
-/* TOAST */
+/* ── TOAST ── */
 .toast {
   position: fixed;
-  bottom: 24px; left: 50%;
-  transform: translateX(-50%) translateY(80px);
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
   background: var(--red);
   color: #fff;
   padding: 12px 24px;
   border-radius: 10px;
   font-size: 14px;
+  font-weight: 500;
   z-index: 200;
-  transition: transform .3s;
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
   max-width: 90vw;
   text-align: center;
+  pointer-events: none;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
+.toast.ok { background: #2a7a4f; }
+
+/* ── SELECT CUSTOM ── */
+.field select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a6e5a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-  <div class="header-logo">✂ Barbearia Digital</div>
+  <div class="header-badge">✂ Barbearia Digital</div>
   <h1>Cadastre sua <em>barbearia</em></h1>
   <p>Leva menos de 3 minutos. Sem cartão de crédito.</p>
 </div>
 
+<!-- PROGRESS -->
 <div class="progress-wrap" id="progressWrap">
   <div class="steps-track" id="stepsTrack"></div>
   <div class="steps-labels" id="stepsLabels"></div>
 </div>
 
+<!-- WIZARD -->
 <div class="wizard" id="wizard">
 
-  <!-- PASSO 1: Dados da barbearia -->
+  <!-- ── PASSO 1: Dados da Barbearia ── -->
   <div class="step-panel active" id="step-1">
     <div class="card">
       <div class="card-title"><span class="icon">🏪</span> Sua Barbearia</div>
-      <div class="card-sub">Informações que seus clientes vão ver.</div>
+      <div class="card-sub">Informações que seus clientes vão ver no site de agendamento.</div>
 
       <div class="field">
-        <label>NOME DA BARBEARIA *</label>
+        <label>Nome da Barbearia *</label>
         <input type="text" id="nome" placeholder="Ex: Barbearia do João" maxlength="80">
       </div>
       <div class="row2">
         <div class="field">
-          <label>CIDADE</label>
+          <label>Cidade</label>
           <input type="text" id="cidade" placeholder="Ex: São Paulo, SP" maxlength="80">
         </div>
         <div class="field">
-          <label>WHATSAPP</label>
+          <label>WhatsApp</label>
           <input type="text" id="whatsapp" placeholder="(81) 99999-0000" maxlength="20">
         </div>
       </div>
       <div class="field">
-        <label>SOBRE A BARBEARIA</label>
-        <textarea id="sobre" placeholder="Conte um pouco sobre o estilo, diferenciais…"></textarea>
+        <label>Sobre a Barbearia</label>
+        <textarea id="sobre" placeholder="Conte um pouco sobre o estilo, diferenciais, ambiente…"></textarea>
       </div>
       <div class="field">
-        <label>COR PRINCIPAL</label>
+        <label>Cor Principal</label>
         <div class="color-picker-wrap">
           <input type="color" id="corPicker" value="#c8a96e">
           <input type="text" id="corHex" value="#c8a96e" placeholder="#c8a96e" maxlength="7">
@@ -536,24 +714,26 @@ body::before {
     </div>
   </div>
 
-  <!-- PASSO 2: Login -->
+  <!-- ── PASSO 2: Acesso ao Painel ── -->
   <div class="step-panel" id="step-2">
     <div class="card">
       <div class="card-title"><span class="icon">🔐</span> Acesso ao Painel</div>
-      <div class="card-sub">Crie seu login para gerenciar agendamentos.</div>
+      <div class="card-sub">Crie seu login para gerenciar agendamentos e configurações.</div>
 
       <div class="field">
-        <label>USUÁRIO *</label>
-        <input type="text" id="username" placeholder="joaobarbearia" maxlength="50" oninput="checkUsername()">
+        <label>Usuário *</label>
+        <input type="text" id="username" placeholder="joaobarbearia" maxlength="50" autocomplete="username" oninput="checkUsername()">
         <div class="hint" id="usernameHint">Mínimo 3 caracteres, sem espaços.</div>
       </div>
-      <div class="field">
-        <label>SENHA *</label>
-        <input type="password" id="password" placeholder="Mínimo 6 caracteres" maxlength="100">
-      </div>
-      <div class="field">
-        <label>CONFIRMAR SENHA *</label>
-        <input type="password" id="passwordConf" placeholder="Repita a senha" maxlength="100">
+      <div class="row2">
+        <div class="field">
+          <label>Senha *</label>
+          <input type="password" id="password" placeholder="Mínimo 6 caracteres" maxlength="100" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Confirmar Senha *</label>
+          <input type="password" id="passwordConf" placeholder="Repita a senha" maxlength="100" autocomplete="new-password">
+        </div>
       </div>
     </div>
     <div class="nav">
@@ -562,14 +742,14 @@ body::before {
     </div>
   </div>
 
-  <!-- PASSO 3: Horários -->
+  <!-- ── PASSO 3: Horários ── -->
   <div class="step-panel" id="step-3">
     <div class="card">
-      <div class="card-title"><span class="icon">🕐</span> Horários</div>
-      <div class="card-sub">Configure quais dias e horários você atende.</div>
+      <div class="card-title"><span class="icon">🕐</span> Horários de Atendimento</div>
+      <div class="card-sub">Configure os dias e horários em que sua barbearia atende.</div>
 
       <div class="field">
-        <label>INTERVALO ENTRE AGENDAMENTOS</label>
+        <label>Intervalo entre agendamentos</label>
         <select id="intervalo">
           <option value="15">15 minutos</option>
           <option value="20">20 minutos</option>
@@ -579,12 +759,12 @@ body::before {
         </select>
       </div>
 
-      <div id="diasGrid" class="dias-grid" style="margin-bottom:4px"></div>
+      <div id="diasGrid" class="dias-grid"></div>
 
       <div class="pausa-row">
-        <span style="color:var(--muted);font-size:12px;white-space:nowrap">☕ Pausa almoço</span>
-        <input type="time" id="pausaInicio" placeholder="--:--" style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%">
-        <input type="time" id="pausaFim" placeholder="--:--" style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%">
+        <span class="pausa-label">☕ Pausa almoço</span>
+        <input type="time" id="pausaInicio" class="dia-input" placeholder="--:--">
+        <input type="time" id="pausaFim" class="dia-input" placeholder="--:--">
       </div>
     </div>
     <div class="nav">
@@ -593,13 +773,32 @@ body::before {
     </div>
   </div>
 
-  <!-- PASSO 4: Serviços -->
+  <!-- ── PASSO 4: Serviços ── -->
   <div class="step-panel" id="step-4">
     <div class="card">
       <div class="card-title"><span class="icon">✂️</span> Serviços</div>
-      <div class="card-sub">Adicione os serviços que você oferece (pode editar depois).</div>
+      <div class="card-sub">Configure os dois tipos de serviços do seu sistema.</div>
+
+      <!-- Serviços de Agendamento -->
+      <div class="ctx-tag agenda">📅 Página de Agendamento</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+        O cliente escolhe um destes serviços ao marcar o horário. Ex: Corte, Barba, Corte + Barba.
+      </p>
       <div id="servicosList"></div>
-      <button class="add-btn" onclick="addServico()">+ Adicionar serviço</button>
+      <button class="add-btn" onclick="addServico()">+ Adicionar serviço de agendamento</button>
+
+      <!-- Divisor -->
+      <div class="section-divider">
+        <span style="color:var(--muted)">Também</span>
+      </div>
+
+      <!-- Serviços Destaque / Vitrine -->
+      <div class="ctx-tag vitrine">🖼️ Vitrine — Página Inicial</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+        Aparecem como cards na apresentação do seu site. Podem ter descrição e imagem. Independente dos serviços de agendamento.
+      </p>
+      <div id="destaquesList"></div>
+      <button class="add-btn" onclick="addDestaque()">+ Adicionar destaque da vitrine</button>
     </div>
     <div class="nav">
       <button class="btn btn-back" onclick="goTo(3)">← Voltar</button>
@@ -607,7 +806,7 @@ body::before {
     </div>
   </div>
 
-  <!-- PASSO 5: Profissionais -->
+  <!-- ── PASSO 5: Profissionais ── -->
   <div class="step-panel" id="step-5">
     <div class="card">
       <div class="card-title"><span class="icon">💈</span> Profissionais</div>
@@ -621,7 +820,7 @@ body::before {
     </div>
   </div>
 
-  <!-- PASSO 6: Planos -->
+  <!-- ── PASSO 6: Planos ── -->
   <div class="step-panel" id="step-6">
     <div class="card">
       <div class="card-title"><span class="icon">⭐</span> Planos de Assinatura</div>
@@ -637,16 +836,16 @@ body::before {
 
 </div>
 
-<!-- SUCESSO -->
+<!-- SUCCESS -->
 <div class="success-screen" id="successScreen">
-  <span class="success-icon">🎉</span>
+  <div class="success-icon-wrap">🎉</div>
   <h2>Barbearia criada!</h2>
   <p>Seu sistema está pronto. Compartilhe o link abaixo com seus clientes:</p>
   <div class="link-box">
     <a href="#" id="linkAgendamento" target="_blank"></a>
     <button class="copy-btn" onclick="copiarLink()">Copiar</button>
   </div>
-  <p style="font-size:13px;color:var(--muted)">Você tem 30 dias gratuitos para testar tudo.</p>
+  <div class="trial-badge">✓ 7 dias gratuitos para testar tudo</div>
   <br>
   <a href="#" id="linkPainel" class="btn-painel">Abrir meu painel →</a>
 </div>
@@ -654,48 +853,51 @@ body::before {
 <!-- LOADING -->
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
-  <span style="color:var(--muted);font-size:14px">Criando sua barbearia…</span>
+  <span class="loading-text">Criando sua barbearia…</span>
 </div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── CONFIG ────────────────────────────────────────────────
-const API_BASE = "https://vtrip.com.br";
-const TOTAL_STEPS = 6;
-const LABELS = ["Barbearia","Acesso","Horários","Serviços","Equipe","Planos"];
-const DIAS_NOMES = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+// ── CONFIG ────────────────────────────────────────────
+const API_BASE     = "https://vtrip.com.br";
+const TOTAL_STEPS  = 6;
+const LABELS       = ["Barbearia","Acesso","Horários","Serviços","Equipe","Planos"];
+const DIAS_NOMES   = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+const DIAS_CURTOS  = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
-let currentStep = 1;
-let usernameOk = false;
+let currentStep   = 1;
+let usernameOk    = false;
 let usernameTimer = null;
-let slugCriado = "";
+let slugCriado    = "";
 
-// ─── PROGRESS ──────────────────────────────────────────────
+// ── PROGRESS ──────────────────────────────────────────
 function renderProgress() {
-  const track = document.getElementById("stepsTrack");
+  const track  = document.getElementById("stepsTrack");
   const labels = document.getElementById("stepsLabels");
-  track.innerHTML = "";
-  labels.innerHTML = "";
+  track.innerHTML = labels.innerHTML = "";
+
   for (let i = 1; i <= TOTAL_STEPS; i++) {
     const dot = document.createElement("div");
     dot.className = "step-dot" + (i < currentStep ? " done" : i === currentStep ? " active" : "");
     dot.textContent = i < currentStep ? "✓" : i;
     track.appendChild(dot);
+
     if (i < TOTAL_STEPS) {
       const line = document.createElement("div");
       line.className = "step-line" + (i < currentStep ? " done" : "");
       track.appendChild(line);
     }
+
     const lbl = document.createElement("div");
     lbl.className = "step-label" + (i === currentStep ? " active" : "");
-    lbl.textContent = LABELS[i-1];
+    lbl.textContent = LABELS[i - 1];
     labels.appendChild(lbl);
   }
 }
 
-// ─── NAVEGAÇÃO ─────────────────────────────────────────────
+// ── NAVEGAÇÃO ─────────────────────────────────────────
 function goTo(n) {
   document.getElementById(`step-${currentStep}`).classList.remove("active");
   currentStep = n;
@@ -709,35 +911,37 @@ function goNext(from) {
   goTo(from + 1);
 }
 
-// ─── VALIDAÇÕES ────────────────────────────────────────────
-function toast(msg) {
+// ── TOAST ─────────────────────────────────────────────
+function toast(msg, tipo = "erro") {
   const t = document.getElementById("toast");
   t.textContent = msg;
-  t.classList.add("show");
+  t.className = "toast" + (tipo === "ok" ? " ok" : "") + " show";
   setTimeout(() => t.classList.remove("show"), 3500);
 }
 
+// ── VALIDAÇÕES ────────────────────────────────────────
 function validar(step) {
   if (step === 1) {
-    const nome = document.getElementById("nome").value.trim();
-    if (nome.length < 2) { toast("Digite o nome da barbearia."); return false; }
+    if (document.getElementById("nome").value.trim().length < 2) {
+      toast("Digite o nome da barbearia."); return false;
+    }
   }
   if (step === 2) {
     const u = document.getElementById("username").value.trim();
     const p = document.getElementById("password").value;
     const c = document.getElementById("passwordConf").value;
-    if (u.length < 3) { toast("Usuário deve ter ao menos 3 caracteres."); return false; }
-    if (/\s/.test(u)) { toast("Usuário não pode ter espaços."); return false; }
-    if (!usernameOk) { toast("Usuário indisponível. Escolha outro."); return false; }
-    if (p.length < 6) { toast("Senha deve ter ao menos 6 caracteres."); return false; }
-    if (p !== c) { toast("As senhas não coincidem."); return false; }
+    if (u.length < 3)   { toast("Usuário deve ter ao menos 3 caracteres."); return false; }
+    if (/\s/.test(u))   { toast("Usuário não pode ter espaços."); return false; }
+    if (!usernameOk)    { toast("Usuário indisponível. Escolha outro."); return false; }
+    if (p.length < 6)   { toast("Senha deve ter ao menos 6 caracteres."); return false; }
+    if (p !== c)        { toast("As senhas não coincidem."); return false; }
   }
   return true;
 }
 
-// ─── USERNAME CHECK ────────────────────────────────────────
+// ── USERNAME CHECK ────────────────────────────────────
 function checkUsername() {
-  const u = document.getElementById("username").value.trim();
+  const u    = document.getElementById("username").value.trim();
   const hint = document.getElementById("usernameHint");
   clearTimeout(usernameTimer);
   usernameOk = false;
@@ -752,6 +956,7 @@ function checkUsername() {
     return;
   }
   hint.textContent = "Verificando…";
+  hint.className = "hint";
   usernameTimer = setTimeout(async () => {
     try {
       const r = await fetch(`${API_BASE}/cadastro/check-username?u=${encodeURIComponent(u)}`);
@@ -768,24 +973,23 @@ function checkUsername() {
     } catch {
       hint.className = "hint";
       hint.textContent = "Não foi possível verificar agora.";
-      usernameOk = true; // permite tentar mesmo assim
+      usernameOk = true;
     }
   }, 600);
 }
 
-// ─── COR ───────────────────────────────────────────────────
+// ── COR ───────────────────────────────────────────────
 document.getElementById("corPicker").addEventListener("input", e => {
   document.getElementById("corHex").value = e.target.value;
 });
 document.getElementById("corHex").addEventListener("input", e => {
-  const v = e.target.value;
-  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-    document.getElementById("corPicker").value = v;
-  }
+  if (/^#[0-9a-fA-F]{6}$/.test(e.target.value))
+    document.getElementById("corPicker").value = e.target.value;
 });
 
-// ─── HORÁRIOS ──────────────────────────────────────────────
+// ── HORÁRIOS ──────────────────────────────────────────
 const diasState = {};
+
 function renderDias() {
   const grid = document.getElementById("diasGrid");
   grid.innerHTML = "";
@@ -795,133 +999,156 @@ function renderDias() {
     }
     const st = diasState[d];
 
+    const row = document.createElement("div");
+    row.className = "dia-row" + (st.aberto ? " open" : "");
+
     // Nome
     const nome = document.createElement("div");
     nome.className = "dia-nome";
-    nome.textContent = DIAS_NOMES[d];
-    grid.appendChild(nome);
+    nome.textContent = DIAS_CURTOS[d];
+    row.appendChild(nome);
 
     // Toggle
-    const toggleWrap = document.createElement("div");
-    toggleWrap.className = "toggle-btn";
+    const togWrap = document.createElement("div");
+    togWrap.className = "toggle-btn";
     const tog = document.createElement("div");
     tog.className = "toggle" + (st.aberto ? " on" : "");
-    const togLabel = document.createElement("span");
-    togLabel.style.fontSize = "12px";
-    togLabel.style.color = st.aberto ? "var(--gold)" : "var(--muted)";
-    togLabel.textContent = st.aberto ? "Aberto" : "Fechado";
-    toggleWrap.appendChild(tog);
-    toggleWrap.appendChild(togLabel);
-    toggleWrap.onclick = () => {
+    const togLbl = document.createElement("span");
+    togLbl.className = "toggle-label";
+    togLbl.textContent = st.aberto ? "Aberto" : "Fechado";
+    togWrap.appendChild(tog);
+    togWrap.appendChild(togLbl);
+    togWrap.onclick = () => {
       st.aberto = !st.aberto;
       renderDias();
     };
-    grid.appendChild(toggleWrap);
+    row.appendChild(togWrap);
 
     // Hora início
     const inpI = document.createElement("input");
-    inpI.type = "time";
-    inpI.value = st.hora_inicio;
-    inpI.disabled = !st.aberto;
+    inpI.type = "time"; inpI.className = "dia-input";
+    inpI.value = st.hora_inicio; inpI.disabled = !st.aberto;
     inpI.oninput = e => st.hora_inicio = e.target.value;
-    grid.appendChild(inpI);
+    row.appendChild(inpI);
 
     // Hora fim
     const inpF = document.createElement("input");
-    inpF.type = "time";
-    inpF.value = st.hora_fim;
-    inpF.disabled = !st.aberto;
+    inpF.type = "time"; inpF.className = "dia-input";
+    inpF.value = st.hora_fim; inpF.disabled = !st.aberto;
     inpF.oninput = e => st.hora_fim = e.target.value;
-    grid.appendChild(inpF);
+    row.appendChild(inpF);
+
+    grid.appendChild(row);
   }
 }
 renderDias();
 
-// ─── SERVIÇOS ──────────────────────────────────────────────
+// ── SERVIÇOS DE AGENDAMENTO ───────────────────────────
 let servicoId = 0;
-function addServico(nome="", preco="") {
+function addServico(nome = "", preco = "") {
   const id = ++servicoId;
-  const container = document.getElementById("servicosList");
   const div = document.createElement("div");
   div.className = "list-item";
   div.id = `srv-${id}`;
   div.innerHTML = `
-    <button class="remove-btn" onclick="document.getElementById('srv-${id}').remove()">×</button>
+    <button class="remove-btn" onclick="document.getElementById('srv-${id}').remove()" title="Remover">×</button>
     <div class="row2">
       <div class="field" style="margin:0">
-        <label>SERVIÇO</label>
+        <label>Serviço</label>
         <input type="text" class="srv-nome" placeholder="Ex: Corte masculino" value="${nome}" maxlength="80">
       </div>
       <div class="field" style="margin:0">
-        <label>PREÇO (R$)</label>
+        <label>Preço (R$)</label>
         <input type="number" class="srv-preco" placeholder="35.00" value="${preco}" min="0" step="0.01">
       </div>
     </div>`;
-  container.appendChild(div);
+  document.getElementById("servicosList").appendChild(div);
 }
-// pré-popular
 addServico("Corte masculino", "35");
 addServico("Barba", "25");
 
-// ─── PROFISSIONAIS ─────────────────────────────────────────
+// ── SERVIÇOS DESTAQUE / VITRINE ───────────────────────
+let destaqueId = 0;
+function addDestaque(nome = "", desc = "", preco = "") {
+  const id = ++destaqueId;
+  const div = document.createElement("div");
+  div.className = "list-item";
+  div.id = `dest-${id}`;
+  div.innerHTML = `
+    <button class="remove-btn" onclick="document.getElementById('dest-${id}').remove()" title="Remover">×</button>
+    <div class="row2">
+      <div class="field" style="margin:0">
+        <label>Nome</label>
+        <input type="text" class="dest-nome" placeholder="Ex: Corte + Barba" value="${nome}" maxlength="80">
+      </div>
+      <div class="field" style="margin:0">
+        <label>Preço (R$)</label>
+        <input type="number" class="dest-preco" placeholder="55.00" value="${preco}" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px;margin-bottom:0">
+      <label>Descrição curta (opcional)</label>
+      <input type="text" class="dest-desc" placeholder="Ex: Degradê + acabamento na navalha" value="${desc}" maxlength="120">
+    </div>`;
+  document.getElementById("destaquesList").appendChild(div);
+}
+
+// ── PROFISSIONAIS ─────────────────────────────────────
 let profId = 0;
-function addProf(nome="", esp="") {
+function addProf(nome = "", esp = "") {
   const id = ++profId;
-  const container = document.getElementById("profsList");
   const div = document.createElement("div");
   div.className = "list-item";
   div.id = `prof-${id}`;
   div.innerHTML = `
-    <button class="remove-btn" onclick="document.getElementById('prof-${id}').remove()">×</button>
+    <button class="remove-btn" onclick="document.getElementById('prof-${id}').remove()" title="Remover">×</button>
     <div class="row2">
       <div class="field" style="margin:0">
-        <label>NOME</label>
+        <label>Nome</label>
         <input type="text" class="prof-nome" placeholder="Ex: João" value="${nome}" maxlength="80">
       </div>
       <div class="field" style="margin:0">
-        <label>ESPECIALIDADE</label>
+        <label>Especialidade</label>
         <input type="text" class="prof-esp" placeholder="Ex: Barbeiro, Degradê" value="${esp}" maxlength="80">
       </div>
     </div>`;
-  container.appendChild(div);
+  document.getElementById("profsList").appendChild(div);
 }
 
-// ─── PLANOS ────────────────────────────────────────────────
+// ── PLANOS ────────────────────────────────────────────
 let planoId = 0;
 function addPlano() {
   const id = ++planoId;
-  const container = document.getElementById("planosList");
   const div = document.createElement("div");
   div.className = "list-item";
   div.id = `plano-${id}`;
   div.innerHTML = `
-    <button class="remove-btn" onclick="document.getElementById('plano-${id}').remove()">×</button>
+    <button class="remove-btn" onclick="document.getElementById('plano-${id}').remove()" title="Remover">×</button>
     <div class="row2">
       <div class="field" style="margin:0">
-        <label>NOME DO PLANO</label>
+        <label>Nome do Plano</label>
         <input type="text" class="plano-nome" placeholder="Ex: Plano Mensal" maxlength="80">
       </div>
       <div class="field" style="margin:0">
-        <label>VALOR (R$/mês)</label>
+        <label>Valor (R$/mês)</label>
         <input type="number" class="plano-valor" placeholder="99.90" min="0" step="0.01">
       </div>
     </div>
     <div class="row2" style="margin-top:10px">
       <div class="field" style="margin:0">
-        <label>CORTES NO MÊS</label>
+        <label>Cortes no mês</label>
         <input type="number" class="plano-cortes" placeholder="4" min="1">
       </div>
       <div class="field" style="margin:0">
-        <label>DESCRIÇÃO</label>
+        <label>Descrição</label>
         <input type="text" class="plano-desc" placeholder="Ex: 4 cortes + barba grátis" maxlength="120">
       </div>
     </div>`;
-  container.appendChild(div);
+  document.getElementById("planosList").appendChild(div);
 }
 
-// ─── COLETAR DADOS ─────────────────────────────────────────
+// ── COLETAR DADOS ─────────────────────────────────────
 function coletarDados() {
-  // Barbearia
   const barbearia = {
     nome:         document.getElementById("nome").value.trim(),
     cidade:       document.getElementById("cidade").value.trim(),
@@ -941,14 +1168,23 @@ function coletarDados() {
       : { aberto: false };
   }
   horarios.pausa_inicio = document.getElementById("pausaInicio").value || null;
-  horarios.pausa_fim    = document.getElementById("pausaFim").value || null;
+  horarios.pausa_fim    = document.getElementById("pausaFim").value    || null;
 
-  // Serviços
+  // Serviços de agendamento (tabela: servicos)
   const servicos = [];
   document.querySelectorAll(".list-item[id^='srv-']").forEach(el => {
     const n = el.querySelector(".srv-nome").value.trim();
     const p = el.querySelector(".srv-preco").value;
     if (n) servicos.push({ nome: n, preco: Number(p) || 0 });
+  });
+
+  // Serviços destaque — vitrine (tabela: servicos_destaque)
+  const servicosDestaque = [];
+  document.querySelectorAll(".list-item[id^='dest-']").forEach(el => {
+    const n = el.querySelector(".dest-nome").value.trim();
+    const p = el.querySelector(".dest-preco").value;
+    const d = el.querySelector(".dest-desc").value.trim();
+    if (n) servicosDestaque.push({ nome: n, preco: Number(p) || 0, descricao: d });
   });
 
   // Profissionais
@@ -962,22 +1198,20 @@ function coletarDados() {
   // Planos
   const planos = [];
   document.querySelectorAll(".list-item[id^='plano-']").forEach(el => {
-    const n  = el.querySelector(".plano-nome").value.trim();
-    const v  = el.querySelector(".plano-valor").value;
-    const c  = el.querySelector(".plano-cortes").value;
-    const d  = el.querySelector(".plano-desc").value.trim();
-    if (n && v) planos.push({ nome: n, valor: Number(v), cortes_mes: Number(c)||1, descricao: d });
+    const n = el.querySelector(".plano-nome").value.trim();
+    const v = el.querySelector(".plano-valor").value;
+    const c = el.querySelector(".plano-cortes").value;
+    const d = el.querySelector(".plano-desc").value.trim();
+    if (n && v) planos.push({ nome: n, valor: Number(v), cortes_mes: Number(c) || 1, descricao: d });
   });
 
-  return { barbearia, horarios, servicos, profissionais, planos };
+  return { barbearia, horarios, servicos, servicosDestaque, profissionais, planos };
 }
 
-// ─── ENVIO ─────────────────────────────────────────────────
+// ── ENVIO ─────────────────────────────────────────────
 async function enviar() {
   const dados = coletarDados();
-
   document.getElementById("loading").classList.add("show");
-
   try {
     const r = await fetch(`${API_BASE}/cadastro`, {
       method: "POST",
@@ -985,23 +1219,17 @@ async function enviar() {
       body: JSON.stringify(dados)
     });
     const d = await r.json();
-
-    if (d.erro) {
-      toast(d.erro);
-      return;
-    }
+    if (d.erro) { toast(d.erro); return; }
 
     slugCriado = d.slug;
     const origin = window.location.origin;
 
-    document.getElementById("wizard").style.display = "none";
+    document.getElementById("wizard").style.display      = "none";
     document.getElementById("progressWrap").style.display = "none";
 
-    const linkAg   = document.getElementById("linkAgendamento");
-    const linkPain = document.getElementById("linkPainel");
-    linkAg.textContent = `${origin}/${slugCriado}`;
-    linkAg.href = `${origin}/${slugCriado}`;
-    linkPain.href = `${origin}/${slugCriado}/admin`;
+    document.getElementById("linkAgendamento").textContent = `${origin}/${slugCriado}`;
+    document.getElementById("linkAgendamento").href        = `${origin}/${slugCriado}`;
+    document.getElementById("linkPainel").href             = `${origin}/${slugCriado}/admin`;
 
     document.getElementById("successScreen").classList.add("show");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1017,11 +1245,11 @@ async function enviar() {
 function copiarLink() {
   const origin = window.location.origin;
   navigator.clipboard.writeText(`${origin}/${slugCriado}`).then(() => {
-    toast("Link copiado! ✓");
+    toast("Link copiado! ✓", "ok");
   });
 }
 
-// ─── INIT ──────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────
 renderProgress();
 </script>
 </body>

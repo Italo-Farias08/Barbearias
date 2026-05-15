@@ -10,7 +10,6 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: "10kb" }));
 
-
 // SEGURANÇA — rate limiting e helmet
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
@@ -72,12 +71,10 @@ async function iniciarWhatsApp() {
         console.log("╚══════════════════════════════════════╝\n");
         qrcode.generate(qr, { small: true });
       }
-
       if (connection === "open") {
         waConectado = true;
         console.log("✅ WhatsApp conectado! Lembretes automáticos ativos.");
       }
-
       if (connection === "close") {
         waConectado = false;
         const codigo = lastDisconnect?.error?.output?.statusCode;
@@ -135,7 +132,7 @@ async function enviarLembrete(ag) {
 // JOB DE LEMBRETES — a cada 60s, dispara ~1h antes
 async function verificarLembretes() {
   try {
-    const agora = new Date();
+    const agora  = new Date();
     const result = await db.query(`
       SELECT a.id, a.nome, a.telefone, a.data, a.horario,
              b.nome AS nome_barbearia
@@ -180,7 +177,7 @@ app.get("/whatsapp-status", (req, res) => {
 
 app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
 
-// HELPERS
+// ── HELPERS ───────────────────────────────────────────────────────────────
 
 function slugValido(slug) {
   return /^[a-z0-9-]+$/.test(slug);
@@ -198,7 +195,6 @@ async function podeUsarSistema(slug) {
   return barb.ativo && hoje <= vencimento;
 }
 
-// ─── HELPER ONBOARDING: gera slug único a partir do nome ──────────────────
 async function gerarSlug(nome) {
   const base = nome
     .toLowerCase()
@@ -217,23 +213,18 @@ async function gerarSlug(nome) {
   }
 }
 
-// MIDDLEWARES
+// ── MIDDLEWARES ───────────────────────────────────────────────────────────
 
 async function resolveBarbearia(req, res, next) {
   const { slug } = req.params;
-
-  if (!slugValido(slug)) {
-    return res.status(400).json({ erro: "Slug inválido" });
-  }
-
+  if (!slugValido(slug)) return res.status(400).json({ erro: "Slug inválido" });
   try {
     const result = await db.query(
       `SELECT id, nome, slug, telefone FROM barbearias WHERE slug = $1`,
       [slug]
     );
-    if (result.rows.length === 0) {
+    if (result.rows.length === 0)
       return res.status(404).json({ erro: "Barbearia não encontrada" });
-    }
     req.barbearia = result.rows[0];
     next();
   } catch (err) {
@@ -244,22 +235,19 @@ async function resolveBarbearia(req, res, next) {
 
 async function verificarAssinatura(req, res, next) {
   const permitido = await podeUsarSistema(req.params.slug);
-  if (!permitido) {
-    return res.status(403).json({ erro: "Assinatura vencida" });
-  }
+  if (!permitido) return res.status(403).json({ erro: "Assinatura vencida" });
   next();
 }
 
 app.use("/api/:slug", resolveBarbearia);
 
-// CONFIG PÚBLICA DA BARBEARIA
+// ── CONFIG PÚBLICA ────────────────────────────────────────────────────────
 
 app.get("/api/:slug/config", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT slug, nome, cidade, horario_func, whatsapp,
-              pix_chave,
-              cor_primaria, logo_url, sobre
+              pix_chave, cor_primaria, logo_url, sobre
        FROM barbearias WHERE slug = $1`,
       [req.params.slug]
     );
@@ -270,48 +258,36 @@ app.get("/api/:slug/config", async (req, res) => {
   }
 });
 
-// LOGIN
+// ── LOGIN ─────────────────────────────────────────────────────────────────
 
 app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   const { username, password } = req.body;
-
-  if (!username || !password || typeof username !== "string" || typeof password !== "string") {
+  if (!username || !password || typeof username !== "string" || typeof password !== "string")
     return res.status(400).json({ erro: "Dados inválidos" });
-  }
-  if (username.length > 50 || password.length > 100) {
+  if (username.length > 50 || password.length > 100)
     return res.status(400).json({ erro: "Dados inválidos" });
-  }
 
   try {
     const result = await db.query(
-      `SELECT id, username, password, slug
-       FROM barbearias
+      `SELECT id, username, password, slug FROM barbearias
        WHERE slug = $1 AND username = $2`,
       [req.params.slug, username.trim()]
     );
-
-    if (result.rows.length === 0) {
+    if (result.rows.length === 0)
       return res.status(401).json({ erro: "Usuário ou senha inválidos" });
-    }
 
     const user = result.rows[0];
-
-    if (password !== user.password) {
+    if (password !== user.password)
       return res.status(401).json({ erro: "Usuário ou senha inválidos" });
-    }
 
-    res.json({
-      token: `token_${user.slug}_${Date.now()}`,
-      slug: user.slug
-    });
-
+    res.json({ token: `token_${user.slug}_${Date.now()}`, slug: user.slug });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro no login" });
   }
 });
 
-// AGENDAR
+// ── AGENDAR ───────────────────────────────────────────────────────────────
 
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
@@ -320,9 +296,8 @@ function validarAgendamento({ nome, data, horario, valor }) {
 
   const [ano, mes, dia] = data.split("-").map(Number);
   const [h, m]          = horario.split(":").map(Number);
-
-  const agendamentoUTC = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
-  const agoraUTC = Date.now() - 2 * 60 * 1000;
+  const agendamentoUTC  = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
+  const agoraUTC        = Date.now() - 2 * 60 * 1000;
 
   if (agendamentoUTC <= agoraUTC) return "Não é possível agendar em horário passado";
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
@@ -331,7 +306,6 @@ function validarAgendamento({ nome, data, horario, valor }) {
 
 app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   const { nome, telefone, data, horario, valor, profissional_id } = req.body;
-
   const erro = validarAgendamento({ nome, data, horario, valor });
   if (erro) return res.status(400).json({ erro });
 
@@ -340,64 +314,47 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   const profId       = profissional_id ? Number(profissional_id) : null;
 
   try {
-    // Verifica se o horário está na pausa de almoço
     const horariosCfg = await db.query(
       `SELECT pausa_inicio, pausa_fim FROM horarios_barbearia WHERE barbearia_id = $1`,
       [barbearia_id]
     );
     if (horariosCfg.rows.length > 0) {
       const { pausa_inicio, pausa_fim } = horariosCfg.rows[0];
-      if (pausa_inicio && pausa_fim && horarioLimpo >= pausa_inicio && horarioLimpo < pausa_fim) {
+      if (pausa_inicio && pausa_fim && horarioLimpo >= pausa_inicio && horarioLimpo < pausa_fim)
         return res.status(400).json({ erro: `Horário indisponível — pausa das ${pausa_inicio} às ${pausa_fim}.` });
-      }
     }
 
     if (profId) {
-      // Verifica disponibilidade geral do profissional
       const profCheck = await db.query(
         `SELECT disponivel FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
         [profId, barbearia_id]
       );
-      if (profCheck.rows.length > 0 && profCheck.rows[0].disponivel === false) {
+      if (profCheck.rows.length > 0 && profCheck.rows[0].disponivel === false)
         return res.json({ erro: "Este profissional não está aceitando agendamentos no momento." });
-      }
 
-      // Verifica se a data cai em alguma pausa cadastrada
       const pausaCheck = await db.query(
         `SELECT id FROM profissional_pausas
-         WHERE profissional_id = $1
-           AND barbearia_id    = $2
-           AND $3 BETWEEN data_inicio AND data_fim`,
+         WHERE profissional_id = $1 AND barbearia_id = $2 AND $3 BETWEEN data_inicio AND data_fim`,
         [profId, barbearia_id, data]
       );
-      if (pausaCheck.rows.length > 0) {
-        return res.status(400).json({
-          erro: "Este profissional está de folga nesta data. Escolha outro dia ou outro profissional."
-        });
-      }
+      if (pausaCheck.rows.length > 0)
+        return res.status(400).json({ erro: "Este profissional está de folga nesta data. Escolha outro dia ou outro profissional." });
     }
 
     let queryConflito = `
       SELECT id FROM agendamentos
-      WHERE barbearia_id = $1 AND data = $2 AND horario = $3 AND status = 'pendente'
-    `;
+      WHERE barbearia_id = $1 AND data = $2 AND horario = $3 AND status = 'pendente'`;
     const paramsConflito = [barbearia_id, data, horarioLimpo];
-
-    if (profId) {
-      queryConflito += ` AND profissional_id = $4`;
-      paramsConflito.push(profId);
-    }
+    if (profId) { queryConflito += ` AND profissional_id = $4`; paramsConflito.push(profId); }
 
     const existe = await db.query(queryConflito, paramsConflito);
     if (existe.rows.length > 0) return res.json({ erro: "Horário já ocupado!" });
 
     await db.query(
-      `INSERT INTO agendamentos
-         (barbearia_id, nome, telefone, data, horario, valor, profissional_id)
+      `INSERT INTO agendamentos (barbearia_id, nome, telefone, data, horario, valor, profissional_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [barbearia_id, nome.trim(), telefone || null, data, horarioLimpo, Number(valor) || 0, profId]
     );
-
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
@@ -405,14 +362,12 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   }
 });
 
-// LISTAR AGENDAMENTOS
+// ── LISTAR AGENDAMENTOS ───────────────────────────────────────────────────
 
 app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT a.*,
-              p.nome     AS profissional_nome,
-              p.foto_url AS profissional_foto
+      `SELECT a.*, p.nome AS profissional_nome, p.foto_url AS profissional_foto
        FROM agendamentos a
        LEFT JOIN profissionais p ON p.id = a.profissional_id
        WHERE a.barbearia_id = $1
@@ -420,41 +375,30 @@ app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch {
-    res.json([]);
-  }
+  } catch { res.json([]); }
 });
 
-// HORÁRIOS OCUPADOS POR DATA
+// ── HORÁRIOS OCUPADOS POR DATA ────────────────────────────────────────────
 
 app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   const { data } = req.params;
   const { profissional_id } = req.query;
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    return res.status(400).json({ erro: "Data inválida" });
-  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return res.status(400).json({ erro: "Data inválida" });
 
   try {
-    let query = `
-      SELECT TRIM(horario) AS horario FROM agendamentos
-      WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'
-    `;
+    let query = `SELECT TRIM(horario) AS horario FROM agendamentos
+                 WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'`;
     const params = [req.barbearia.id, data];
-
     if (profissional_id && !isNaN(Number(profissional_id))) {
       query += ` AND profissional_id = $3`;
       params.push(Number(profissional_id));
     }
-
     const result = await db.query(query, params);
     res.json(result.rows);
-  } catch {
-    res.json([]);
-  }
+  } catch { res.json([]); }
 });
 
-// HORÁRIOS DA BARBEARIA (configuração)
+// ── HORÁRIOS DA BARBEARIA (configuração) ──────────────────────────────────
 
 app.get("/api/:slug/horarios", async (req, res) => {
   try {
@@ -468,44 +412,35 @@ app.get("/api/:slug/horarios", async (req, res) => {
       const config = typeof row.dias_semana === "string"
         ? JSON.parse(row.dias_semana)
         : row.dias_semana;
-
       config.pausa_inicio = row.pausa_inicio || null;
       config.pausa_fim    = row.pausa_fim    || null;
-
       return res.json(config);
     }
 
     const hi   = (row && row.hora_inicio)       ? row.hora_inicio       : "08:00";
     const hf   = (row && row.hora_fim)          ? row.hora_fim          : "21:00";
     const intv = (row && row.intervalo_minutos) ? row.intervalo_minutos : 30;
-
     const fallback = { intervalo_minutos: intv };
     for (let d = 0; d <= 6; d++) {
       fallback[String(d)] = d === 0
         ? { aberto: false }
         : { aberto: true, hora_inicio: hi, hora_fim: hf };
     }
-
     fallback.pausa_inicio = (row && row.pausa_inicio) || null;
     fallback.pausa_fim    = (row && row.pausa_fim)    || null;
-
     res.json(fallback);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro ao buscar horários" });
   }
 });
 
-// SALVAR HORÁRIOS POR DIA DA SEMANA
+// ── SALVAR HORÁRIOS ───────────────────────────────────────────────────────
 
 app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   const { pausa_inicio, pausa_fim, ...diasConfig } = req.body;
-
-  if (!diasConfig || typeof diasConfig !== "object") {
+  if (!diasConfig || typeof diasConfig !== "object")
     return res.status(400).json({ erro: "Config inválida" });
-  }
-
   try {
     await db.query(
       `INSERT INTO horarios_barbearia (barbearia_id, dias_semana, pausa_inicio, pausa_fim)
@@ -521,25 +456,21 @@ app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   }
 });
 
-// CONCLUIR AGENDAMENTO
+// ── CONCLUIR AGENDAMENTO ──────────────────────────────────────────────────
 
 app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
-
   try {
     await db.query(
       `UPDATE agendamentos SET status = 'concluido' WHERE id = $1 AND barbearia_id = $2`,
       [id, req.barbearia.id]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao concluir" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao concluir" }); }
 });
 
-// APAGAR CONCLUÍDOS
+// ── APAGAR CONCLUÍDOS ─────────────────────────────────────────────────────
 
 app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req, res) => {
   try {
@@ -549,48 +480,38 @@ app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req
     );
     console.log(`Concluídos apagados (${req.params.slug}):`, r.rowCount);
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao apagar" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao apagar" }); }
 });
 
-// CANCELAR AGENDAMENTO
+// ── CANCELAR AGENDAMENTO ──────────────────────────────────────────────────
 
 app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
-
   try {
     await db.query(
       `UPDATE agendamentos SET status = 'cancelado' WHERE id = $1 AND barbearia_id = $2`,
       [id, req.barbearia.id]
     );
     res.json({ sucesso: true });
-  } catch {
-    res.json({ erro: "Erro ao cancelar" });
-  }
+  } catch { res.json({ erro: "Erro ao cancelar" }); }
 });
 
-// GASTOS
+// ── GASTOS ────────────────────────────────────────────────────────────────
 
 app.post("/api/:slug/gastos", verificarAssinatura, async (req, res) => {
   const { descricao, valor } = req.body;
-  if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
+  if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0)
     return res.status(400).json({ erro: "Descrição inválida" });
-  }
-  if (isNaN(Number(valor)) || Number(valor) < 0) {
+  if (isNaN(Number(valor)) || Number(valor) < 0)
     return res.status(400).json({ erro: "Valor inválido" });
-  }
   try {
     await db.query(
       `INSERT INTO gastos (barbearia_id, descricao, valor) VALUES ($1, $2, $3)`,
       [req.barbearia.id, descricao.trim(), Number(valor)]
     );
     res.json({ sucesso: true });
-  } catch {
-    res.json({ erro: "Erro ao salvar gasto" });
-  }
+  } catch { res.json({ erro: "Erro ao salvar gasto" }); }
 });
 
 app.get("/api/:slug/gastos", verificarAssinatura, async (req, res) => {
@@ -600,27 +521,19 @@ app.get("/api/:slug/gastos", verificarAssinatura, async (req, res) => {
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch {
-    res.json([]);
-  }
+  } catch { res.json([]); }
 });
 
 app.delete("/api/:slug/gastos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
-
   try {
-    await db.query(
-      `DELETE FROM gastos WHERE id = $1 AND barbearia_id = $2`,
-      [id, req.barbearia.id]
-    );
+    await db.query(`DELETE FROM gastos WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
-  } catch {
-    res.json({ erro: "Erro ao deletar" });
-  }
+  } catch { res.json({ erro: "Erro ao deletar" }); }
 });
 
-// LUCRO REAL
+// ── LUCRO REAL ────────────────────────────────────────────────────────────
 
 app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   try {
@@ -642,7 +555,7 @@ app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   }
 });
 
-// SERVIÇOS
+// ── SERVIÇOS (agendamento) ────────────────────────────────────────────────
 
 app.get("/api/:slug/servicos", async (req, res) => {
   try {
@@ -651,15 +564,11 @@ app.get("/api/:slug/servicos", async (req, res) => {
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+  } catch (err) { console.error(err); res.json([]); }
 });
 
-// PROFISSIONAIS
+// ── PROFISSIONAIS ─────────────────────────────────────────────────────────
 
-// Listar profissionais — inclui pausas ativas/futuras no retorno
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
     const result = await db.query(
@@ -669,9 +578,7 @@ app.get("/api/:slug/profissionais", async (req, res) => {
        ORDER BY ordem`,
       [req.barbearia.id]
     );
-
     const profissionais = result.rows;
-
     if (profissionais.length === 0) return res.json([]);
 
     const hoje = new Date().toISOString().split("T")[0];
@@ -680,9 +587,7 @@ app.get("/api/:slug/profissionais", async (req, res) => {
     const pausasResult = await db.query(
       `SELECT id, profissional_id, data_inicio, data_fim
        FROM profissional_pausas
-       WHERE barbearia_id = $1
-         AND profissional_id = ANY($2::int[])
-         AND data_fim >= $3
+       WHERE barbearia_id = $1 AND profissional_id = ANY($2::int[]) AND data_fim >= $3
        ORDER BY data_inicio`,
       [req.barbearia.id, ids, hoje]
     );
@@ -693,255 +598,152 @@ app.get("/api/:slug/profissionais", async (req, res) => {
       pausasPorProf[p.profissional_id].push(p);
     });
 
-    const retorno = profissionais.map(p => ({
-      ...p,
-      pausas: pausasPorProf[p.id] || []
-    }));
-
-    res.json(retorno);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+    res.json(profissionais.map(p => ({ ...p, pausas: pausasPorProf[p.id] || [] })));
+  } catch (err) { console.error(err); res.json([]); }
 });
 
-// DISPONIBILIDADE GERAL DO PROFISSIONAL (liga/desliga total)
+// ── DISPONIBILIDADE DO PROFISSIONAL ──────────────────────────────────────
 
 app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { disponivel } = req.body;
-  if (typeof disponivel !== "boolean")
-    return res.status(400).json({ erro: "Campo 'disponivel' deve ser boolean" });
-
+  if (typeof disponivel !== "boolean") return res.status(400).json({ erro: "Campo 'disponivel' deve ser boolean" });
   try {
     const result = await db.query(
-      `UPDATE profissionais
-       SET disponivel = $1
+      `UPDATE profissionais SET disponivel = $1
        WHERE id = $2 AND barbearia_id = $3
        RETURNING id, nome, disponivel`,
       [disponivel, id, req.barbearia.id]
     );
-
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
-
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     res.json({ sucesso: true, profissional: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao atualizar disponibilidade" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao atualizar disponibilidade" }); }
 });
 
-// PAUSAS POR DATA DO PROFISSIONAL
+// ── PAUSAS DO PROFISSIONAL ────────────────────────────────────────────────
 
-// GET — lista todas as pausas ativas/futuras de um profissional
 app.get("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.id);
-  if (!Number.isInteger(profId) || profId <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    const hoje = new Date().toISOString().split("T")[0];
-
+    const hoje   = new Date().toISOString().split("T")[0];
     const result = await db.query(
       `SELECT id, profissional_id, data_inicio, data_fim, criado_em
        FROM profissional_pausas
-       WHERE profissional_id = $1
-         AND barbearia_id    = $2
-         AND data_fim        >= $3
+       WHERE profissional_id = $1 AND barbearia_id = $2 AND data_fim >= $3
        ORDER BY data_inicio`,
       [profId, req.barbearia.id, hoje]
     );
-
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar pausas" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao buscar pausas" }); }
 });
 
-// POST — cria uma nova pausa por data
 app.post("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.id);
-  if (!Number.isInteger(profId) || profId <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { data_inicio, data_fim } = req.body;
-
-  if (!data_inicio || !/^\d{4}-\d{2}-\d{2}$/.test(data_inicio))
-    return res.status(400).json({ erro: "data_inicio inválida" });
-  if (!data_fim || !/^\d{4}-\d{2}-\d{2}$/.test(data_fim))
-    return res.status(400).json({ erro: "data_fim inválida" });
-  if (data_fim < data_inicio)
-    return res.status(400).json({ erro: "data_fim deve ser igual ou posterior a data_inicio" });
-
+  if (!data_inicio || !/^\d{4}-\d{2}-\d{2}$/.test(data_inicio)) return res.status(400).json({ erro: "data_inicio inválida" });
+  if (!data_fim    || !/^\d{4}-\d{2}-\d{2}$/.test(data_fim))    return res.status(400).json({ erro: "data_fim inválida" });
+  if (data_fim < data_inicio) return res.status(400).json({ erro: "data_fim deve ser igual ou posterior a data_inicio" });
   try {
-    const profCheck = await db.query(
-      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
-      [profId, req.barbearia.id]
-    );
-    if (profCheck.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
-
+    const profCheck = await db.query(`SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`, [profId, req.barbearia.id]);
+    if (profCheck.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     const sobreposicao = await db.query(
       `SELECT id FROM profissional_pausas
-       WHERE profissional_id = $1
-         AND barbearia_id    = $2
-         AND data_inicio     <= $4
-         AND data_fim        >= $3`,
+       WHERE profissional_id = $1 AND barbearia_id = $2 AND data_inicio <= $4 AND data_fim >= $3`,
       [profId, req.barbearia.id, data_inicio, data_fim]
     );
-    if (sobreposicao.rows.length > 0)
-      return res.status(409).json({ erro: "Já existe uma pausa cadastrada neste período." });
-
+    if (sobreposicao.rows.length > 0) return res.status(409).json({ erro: "Já existe uma pausa cadastrada neste período." });
     const insert = await db.query(
-      `INSERT INTO profissional_pausas
-         (profissional_id, barbearia_id, data_inicio, data_fim)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, profissional_id, data_inicio, data_fim, criado_em`,
+      `INSERT INTO profissional_pausas (profissional_id, barbearia_id, data_inicio, data_fim)
+       VALUES ($1, $2, $3, $4) RETURNING id, profissional_id, data_inicio, data_fim, criado_em`,
       [profId, req.barbearia.id, data_inicio, data_fim]
     );
-
     res.status(201).json({ sucesso: true, pausa: insert.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao salvar pausa" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar pausa" }); }
 });
 
-// DELETE — remove uma pausa específica
 app.delete("/api/:slug/profissionais/:profId/pausas/:pausaId", verificarAssinatura, async (req, res) => {
   const profId  = Number(req.params.profId);
   const pausaId = Number(req.params.pausaId);
-
   if (!Number.isInteger(profId)  || profId  <= 0) return res.status(400).json({ erro: "profId inválido" });
   if (!Number.isInteger(pausaId) || pausaId <= 0) return res.status(400).json({ erro: "pausaId inválido" });
-
   try {
     const result = await db.query(
-      `DELETE FROM profissional_pausas
-       WHERE id              = $1
-         AND profissional_id = $2
-         AND barbearia_id    = $3
-       RETURNING id`,
+      `DELETE FROM profissional_pausas WHERE id = $1 AND profissional_id = $2 AND barbearia_id = $3 RETURNING id`,
       [pausaId, profId, req.barbearia.id]
     );
-
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Pausa não encontrada" });
-
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Pausa não encontrada" });
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao remover pausa" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao remover pausa" }); }
 });
 
-// PLANOS
+// ── PLANOS ────────────────────────────────────────────────────────────────
 
 app.get("/api/:slug/planos", async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, nome, descricao, cortes_mes, valor
-       FROM planos
-       WHERE barbearia_id = $1 AND ativo = true
-       ORDER BY ordem, valor`,
+      `SELECT id, nome, descricao, cortes_mes, valor FROM planos
+       WHERE barbearia_id = $1 AND ativo = true ORDER BY ordem, valor`,
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+  } catch (err) { console.error(err); res.json([]); }
 });
 
-// ASSINAR
+// ── ASSINAR ───────────────────────────────────────────────────────────────
 
 app.post("/api/:slug/assinar", async (req, res) => {
   const { nome, telefone, plano_id } = req.body;
-
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
     return res.status(400).json({ erro: "Nome inválido" });
   if (!plano_id || isNaN(Number(plano_id)))
     return res.status(400).json({ erro: "Plano inválido" });
-
   try {
     const plano = await db.query(
       `SELECT id FROM planos WHERE id = $1 AND barbearia_id = $2 AND ativo = true`,
       [Number(plano_id), req.barbearia.id]
     );
-    if (plano.rows.length === 0)
-      return res.status(400).json({ erro: "Plano não encontrado" });
-
+    if (plano.rows.length === 0) return res.status(400).json({ erro: "Plano não encontrado" });
     await db.query(
-      `INSERT INTO assinantes (barbearia_id, plano_id, nome, telefone, status)
-       VALUES ($1, $2, $3, $4, 'aguardando')`,
+      `INSERT INTO assinantes (barbearia_id, plano_id, nome, telefone, status) VALUES ($1, $2, $3, $4, 'aguardando')`,
       [req.barbearia.id, Number(plano_id), nome.trim(), telefone || null]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao registrar assinatura" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao registrar assinatura" }); }
 });
 
-// LISTAR ASSINANTES
+// ── LISTAR ASSINANTES ─────────────────────────────────────────────────────
 
 app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT a.*, p.nome AS plano_nome, p.cortes_mes, p.valor AS plano_valor
-       FROM assinantes a
-       JOIN planos p ON p.id = a.plano_id
+       FROM assinantes a JOIN planos p ON p.id = a.plano_id
        WHERE a.barbearia_id = $1
-       ORDER BY
-         CASE a.status
-           WHEN 'aguardando' THEN 0
-           WHEN 'ativo'      THEN 1
-           WHEN 'vencido'    THEN 2
-           ELSE 3
-         END,
-         a.criado_em DESC`,
+       ORDER BY CASE a.status WHEN 'aguardando' THEN 0 WHEN 'ativo' THEN 1 WHEN 'vencido' THEN 2 ELSE 3 END, a.criado_em DESC`,
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+  } catch (err) { console.error(err); res.json([]); }
 });
-
-// APAGAR ASSINANTES CANCELADOS
 
 app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, res) => {
   try {
-    const r = await db.query(
-      `DELETE FROM assinantes WHERE barbearia_id = $1 AND status = 'cancelado'`,
-      [req.barbearia.id]
-    );
+    const r = await db.query(`DELETE FROM assinantes WHERE barbearia_id = $1 AND status = 'cancelado'`, [req.barbearia.id]);
     res.json({ sucesso: true, apagados: r.rowCount });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao apagar cancelados" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao apagar cancelados" }); }
 });
 
-// AÇÕES DO ASSINANTE
+// ── AÇÕES DO ASSINANTE ────────────────────────────────────────────────────
 
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
   const id   = Number(req.params.id);
   const acao = req.params.acao;
-
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   const acoesValidas = ["confirmar", "usar-corte", "renovar", "cancelar"];
-  if (!acoesValidas.includes(acao))
-    return res.status(400).json({ erro: "Ação inválida" });
-
+  if (!acoesValidas.includes(acao)) return res.status(400).json({ erro: "Ação inválida" });
   try {
     const check = await db.query(
       `SELECT a.id, a.status, a.cortes_usados, p.cortes_mes
@@ -949,144 +751,88 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
        WHERE a.id = $1 AND a.barbearia_id = $2`,
       [id, req.barbearia.id]
     );
-    if (check.rows.length === 0)
-      return res.status(404).json({ erro: "Assinante não encontrado" });
-
+    if (check.rows.length === 0) return res.status(404).json({ erro: "Assinante não encontrado" });
     const ass = check.rows[0];
 
     if (acao === "confirmar") {
       await db.query(
-        `UPDATE assinantes
-         SET status = 'ativo', cortes_usados = 0,
-             data_inicio = NOW(), data_vencimento = NOW() + INTERVAL '30 days'
-         WHERE id = $1`,
+        `UPDATE assinantes SET status = 'ativo', cortes_usados = 0, data_inicio = NOW(), data_vencimento = NOW() + INTERVAL '30 days' WHERE id = $1`,
         [id]
       );
       return res.json({ sucesso: true });
     }
-
     if (acao === "usar-corte") {
       if (ass.status !== "ativo") return res.json({ erro: "Plano não está ativo" });
       if (ass.cortes_usados >= ass.cortes_mes) return res.json({ erro: "Limite de cortes atingido neste mês" });
       await db.query(`UPDATE assinantes SET cortes_usados = cortes_usados + 1 WHERE id = $1`, [id]);
       return res.json({ sucesso: true });
     }
-
     if (acao === "renovar") {
       await db.query(
-        `UPDATE assinantes
-         SET status = 'aguardando', cortes_usados = 0,
-             data_inicio = NULL, data_vencimento = NULL
-         WHERE id = $1`,
+        `UPDATE assinantes SET status = 'aguardando', cortes_usados = 0, data_inicio = NULL, data_vencimento = NULL WHERE id = $1`,
         [id]
       );
       return res.json({ sucesso: true });
     }
-
     if (acao === "cancelar") {
       await db.query(`UPDATE assinantes SET status = 'cancelado' WHERE id = $1`, [id]);
       return res.json({ sucesso: true });
     }
-
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao executar ação" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao executar ação" }); }
 });
 
-// SERVIÇOS DESTAQUE
+// ── SERVIÇOS DESTAQUE (vitrine) ───────────────────────────────────────────
 
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, nome, descricao, preco, imagem
-       FROM servicos_destaque
-       WHERE barbearia_id = $1
-       ORDER BY ordem, id`,
+      `SELECT id, nome, descricao, preco, imagem FROM servicos_destaque
+       WHERE barbearia_id = $1 ORDER BY ordem, id`,
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+  } catch (err) { console.error(err); res.json([]); }
 });
 
 app.post("/api/:slug/servicos-destaque", verificarAssinatura, async (req, res) => {
   const { nome, descricao, preco, ordem, imagem } = req.body;
-
-  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
-    return res.status(400).json({ erro: "Nome inválido" });
-  if (isNaN(Number(preco)) || Number(preco) < 0)
-    return res.status(400).json({ erro: "Preço inválido" });
-
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0) return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(preco)) || Number(preco) < 0) return res.status(400).json({ erro: "Preço inválido" });
   try {
     await db.query(
-      `INSERT INTO servicos_destaque
-       (barbearia_id, nome, descricao, preco, ordem, imagem)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem) VALUES ($1, $2, $3, $4, $5, $6)`,
       [req.barbearia.id, nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao salvar" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao salvar" }); }
 });
 
 app.delete("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    await db.query(
-      `DELETE FROM servicos_destaque WHERE id = $1 AND barbearia_id = $2`,
-      [id, req.barbearia.id]
-    );
+    await db.query(`DELETE FROM servicos_destaque WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao deletar" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao deletar" }); }
 });
 
 app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { nome, descricao, preco, ordem, imagem } = req.body;
-
-  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
-    return res.status(400).json({ erro: "Nome inválido" });
-  if (isNaN(Number(preco)) || Number(preco) < 0)
-    return res.status(400).json({ erro: "Preço inválido" });
-
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0) return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(preco)) || Number(preco) < 0) return res.status(400).json({ erro: "Preço inválido" });
   try {
     await db.query(
-      `UPDATE servicos_destaque
-       SET nome = $1, descricao = $2, preco = $3, ordem = $4, imagem = $5
+      `UPDATE servicos_destaque SET nome = $1, descricao = $2, preco = $3, ordem = $4, imagem = $5
        WHERE id = $6 AND barbearia_id = $7`,
       [nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null, id, req.barbearia.id]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao atualizar" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao atualizar" }); }
 });
 
-app.get("/debug-path", (req, res) => {
-  const path = require('path');
-  const fs = require('fs');
-  const dir = path.join(__dirname, '..', 'projeto');
-  const existe = fs.existsSync(dir);
-  const arquivos = existe ? fs.readdirSync(dir) : [];
-  res.json({ dir, existe, arquivos });
-});
-
-// ROTAS DE COMISSÃO
+// ── COMISSÕES ─────────────────────────────────────────────────────────────
 
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
@@ -1095,70 +841,47 @@ app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => 
               COALESCE(comissao_percentual, 0) AS comissao_percentual,
               COALESCE(comissao_valor_fixo,  0) AS comissao_valor_fixo
        FROM profissionais
-       WHERE barbearia_id = $1 AND ativo = true
-       ORDER BY ordem`,
+       WHERE barbearia_id = $1 AND ativo = true ORDER BY ordem`,
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar configurações de comissão" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao buscar configurações de comissão" }); }
 });
 
 app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.profissional_id);
-  if (!Number.isInteger(profId) || profId <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { percentual, valor_fixo } = req.body;
   const pct = Number(percentual);
   const vfx = Number(valor_fixo);
-
-  if (isNaN(pct) || pct < 0 || pct > 100)
-    return res.status(400).json({ erro: "Percentual inválido (0–100)" });
-  if (isNaN(vfx) || vfx < 0)
-    return res.status(400).json({ erro: "Valor fixo inválido" });
-
+  if (isNaN(pct) || pct < 0 || pct > 100) return res.status(400).json({ erro: "Percentual inválido (0–100)" });
+  if (isNaN(vfx) || vfx < 0) return res.status(400).json({ erro: "Valor fixo inválido" });
   try {
     const result = await db.query(
-      `UPDATE profissionais
-       SET comissao_percentual = $1, comissao_valor_fixo = $2
+      `UPDATE profissionais SET comissao_percentual = $1, comissao_valor_fixo = $2
        WHERE id = $3 AND barbearia_id = $4
        RETURNING id, nome, comissao_percentual, comissao_valor_fixo`,
       [pct, vfx, profId, req.barbearia.id]
     );
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     res.json({ sucesso: true, profissional: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao salvar comissão" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar comissão" }); }
 });
 
 app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) => {
   const { mes, data, data_fim, profissional_id } = req.query;
-
   let dataInicio, dataFim, referenciaAjustes;
 
   if (data_fim && /^\d{4}-\d{2}-\d{2}$/.test(data_fim) && data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    dataInicio = data;
-    dataFim    = data_fim;
-    referenciaAjustes = data.substring(0, 7);
+    dataInicio = data; dataFim = data_fim; referenciaAjustes = data.substring(0, 7);
   } else if (data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    dataInicio = data;
-    dataFim    = data;
-    referenciaAjustes = data.substring(0, 7);
+    dataInicio = data; dataFim = data; referenciaAjustes = data.substring(0, 7);
   } else {
-    const periodo = (mes && /^\d{4}-\d{2}$/.test(mes))
-      ? mes
-      : new Date().toISOString().substring(0, 7);
+    const periodo = (mes && /^\d{4}-\d{2}$/.test(mes)) ? mes : new Date().toISOString().substring(0, 7);
     referenciaAjustes = periodo;
     dataInicio = `${periodo}-01`;
     const [y, m] = periodo.split("-").map(Number);
-    const ultimo = new Date(y, m, 0).getDate();
-    dataFim = `${periodo}-${String(ultimo).padStart(2, "0")}`;
+    dataFim = `${periodo}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
   }
 
   const params = [req.barbearia.id, dataInicio, dataFim];
@@ -1170,22 +893,16 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
 
   try {
     const agResult = await db.query(
-      `SELECT
-         p.id                                    AS profissional_id,
-         p.nome                                  AS profissional_nome,
-         p.foto_url,
-         COALESCE(p.comissao_percentual, 0)      AS percentual,
-         COALESCE(p.comissao_valor_fixo,  0)     AS valor_fixo,
-         COUNT(a.id)                             AS total_cortes,
-         COALESCE(SUM(a.valor), 0)               AS faturamento
+      `SELECT p.id AS profissional_id, p.nome AS profissional_nome, p.foto_url,
+              COALESCE(p.comissao_percentual, 0) AS percentual,
+              COALESCE(p.comissao_valor_fixo,  0) AS valor_fixo,
+              COUNT(a.id) AS total_cortes,
+              COALESCE(SUM(a.valor), 0) AS faturamento
        FROM profissionais p
        LEFT JOIN agendamentos a
-         ON a.profissional_id = p.id
-        AND a.barbearia_id    = $1
-        AND a.status          = 'concluido'
-        AND a.data BETWEEN $2 AND $3
-       WHERE p.barbearia_id = $1 AND p.ativo = true
-       ${filtroProf}
+         ON a.profissional_id = p.id AND a.barbearia_id = $1
+         AND a.status = 'concluido' AND a.data BETWEEN $2 AND $3
+       WHERE p.barbearia_id = $1 AND p.ativo = true ${filtroProf}
        GROUP BY p.id, p.nome, p.foto_url, p.comissao_percentual, p.comissao_valor_fixo
        ORDER BY p.ordem`,
       params
@@ -1197,12 +914,9 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       filtroAjProf = " AND profissional_id = $3";
       ajParams.push(Number(profissional_id));
     }
-
     const ajResult = await db.query(
       `SELECT id, profissional_id, descricao, valor, criado_em
-       FROM comissao_ajustes
-       WHERE barbearia_id = $1 AND referencia_mes = $2
-       ${filtroAjProf}
+       FROM comissao_ajustes WHERE barbearia_id = $1 AND referencia_mes = $2 ${filtroAjProf}
        ORDER BY criado_em DESC`,
       ajParams
     );
@@ -1220,104 +934,65 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
       const valorFixo    = Number(prof.valor_fixo);
       const ajustes      = ajustesPorProf[prof.profissional_id] || [];
       const totalAjustes = ajustes.reduce((s, a) => s + Number(a.valor), 0);
-
       const comissaoBase  = (faturamento * percentual / 100) + (valorFixo * totalCortes);
       const comissaoFinal = comissaoBase + totalAjustes;
-
       return {
         profissional_id:   prof.profissional_id,
         profissional_nome: prof.profissional_nome,
         foto_url:          prof.foto_url,
-        percentual,
-        valor_fixo:        valorFixo,
-        total_cortes:      totalCortes,
-        faturamento,
-        comissao_base:     Number(comissaoBase.toFixed(2)),
-        total_ajustes:     Number(totalAjustes.toFixed(2)),
-        comissao_final:    Number(comissaoFinal.toFixed(2)),
+        percentual, valor_fixo: valorFixo, total_cortes: totalCortes, faturamento,
+        comissao_base:  Number(comissaoBase.toFixed(2)),
+        total_ajustes:  Number(totalAjustes.toFixed(2)),
+        comissao_final: Number(comissaoFinal.toFixed(2)),
         ajustes
       };
     });
 
-    res.json({
-      periodo: { inicio: dataInicio, fim: dataFim, referencia: referenciaAjustes },
-      relatorio
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao gerar relatório" });
-  }
+    res.json({ periodo: { inicio: dataInicio, fim: dataFim, referencia: referenciaAjustes }, relatorio });
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao gerar relatório" }); }
 });
 
 app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) => {
   const { profissional_id, descricao, valor, referencia_mes } = req.body;
-
   const profId = Number(profissional_id);
-  if (!Number.isInteger(profId) || profId <= 0)
-    return res.status(400).json({ erro: "Profissional inválido" });
-  if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0)
-    return res.status(400).json({ erro: "Descrição inválida" });
-  if (isNaN(Number(valor)))
-    return res.status(400).json({ erro: "Valor inválido" });
-  if (!referencia_mes || !/^\d{4}-\d{2}$/.test(referencia_mes))
-    return res.status(400).json({ erro: "Mês de referência inválido (YYYY-MM)" });
-
+  if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "Profissional inválido" });
+  if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) return res.status(400).json({ erro: "Descrição inválida" });
+  if (isNaN(Number(valor))) return res.status(400).json({ erro: "Valor inválido" });
+  if (!referencia_mes || !/^\d{4}-\d{2}$/.test(referencia_mes)) return res.status(400).json({ erro: "Mês de referência inválido (YYYY-MM)" });
   try {
-    const check = await db.query(
-      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
-      [profId, req.barbearia.id]
-    );
-    if (check.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
-
+    const check = await db.query(`SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`, [profId, req.barbearia.id]);
+    if (check.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     await db.query(
-      `INSERT INTO comissao_ajustes
-         (barbearia_id, profissional_id, descricao, valor, referencia_mes)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO comissao_ajustes (barbearia_id, profissional_id, descricao, valor, referencia_mes) VALUES ($1, $2, $3, $4, $5)`,
       [req.barbearia.id, profId, descricao.trim(), Number(valor), referencia_mes]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao salvar ajuste" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar ajuste" }); }
 });
 
 app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    await db.query(
-      `DELETE FROM comissao_ajustes WHERE id = $1 AND barbearia_id = $2`,
-      [id, req.barbearia.id]
-    );
+    await db.query(`DELETE FROM comissao_ajustes WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao deletar ajuste" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao deletar ajuste" }); }
 });
 
-// ─── ONBOARDING PÚBLICO ────────────────────────────────────────────────────
+// ── ONBOARDING PÚBLICO ────────────────────────────────────────────────────
 
-// GET /cadastro/check-username?u=fulano — verifica username em tempo real
 app.get("/cadastro/check-username", async (req, res) => {
   const { u } = req.query;
   if (!u || u.length < 3) return res.json({ disponivel: false });
   try {
     const r = await db.query("SELECT id FROM barbearias WHERE username = $1", [u.trim()]);
     res.json({ disponivel: r.rows.length === 0 });
-  } catch {
-    res.json({ disponivel: false });
-  }
+  } catch { res.json({ disponivel: false }); }
 });
 
-// POST /cadastro — cria barbearia completa (wizard de onboarding)
+// POST /cadastro — cria barbearia completa
 app.post("/cadastro", async (req, res) => {
-  const { barbearia, horarios, servicos, profissionais, planos } = req.body;
+  const { barbearia, horarios, servicos, servicosDestaque, profissionais, planos } = req.body;
 
   if (!barbearia || typeof barbearia.nome !== "string" || barbearia.nome.trim().length < 2)
     return res.status(400).json({ erro: "Nome da barbearia inválido" });
@@ -1335,7 +1010,6 @@ app.post("/cadastro", async (req, res) => {
 
     const slug = await gerarSlug(barbearia.nome.trim());
 
-    // 30 dias de trial automático
     const vencimento = new Date();
     vencimento.setDate(vencimento.getDate() + 30);
 
@@ -1349,12 +1023,12 @@ app.post("/cadastro", async (req, res) => {
       [
         slug,
         barbearia.nome.trim(),
-        barbearia.cidade || "",
-        barbearia.whatsapp || "",
+        barbearia.cidade       || "",
+        barbearia.whatsapp     || "",
         barbearia.username.trim(),
         barbearia.password,
         barbearia.cor_primaria || "#c8a96e",
-        barbearia.sobre || "",
+        barbearia.sobre        || "",
         vencimento
       ]
     );
@@ -1371,10 +1045,21 @@ app.post("/cadastro", async (req, res) => {
       );
     }
 
-    // 3. Salvar serviços destaque
+    // 3. Salvar serviços de agendamento (tabela: servicos)
     if (Array.isArray(servicos)) {
-      for (let i = 0; i < servicos.length; i++) {
-        const s = servicos[i];
+      for (const s of servicos) {
+        if (!s.nome || isNaN(Number(s.preco))) continue;
+        await db.query(
+          `INSERT INTO servicos (barbearia_id, nome, preco) VALUES ($1, $2, $3)`,
+          [barbId, s.nome.trim(), Number(s.preco)]
+        );
+      }
+    }
+
+    // 4. Salvar serviços destaque — vitrine (tabela: servicos_destaque)
+    if (Array.isArray(servicosDestaque)) {
+      for (let i = 0; i < servicosDestaque.length; i++) {
+        const s = servicosDestaque[i];
         if (!s.nome || isNaN(Number(s.preco))) continue;
         await db.query(
           `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem)
@@ -1384,21 +1069,20 @@ app.post("/cadastro", async (req, res) => {
       }
     }
 
-    // 4. Salvar profissionais
+    // 5. Salvar profissionais
     if (Array.isArray(profissionais)) {
       for (let i = 0; i < profissionais.length; i++) {
         const p = profissionais[i];
         if (!p.nome || p.nome.trim().length < 2) continue;
         await db.query(
-          `INSERT INTO profissionais
-             (barbearia_id, nome, especialidade, whatsapp, ativo, disponivel, ordem)
+          `INSERT INTO profissionais (barbearia_id, nome, especialidade, whatsapp, ativo, disponivel, ordem)
            VALUES ($1,$2,$3,$4,true,true,$5)`,
           [barbId, p.nome.trim(), p.especialidade || "", p.whatsapp || "", i]
         );
       }
     }
 
-    // 5. Salvar planos
+    // 6. Salvar planos
     if (Array.isArray(planos)) {
       for (let i = 0; i < planos.length; i++) {
         const pl = planos[i];
@@ -1411,7 +1095,7 @@ app.post("/cadastro", async (req, res) => {
       }
     }
 
-    console.log(`✅ Nova barbearia cadastrada via onboarding: ${barbSlug} (id ${barbId})`);
+    console.log(`✅ Nova barbearia: ${barbSlug} (id ${barbId})`);
 
     res.status(201).json({
       sucesso: true,
@@ -1426,7 +1110,16 @@ app.post("/cadastro", async (req, res) => {
   }
 });
 
-// BANCO + START
+// ── DEBUG ─────────────────────────────────────────────────────────────────
+
+app.get("/debug-path", (req, res) => {
+  const dir    = path.join(__dirname, '..', 'projeto');
+  const existe = fs.existsSync(dir);
+  res.json({ dir, existe, arquivos: existe ? fs.readdirSync(dir) : [] });
+});
+
+// ── BANCO + START ─────────────────────────────────────────────────────────
+
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
