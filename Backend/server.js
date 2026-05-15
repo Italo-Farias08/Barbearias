@@ -10,7 +10,6 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: "10kb" }));
 
-// SEGURANÇA — rate limiting e helmet
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
 
@@ -30,7 +29,43 @@ const limiterLogin = rateLimit({
   message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
 });
 
-app.use(cors());
+// CORS corrigido — aceita Vercel, domínio próprio e localhost
+const ORIGENS_PERMITIDAS = [
+  "https://vtrip.com.br",
+  "http://vtrip.com.br",
+  "https://barbearias-flax.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permite requisições sem origin (ex: Postman, curl) e origens da lista
+    if (!origin || ORIGENS_PERMITIDAS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS bloqueado para: " + origin));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+// Responde preflight OPTIONS em todas as rotas sem redirecionar
+app.options("*", cors({
+  origin: function (origin, callback) {
+    if (!origin || ORIGENS_PERMITIDAS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS bloqueado para: " + origin));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
 // ARQUIVOS ESTÁTICOS
 const path = require('path');
@@ -990,7 +1025,6 @@ app.get("/cadastro/check-username", async (req, res) => {
   } catch { res.json({ disponivel: false }); }
 });
 
-// POST /cadastro — cria barbearia completa
 app.post("/cadastro", async (req, res) => {
   const { barbearia, horarios, servicos, servicosDestaque, profissionais, planos } = req.body;
 
@@ -1013,7 +1047,6 @@ app.post("/cadastro", async (req, res) => {
     const vencimento = new Date();
     vencimento.setDate(vencimento.getDate() + 30);
 
-    // 1. Inserir barbearia
     const barbResult = await db.query(
       `INSERT INTO barbearias
          (slug, nome, cidade, whatsapp, username, password,
@@ -1035,7 +1068,6 @@ app.post("/cadastro", async (req, res) => {
 
     const { id: barbId, slug: barbSlug } = barbResult.rows[0];
 
-    // 2. Salvar horários
     if (horarios && typeof horarios === "object") {
       const { pausa_inicio, pausa_fim, ...diasConfig } = horarios;
       await db.query(
@@ -1045,7 +1077,6 @@ app.post("/cadastro", async (req, res) => {
       );
     }
 
-    // 3. Salvar serviços de agendamento (tabela: servicos)
     if (Array.isArray(servicos)) {
       for (const s of servicos) {
         if (!s.nome || isNaN(Number(s.preco))) continue;
@@ -1056,7 +1087,6 @@ app.post("/cadastro", async (req, res) => {
       }
     }
 
-    // 4. Salvar serviços destaque — vitrine (tabela: servicos_destaque)
     if (Array.isArray(servicosDestaque)) {
       for (let i = 0; i < servicosDestaque.length; i++) {
         const s = servicosDestaque[i];
@@ -1069,7 +1099,6 @@ app.post("/cadastro", async (req, res) => {
       }
     }
 
-    // 5. Salvar profissionais
     if (Array.isArray(profissionais)) {
       for (let i = 0; i < profissionais.length; i++) {
         const p = profissionais[i];
@@ -1082,7 +1111,6 @@ app.post("/cadastro", async (req, res) => {
       }
     }
 
-    // 6. Salvar planos
     if (Array.isArray(planos)) {
       for (let i = 0; i < planos.length; i++) {
         const pl = planos[i];
