@@ -1603,7 +1603,8 @@ async function delServicoDest(id) {
 
 /* ── Agendamento ── */
 async function carregarServicosSimples() {
-  _servicos = await fetch(API('/servicos')).then(r => r.json()).catch(() => []);
+    // linha ~570 do HTML, dentro de carregarServicosSimples()
+_servicos = await fetch(API('/servicos/admin')).then(r => r.json()).catch(() => []);
   document.getElementById('tb-servicos').innerHTML = _servicos.length ? _servicos.map(s => `
     <tr>
       <td>${s.imagem ? `<img src="${s.imagem}" class="svc-thumb">` : `<div class="svc-thumb" style="display:flex;align-items:center;justify-content:center"><i class="ti ti-photo" style="color:var(--text3)"></i></div>`}</td>

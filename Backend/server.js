@@ -1131,6 +1131,305 @@ app.get("/debug-path", (req, res) => {
   const existe = fs.existsSync(dir);
   res.json({ dir, existe, arquivos: existe ? fs.readdirSync(dir) : [] });
 });
+// ══════════════════════════════════════════════════════════════
+// ROTAS FALTANDO — cole no server.js antes do express.static
+// ══════════════════════════════════════════════════════════════
+
+// ── CONFIG (salvar) ───────────────────────────────────────────
+
+app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
+  const { nome, cidade, whatsapp, pix_chave, cor_primaria, sobre } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length < 2)
+    return res.status(400).json({ erro: "Nome inválido" });
+  try {
+    await db.query(
+      `UPDATE barbearias
+       SET nome = $1, cidade = $2, whatsapp = $3,
+           pix_chave = $4, cor_primaria = $5, sobre = $6
+       WHERE slug = $7`,
+      [
+        nome.trim(),
+        cidade    || "",
+        whatsapp  || "",
+        pix_chave || "",
+        cor_primaria || "#c8a96e",
+        sobre     || "",
+        req.params.slug
+      ]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao salvar configurações" });
+  }
+});
+
+// ── PROFISSIONAIS (CRUD completo) ─────────────────────────────
+
+// Adicionar
+app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
+  const { nome, especialidade, whatsapp, ordem, foto_url, disponivel } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length < 2)
+    return res.status(400).json({ erro: "Nome inválido" });
+  try {
+    const result = await db.query(
+      `INSERT INTO profissionais
+         (barbearia_id, nome, especialidade, whatsapp, ordem, foto_url, disponivel, ativo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+       RETURNING id`,
+      [
+        req.barbearia.id,
+        nome.trim(),
+        especialidade || "",
+        whatsapp      || "",
+        Number(ordem) || 0,
+        foto_url      || null,
+        disponivel !== false
+      ]
+    );
+    res.json({ sucesso: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao adicionar profissional" });
+  }
+});
+
+// Editar
+app.put("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  const { nome, especialidade, whatsapp, ordem, foto_url, disponivel } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length < 2)
+    return res.status(400).json({ erro: "Nome inválido" });
+  try {
+    const result = await db.query(
+      `UPDATE profissionais
+       SET nome = $1, especialidade = $2, whatsapp = $3,
+           ordem = $4, foto_url = $5, disponivel = $6
+       WHERE id = $7 AND barbearia_id = $8
+       RETURNING id`,
+      [
+        nome.trim(),
+        especialidade || "",
+        whatsapp      || "",
+        Number(ordem) || 0,
+        foto_url      || null,
+        disponivel !== false,
+        id,
+        req.barbearia.id
+      ]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ erro: "Profissional não encontrado" });
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao editar profissional" });
+  }
+});
+
+// Deletar
+app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  try {
+    // Soft delete: marca como inativo em vez de apagar
+    const result = await db.query(
+      `UPDATE profissionais SET ativo = false
+       WHERE id = $1 AND barbearia_id = $2
+       RETURNING id`,
+      [id, req.barbearia.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ erro: "Profissional não encontrado" });
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao remover profissional" });
+  }
+});
+
+// ── SERVIÇOS DE AGENDAMENTO (CRUD completo) ───────────────────
+
+// Listar — substituir a rota GET existente que não retorna id
+// (a rota original só retorna nome, preco, imagem — sem id)
+// Adicione esta logo ANTES da rota GET existente ou substitua ela:
+app.get("/api/:slug/servicos/admin", verificarAssinatura, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, nome, preco, imagem FROM servicos
+       WHERE barbearia_id = $1 ORDER BY id`,
+      [req.barbearia.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+// Adicionar
+app.post("/api/:slug/servicos", verificarAssinatura, async (req, res) => {
+  const { nome, preco, imagem } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(preco)) || Number(preco) < 0)
+    return res.status(400).json({ erro: "Preço inválido" });
+  try {
+    const result = await db.query(
+      `INSERT INTO servicos (barbearia_id, nome, preco, imagem)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [req.barbearia.id, nome.trim(), Number(preco), imagem || null]
+    );
+    res.json({ sucesso: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao adicionar serviço" });
+  }
+});
+
+// Editar
+app.put("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  const { nome, preco, imagem } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(preco)) || Number(preco) < 0)
+    return res.status(400).json({ erro: "Preço inválido" });
+  try {
+    const result = await db.query(
+      `UPDATE servicos SET nome = $1, preco = $2, imagem = $3
+       WHERE id = $4 AND barbearia_id = $5
+       RETURNING id`,
+      [nome.trim(), Number(preco), imagem || null, id, req.barbearia.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ erro: "Serviço não encontrado" });
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao editar serviço" });
+  }
+});
+
+// Deletar
+app.delete("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  try {
+    await db.query(
+      `DELETE FROM servicos WHERE id = $1 AND barbearia_id = $2`,
+      [id, req.barbearia.id]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao deletar serviço" });
+  }
+});
+
+// ── PLANOS (CRUD completo) ────────────────────────────────────
+
+// Criar
+app.post("/api/:slug/planos", verificarAssinatura, async (req, res) => {
+  const { nome, valor, cortes_mes, descricao, ordem, ativo } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(valor)) || Number(valor) < 0)
+    return res.status(400).json({ erro: "Valor inválido" });
+  try {
+    const result = await db.query(
+      `INSERT INTO planos
+         (barbearia_id, nome, descricao, cortes_mes, valor, ativo, ordem)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id`,
+      [
+        req.barbearia.id,
+        nome.trim(),
+        descricao  || "",
+        Number(cortes_mes) || 0,
+        Number(valor),
+        ativo !== false,
+        Number(ordem) || 0
+      ]
+    );
+    res.json({ sucesso: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao criar plano" });
+  }
+});
+
+// Editar
+app.put("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  const { nome, valor, cortes_mes, descricao, ordem, ativo } = req.body;
+  if (!nome || typeof nome !== "string" || nome.trim().length === 0)
+    return res.status(400).json({ erro: "Nome inválido" });
+  if (isNaN(Number(valor)) || Number(valor) < 0)
+    return res.status(400).json({ erro: "Valor inválido" });
+  try {
+    const result = await db.query(
+      `UPDATE planos
+       SET nome = $1, descricao = $2, cortes_mes = $3,
+           valor = $4, ativo = $5, ordem = $6
+       WHERE id = $7 AND barbearia_id = $8
+       RETURNING id`,
+      [
+        nome.trim(),
+        descricao  || "",
+        Number(cortes_mes) || 0,
+        Number(valor),
+        ativo !== false,
+        Number(ordem) || 0,
+        id,
+        req.barbearia.id
+      ]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ erro: "Plano não encontrado" });
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao editar plano" });
+  }
+});
+
+// Deletar
+app.delete("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  try {
+    // Verifica se há assinantes ativos vinculados
+    const check = await db.query(
+      `SELECT COUNT(*) AS total FROM assinantes
+       WHERE plano_id = $1 AND barbearia_id = $2 AND status IN ('ativo','aguardando')`,
+      [id, req.barbearia.id]
+    );
+    if (Number(check.rows[0].total) > 0)
+      return res.status(409).json({
+        erro: "Existem assinantes ativos neste plano. Cancele-os antes de excluir."
+      });
+
+    await db.query(
+      `DELETE FROM planos WHERE id = $1 AND barbearia_id = $2`,
+      [id, req.barbearia.id]
+    );
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao deletar plano" });
+  }
+});
 
 // ── ARQUIVOS ESTÁTICOS — deve ficar DEPOIS de todas as rotas ──────────────
 // Isso evita que o Express tente servir /cadastro/check-username como arquivo
