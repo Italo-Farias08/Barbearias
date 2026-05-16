@@ -1430,6 +1430,122 @@ app.delete("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
     res.status(500).json({ erro: "Erro ao deletar plano" });
   }
 });
+// ══════════════════════════════════════════════════════════════
+// ROTAS: HORÁRIOS POR PROFISSIONAL
+// Cole no server.js ANTES de app.use(express.static(...))
+// ══════════════════════════════════════════════════════════════
+
+// Você também precisará rodar este SQL no seu banco:
+/*
+CREATE TABLE IF NOT EXISTS profissional_horarios (
+  id              SERIAL PRIMARY KEY,
+  profissional_id INTEGER NOT NULL REFERENCES profissionais(id) ON DELETE CASCADE,
+  barbearia_id    INTEGER NOT NULL,
+  dias_semana     JSONB   NOT NULL DEFAULT '{}',
+  pausa_inicio    TIME,
+  pausa_fim       TIME,
+  criado_em       TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (profissional_id, barbearia_id)
+);
+*/
+
+// ── GET: buscar horários de um profissional ───────────────────
+app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
+  const profId = Number(req.params.id);
+  if (!Number.isInteger(profId) || profId <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+  try {
+    const result = await db.query(
+      `SELECT dias_semana, pausa_inicio, pausa_fim
+       FROM profissional_horarios
+       WHERE profissional_id = $1 AND barbearia_id = $2`,
+      [profId, req.barbearia.id]
+    );
+
+    if (result.rows.length === 0) {
+      // Fallback: retorna horários globais da barbearia como padrão
+      const global = await db.query(
+        `SELECT dias_semana, pausa_inicio, pausa_fim
+         FROM horarios_barbearia WHERE barbearia_id = $1`,
+        [req.barbearia.id]
+      );
+      if (global.rows.length > 0) {
+        const row = global.rows[0];
+        const cfg = typeof row.dias_semana === "string"
+          ? JSON.parse(row.dias_semana)
+          : (row.dias_semana || {});
+        cfg.pausa_inicio = row.pausa_inicio || null;
+        cfg.pausa_fim    = row.pausa_fim    || null;
+        cfg._usa_global  = true; // sinaliza que não tem cfg própria
+        return res.json(cfg);
+      }
+      return res.json({ _usa_global: true });
+    }
+
+    const row = result.rows[0];
+    const cfg = typeof row.dias_semana === "string"
+      ? JSON.parse(row.dias_semana)
+      : (row.dias_semana || {});
+    cfg.pausa_inicio = row.pausa_inicio || null;
+    cfg.pausa_fim    = row.pausa_fim    || null;
+    cfg._usa_global  = false;
+    res.json(cfg);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao buscar horários do profissional" });
+  }
+});
+
+// ── POST/PUT: salvar horários de um profissional ──────────────
+app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (req, res) => {
+  const profId = Number(req.params.id);
+  if (!Number.isInteger(profId) || profId <= 0)
+    return res.status(400).json({ erro: "ID inválido" });
+
+  const { pausa_inicio, pausa_fim, usa_global, ...diasConfig } = req.body;
+
+  try {
+    // Verifica se o profissional pertence à barbearia
+    const check = await db.query(
+      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
+      [profId, req.barbearia.id]
+    );
+    if (check.rows.length === 0)
+      return res.status(404).json({ erro: "Profissional não encontrado" });
+
+    if (usa_global) {
+      // Remove config individual → vai usar global
+      await db.query(
+        `DELETE FROM profissional_horarios
+         WHERE profissional_id = $1 AND barbearia_id = $2`,
+        [profId, req.barbearia.id]
+      );
+      return res.json({ sucesso: true, modo: "global" });
+    }
+
+    await db.query(
+      `INSERT INTO profissional_horarios
+         (profissional_id, barbearia_id, dias_semana, pausa_inicio, pausa_fim)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (profissional_id, barbearia_id)
+       DO UPDATE SET
+         dias_semana  = $3,
+         pausa_inicio = $4,
+         pausa_fim    = $5`,
+      [
+        profId,
+        req.barbearia.id,
+        JSON.stringify(diasConfig),
+        pausa_inicio || null,
+        pausa_fim    || null
+      ]
+    );
+    res.json({ sucesso: true, modo: "individual" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao salvar horários do profissional" });
+  }
+});
 
 // ── ARQUIVOS ESTÁTICOS — deve ficar DEPOIS de todas as rotas ──────────────
 // Isso evita que o Express tente servir /cadastro/check-username como arquivo
