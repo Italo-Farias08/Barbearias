@@ -6,7 +6,7 @@
 <title>Painel da Barbearia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
   :root {
     --gold: #c8a96e;
@@ -1185,7 +1185,8 @@
 // ── STATE ──
 let SLUG = '', TOKEN = '', _profissionais = [];
 
-const API = (path) => `/api/${SLUG}${path}`;
+const BASE = 'https://vtrip.com.br';
+const API = (path) => `${BASE}/api/${SLUG}${path}`;
 
 const fmt = (v) => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fmtData = (d) => {
@@ -1217,7 +1218,7 @@ async function fazerLogin() {
   if (!slug || !user || !pass) { erro.textContent = 'Preencha todos os campos.'; erro.style.display='block'; return; }
 
   try {
-    const r = await fetch(`/api/${slug}/login`, {
+    const r = await fetch(`https://vtrip.com.br/api/${slug}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: user, password: pass })
@@ -1326,7 +1327,7 @@ async function carregarConfigSilent() {
 
 async function verificarWA() {
   try {
-    const d = await (await fetch('/whatsapp-status')).json();
+    const d = await (await fetch(`https://vtrip.com.br/whatsapp-status`)).json();
     const dot = document.getElementById('wa-dot');
     const txt = document.getElementById('wa-txt');
     if (d.conectado) { dot.className='wa-dot on'; txt.textContent='WhatsApp conectado'; }
