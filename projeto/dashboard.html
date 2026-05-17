@@ -270,7 +270,10 @@ nav { flex: 1; padding: 4px 0 12px; }
 #content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
+  /* garante que nada vaze horizontalmente */
+  width: 100%;
 }
 
 .section { display: none; }
@@ -279,7 +282,7 @@ nav { flex: 1; padding: 4px 0 12px; }
 /* ── METRICS ── */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -291,6 +294,7 @@ nav { flex: 1; padding: 4px 0 12px; }
   padding: 16px 18px;
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 
 .metric-card::after {
@@ -328,9 +332,13 @@ nav { flex: 1; padding: 4px 0 12px; }
 }
 .metric-value {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 26px;
   letter-spacing: 0.02em;
   line-height: 1;
+  /* impede texto de vazar */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .metric-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
 
@@ -341,6 +349,8 @@ nav { flex: 1; padding: 4px 0 12px; }
   border-radius: var(--r-lg);
   padding: 18px 20px;
   margin-bottom: 16px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card-header {
@@ -426,9 +436,14 @@ nav { flex: 1; padding: 4px 0 12px; }
 .btn-icon.danger:hover { border-color: rgba(224,82,82,0.3); color: var(--danger); }
 
 /* ── TABLES ── */
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* limita ao pai, sem vazar */
+  max-width: 100%;
+}
 
-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+table { width: 100%; border-collapse: collapse; }
 
 th {
   text-align: left;
@@ -439,6 +454,7 @@ th {
   letter-spacing: 0.1em;
   padding: 0 12px 10px;
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 td {
@@ -461,6 +477,7 @@ tr:hover td { background: rgba(255,255,255,0.015); }
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .badge-success { background: var(--success-bg); color: var(--success); }
 .badge-danger  { background: var(--danger-bg);  color: var(--danger); }
@@ -490,7 +507,7 @@ input, select, textarea {
   padding: 10px 13px;
   color: var(--text);
   font-family: var(--font);
-  font-size: 16px; /* ← mínimo 16px para evitar zoom no iOS */
+  font-size: 16px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
@@ -598,7 +615,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 #toast.danger  { background: #4D1D1D; border: 1px solid var(--danger);  display: flex; }
 #toast.info    { background: #1D2E4D; border: 1px solid var(--info);    display: flex; }
 
-/* ── MODALS ── */
+/* ── MODAIS ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -720,7 +737,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
   flex-wrap: wrap;
   align-items: center;
 }
-.filter-bar input, .filter-bar select { max-width: 200px; }
+.filter-bar input, .filter-bar select { max-width: 200px; flex: 1 1 auto; }
 
 /* ── PLANO CARD ── */
 .plano-card {
@@ -769,8 +786,8 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 }
 .day-row:last-child { border-bottom: none; }
 .day-name { width: 78px; font-size: 13.5px; color: var(--text2); flex-shrink: 0; }
-.day-inputs { display: flex; align-items: center; gap: 8px; }
-.day-inputs input { max-width: 120px; }
+.day-inputs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.day-inputs input { max-width: 120px; min-width: 100px; flex: 1; }
 .day-inputs span { color: var(--text3); font-size: 12px; }
 
 /* ── COM ROW ── */
@@ -804,10 +821,11 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
   border-bottom: 1px solid var(--border);
   font-size: 13.5px;
   gap: 10px;
+  flex-wrap: wrap;
 }
 .info-row:last-child { border-bottom: none; }
 .info-row .label { color: var(--text2); }
-.info-row .value { font-weight: 600; text-align: right; }
+.info-row .value { font-weight: 600; text-align: right; word-break: break-all; }
 
 /* ── INLINE ACTIONS ── */
 .inline-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
@@ -915,42 +933,6 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
   z-index: 199;
 }
 
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  #sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100dvh;
-    transform: translateX(-100%);
-  }
-  #sidebar.open { transform: translateX(0); }
-  #sidebar-overlay.open { display: block; }
-  .menu-btn { display: flex; }
-  
-  .metrics-grid { grid-template-columns: 1fr 1fr; }
-  .dash-grid { grid-template-columns: 1fr; }
-  .form-grid, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
-  .filter-bar input, .filter-bar select { max-width: 100%; }
-  
-  #content { padding: 14px; }
-  .topbar { padding: 0 14px; }
-
-  .modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
-  
-  .com-inputs { flex-direction: column; }
-  .com-inputs input { width: 100%; }
-  
-  .plano-valor { display: none; }
-  
-  #toast { bottom: 16px; right: 12px; left: 12px; max-width: none; }
-}
-
-@media (max-width: 480px) {
-  .metrics-grid { grid-template-columns: 1fr; }
-  .prof-actions .btn-ghost { display: none; }
-}
-
 /* ── GOLD LINE ACCENTS ── */
 .gl-divider {
   display: flex;
@@ -971,6 +953,112 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 }
 
 .gold-rule { height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0.3; margin: 2px 0; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE — MOBILE FIXES
+══════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* sidebar */
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    transform: translateX(-100%);
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay.open { display: block; }
+  .menu-btn { display: flex; }
+
+  #content { padding: 12px; }
+  .topbar { padding: 0 12px; }
+
+  /* ── DASHBOARD ── */
+  /* 4 métricas → 2 colunas fixas */
+  #section-dashboard .metrics-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  /* cards lado a lado → empilhados */
+  .dash-grid { grid-template-columns: 1fr !important; }
+
+  /* ── FINANCEIRO ── */
+  #section-financeiro .metrics-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  /* coloca o terceiro card (lucro) embaixo full */
+  #section-financeiro .metrics-grid .metric-card:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  /* ── FORMS ── */
+  .form-grid,
+  .form-grid-3,
+  .form-grid-4 { grid-template-columns: 1fr !important; }
+
+  /* ── FILTER BAR ── */
+  .filter-bar input,
+  .filter-bar select { max-width: none; }
+
+  /* ── MODAIS ── */
+  .modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .modal .form-grid,
+  .modal .form-grid-3,
+  .modal .form-grid-4 { grid-template-columns: 1fr !important; }
+
+  /* ── COMISSÕES ── */
+  .com-inputs { flex-direction: column; width: 100%; }
+  .com-inputs input { width: 100%; }
+
+  /* ── PLANOS ── */
+  .plano-valor { display: none; }
+
+  /* ── TOAST ── */
+  #toast { bottom: 16px; right: 12px; left: 12px; max-width: none; }
+
+  /* ── HORÁRIOS GLOBAL ── */
+  .day-row { flex-wrap: wrap; gap: 10px; }
+  .day-inputs { flex: 1 0 100%; }
+  .day-inputs input { max-width: none; width: 100%; flex: 1; }
+
+  /* ── HORÁRIOS POR PROFISSIONAL ──
+     Layout de 2 colunas (lista + painel) → empilhado */
+  #hr-prof > div {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+  }
+  /* lista de profissionais ocupa largura total */
+  #hr-prof > div > .card {
+    width: 100%;
+  }
+
+  /* ── CONFIG ── */
+  #section-config > div {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+  }
+
+  /* ── PROF ACTIONS ── */
+  .prof-actions .btn-ghost { display: none; }
+}
+
+@media (max-width: 480px) {
+  /* métricas → coluna única em telas muito pequenas */
+  #section-dashboard .metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #section-financeiro .metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #section-financeiro .metrics-grid .metric-card:nth-child(3) {
+    grid-column: auto;
+  }
+
+  /* valor do metric menor para não vazar */
+  .metric-value { font-size: 22px; }
+}
 </style>
 </head>
 <body>
@@ -1062,7 +1150,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 
       <!-- DASHBOARD -->
       <div class="section active" id="section-dashboard">
-        <div class="metrics-grid" style="grid-template-columns:repeat(4,minmax(140px,1fr))">
+        <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-icon-bg"><i class="ti ti-calendar"></i></div>
             <div class="metric-label">Agendamentos</div>
@@ -1191,6 +1279,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
             </div>
           </div>
         </div>
+        <!-- horários por profissional: flex-col no mobile via CSS -->
         <div id="hr-prof" style="display:none">
           <div style="display:grid;grid-template-columns:220px 1fr;gap:16px;margin-top:16px;align-items:start">
             <div class="card" style="padding:10px 0;margin-bottom:0">
@@ -1209,7 +1298,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 
       <!-- FINANCEIRO -->
       <div class="section" id="section-financeiro">
-        <div class="metrics-grid" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="metrics-grid">
           <div class="metric-card"><div class="metric-icon-bg" style="background:var(--success-bg)"><i class="ti ti-trending-up" style="color:var(--success)"></i></div><div class="metric-label">Total Ganhos</div><div class="metric-value" id="f-ganhos" style="color:var(--success)">—</div></div>
           <div class="metric-card"><div class="metric-icon-bg" style="background:var(--danger-bg)"><i class="ti ti-trending-down" style="color:var(--danger)"></i></div><div class="metric-label">Total Gastos</div><div class="metric-value" id="f-gastos" style="color:var(--danger)">—</div></div>
           <div class="metric-card" style="border-color:var(--gold-border)"><div class="metric-icon-bg" style="background:var(--gold-muted)"><i class="ti ti-cash" style="color:var(--gold)"></i></div><div class="metric-label">Lucro Real</div><div class="metric-value" id="f-lucro" style="color:var(--gold)">—</div></div>
@@ -1310,6 +1399,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 
       <!-- CONFIG -->
       <div class="section" id="section-config">
+        <!-- inline style grid é sobrescrito via CSS no mobile -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="card">
             <div class="card-header">
@@ -1662,17 +1752,17 @@ async function verificarWA() {
 // NAV
 // ══════════════════════════════════════════
 const pageInfo = {
-  dashboard:    { title: 'DASHBOARD',      sub: 'Visão geral' },
-  agendamentos: { title: 'AGENDAMENTOS',   sub: 'Gerencie todos os agendamentos' },
-  profissionais:{ title: 'PROFISSIONAIS',  sub: 'Sua equipe' },
-  servicos:     { title: 'SERVIÇOS',       sub: 'Serviços oferecidos' },
-  horarios:     { title: 'HORÁRIOS',       sub: 'Configuração de funcionamento' },
-  financeiro:   { title: 'LUCRO REAL',     sub: 'Balanço financeiro' },
-  gastos:       { title: 'GASTOS',         sub: 'Controle de despesas' },
-  comissoes:    { title: 'COMISSÕES',      sub: 'Comissão dos profissionais' },
-  planos:       { title: 'PLANOS',         sub: 'Planos de assinatura' },
-  assinantes:   { title: 'ASSINANTES',     sub: 'Clientes com plano' },
-  config:       { title: 'CONFIGURAÇÕES',  sub: 'Dados e preferências' },
+  dashboard:    { title: 'DASHBOARD' },
+  agendamentos: { title: 'AGENDAMENTOS' },
+  profissionais:{ title: 'PROFISSIONAIS' },
+  servicos:     { title: 'SERVIÇOS' },
+  horarios:     { title: 'HORÁRIOS' },
+  financeiro:   { title: 'LUCRO REAL' },
+  gastos:       { title: 'GASTOS' },
+  comissoes:    { title: 'COMISSÕES' },
+  planos:       { title: 'PLANOS' },
+  assinantes:   { title: 'ASSINANTES' },
+  config:       { title: 'CONFIGURAÇÕES' },
 };
 
 function nav(el) {
@@ -1723,9 +1813,9 @@ async function carregarDashboard() {
 
     const ult = (ags||[]).slice(0,5);
     document.getElementById('dash-ags').innerHTML = ult.length ? ult.map(a => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div>
-          <div style="font-size:13.5px;font-weight:500">${a.nome}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">
+        <div style="min-width:0">
+          <div style="font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.nome}</div>
           <div style="font-size:11px;color:var(--text3)">${fmtData(a.data)} ${(a.horario||'').substring(0,5)}</div>
         </div>
         <span class="badge badge-${a.status==='concluido'?'success':a.status==='cancelado'?'danger':'warning'}">${a.status}</span>
@@ -1734,9 +1824,9 @@ async function carregarDashboard() {
     const prox = pendHoje.sort((a,b) => a.horario > b.horario ? 1 : -1).slice(0,6);
     document.getElementById('dash-hoje').innerHTML = prox.length ? prox.map(a => `
       <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="font-family:var(--font-display);font-size:18px;color:var(--gold);min-width:44px;letter-spacing:.03em">${(a.horario||'').substring(0,5)}</div>
-        <div>
-          <div style="font-size:13.5px;font-weight:500">${a.nome}</div>
+        <div style="font-family:var(--font-display);font-size:18px;color:var(--gold);min-width:44px;letter-spacing:.03em;flex-shrink:0">${(a.horario||'').substring(0,5)}</div>
+        <div style="min-width:0">
+          <div style="font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.nome}</div>
           <div style="font-size:11px;color:var(--text3)">${a.profissional_nome||'Qualquer'}</div>
         </div>
       </div>`).join('') : '<div class="empty"><p>Nenhum agendamento hoje</p></div>';
@@ -2281,7 +2371,7 @@ async function carregarComissoes() {
   document.getElementById('lista-comissoes').innerHTML = r.length ? r.map(p => `
     <div class="com-row">
       <div class="avatar">${p.foto_url ? `<img src="${p.foto_url}" alt="">` : (p.nome||'').substring(0,2).toUpperCase()}</div>
-      <div style="flex:1"><div style="font-size:13.5px;font-weight:500">${p.nome}</div><div style="font-size:11px;color:var(--text3)">${p.especialidade||''}</div></div>
+      <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:500">${p.nome}</div><div style="font-size:11px;color:var(--text3)">${p.especialidade||''}</div></div>
       <div class="com-inputs">
         <div class="form-group"><label style="font-size:10px">% Comissão</label><input type="number" id="cp-${p.id}" value="${p.comissao_percentual}" min="0" max="100"></div>
         <div class="form-group"><label style="font-size:10px">Fixo/corte</label><input type="number" id="cf-${p.id}" value="${p.comissao_valor_fixo}" min="0"></div>
