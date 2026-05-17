@@ -2,50 +2,67 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel da Barbearia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gold Line — Painel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 :root {
-  --gold: #c8a96e;
-  --gold-dark: #a8893e;
-  --gold-light: #e8d9b8;
-  --bg: #0a0a0a;
-  --bg2: #111111;
-  --bg3: #181818;
-  --bg4: #222222;
+  --gold: #C9A84C;
+  --gold2: #E8C96A;
+  --gold3: #8B6914;
+  --gold-muted: rgba(201,168,76,0.12);
+  --gold-border: rgba(201,168,76,0.28);
+  --bg: #0C0C0E;
+  --bg2: #131316;
+  --bg3: #1A1A1F;
+  --bg4: #222228;
+  --bg5: #2A2A32;
   --border: rgba(255,255,255,0.06);
-  --border2: rgba(200,169,110,0.35);
-  --text: #f0ede8;
-  --text2: #9a9390;
-  --text3: #5a5350;
-  --success: #4a9e6e;
-  --danger: #c84a4a;
-  --warning: #c8903a;
-  --info: #4a7ec8;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --sidebar: 230px;
+  --border2: rgba(255,255,255,0.1);
+  --text: #F2EFE8;
+  --text2: #A09A90;
+  --text3: #5C5852;
+  --success: #3DB87A;
+  --success-bg: rgba(61,184,122,0.12);
+  --danger: #E05252;
+  --danger-bg: rgba(224,82,82,0.12);
+  --warning: #D4943A;
+  --warning-bg: rgba(212,148,58,0.12);
+  --info: #4A8CCC;
+  --info-bg: rgba(74,140,204,0.12);
+  --r: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --sidebar: 240px;
+  --topbar: 60px;
+  --font: 'Outfit', sans-serif;
+  --font-display: 'Bebas Neue', sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
   font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 2px; }
 
+/* ── LAYOUT ── */
+#app-shell {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
 #sidebar {
   width: var(--sidebar);
   min-width: var(--sidebar);
@@ -53,206 +70,907 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
+  z-index: 200;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
   overflow-y: auto;
-  position: relative;
-  z-index: 10;
+  overflow-x: hidden;
 }
 
-.sidebar-logo { padding: 22px 18px 18px; border-bottom: 1px solid var(--border); }
-.sidebar-logo h1 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--gold); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sidebar-logo span { font-size: 11px; color: var(--text3); display: block; margin-top: 2px; }
+.sidebar-brand {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
 
-.wa-badge { margin: 10px 14px; padding: 7px 11px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--text2); cursor: pointer; transition: border-color 0.15s; }
-.wa-badge:hover { border-color: var(--border2); }
-.wa-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #555; }
-.wa-dot.on { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--gold);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-icon i {
+  font-size: 20px;
+  color: #0C0C0E;
+}
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.brand-text span {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wa-pill {
+  margin: 10px 14px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.wa-pill:hover { border-color: var(--gold-border); }
+.wa-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--text3); }
+.wa-dot.on { background: var(--success); box-shadow: 0 0 8px rgba(61,184,122,0.5); }
 .wa-dot.off { background: var(--danger); }
 
-nav { flex: 1; padding: 6px 0; }
+nav { flex: 1; padding: 4px 0 12px; }
 
-.nav-section { padding: 14px 16px 3px; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); font-weight: 600; }
+.nav-label {
+  padding: 14px 16px 4px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-weight: 600;
+}
 
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; cursor: pointer; color: var(--text2); font-size: 13px; transition: all 0.12s; border-left: 2px solid transparent; }
-.nav-item i { font-size: 15px; width: 17px; flex-shrink: 0; }
-.nav-item:hover { background: var(--bg3); color: var(--text); }
-.nav-item.active { background: rgba(200,169,110,0.07); color: var(--gold); border-left-color: var(--gold); }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 13.5px;
+  font-weight: 400;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  margin: 1px 0;
+}
 
-.sidebar-footer { padding: 14px; border-top: 1px solid var(--border); }
-.slug-info { font-size: 10.5px; color: var(--text3); margin-bottom: 8px; }
-.slug-info strong { color: var(--text2); }
-.btn-sair { width: 100%; padding: 7px; background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; }
-.btn-sair:hover { border-color: var(--danger); color: var(--danger); }
+.nav-item i { font-size: 16px; width: 18px; flex-shrink: 0; }
+.nav-item:hover { background: var(--bg3); color: var(--text2); }
+.nav-item.active {
+  background: var(--gold-muted);
+  color: var(--gold);
+  border-left-color: var(--gold);
+  font-weight: 500;
+}
 
-#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.sidebar-footer {
+  padding: 12px 14px 16px;
+  border-top: 1px solid var(--border);
+}
 
-.topbar { padding: 14px 26px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg2); flex-shrink: 0; }
-.topbar-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
-.topbar-sub { font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+.slug-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+.slug-chip strong { color: var(--text2); font-weight: 500; }
+
+.btn-sair {
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text3);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s;
+}
+.btn-sair:hover { border-color: var(--danger-bg); color: var(--danger); }
+
+/* ── MAIN ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  height: var(--topbar);
+  min-height: var(--topbar);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.menu-btn {
+  display: none;
+  width: 36px;
+  height: 36px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.menu-btn i { font-size: 18px; color: var(--text2); }
+
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .topbar-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-.btn { padding: 8px 15px; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; transition: all 0.12s; font-weight: 500; white-space: nowrap; }
-.btn-primary { background: var(--gold); color: #1a1000; }
-.btn-primary:hover { background: var(--gold-dark); }
-.btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
-.btn-danger { background: rgba(200,74,74,0.13); color: var(--danger); border: 1px solid rgba(200,74,74,0.25); }
-.btn-danger:hover { background: rgba(200,74,74,0.22); }
-.btn-success { background: rgba(74,158,110,0.13); color: var(--success); border: 1px solid rgba(74,158,110,0.25); }
-.btn-success:hover { background: rgba(74,158,110,0.22); }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-icon { padding: 6px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border); color: var(--text2); cursor: pointer; display: inline-flex; align-items: center; transition: all 0.12s; }
-.btn-icon:hover { border-color: var(--border2); color: var(--gold); }
-.btn-icon.danger:hover { border-color: rgba(200,74,74,0.4); color: var(--danger); }
-
-#content { flex: 1; overflow-y: auto; padding: 24px 26px; }
+/* ── CONTENT ── */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
 
 .section { display: none; }
 .section.active { display: block; }
 
-.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
-.metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; position: relative; overflow: hidden; }
-.metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); opacity: 0.5; }
-.metric-label { font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-.metric-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; }
-.metric-sub { font-size: 10.5px; color: var(--text3); margin-top: 3px; }
-.metric-icon { position: absolute; right: 14px; top: 14px; font-size: 22px; color: var(--gold); opacity: 0.18; }
+/* ── METRICS ── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
 
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 18px; }
-.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
-.card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; }
+.metric-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.metric-card:hover::after { opacity: 0.6; }
+
+.metric-icon-bg {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.metric-icon-bg i { font-size: 18px; color: var(--text3); }
+
+.metric-label {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
 .card-sub { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
 
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-th { text-align: left; font-size: 10.5px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; padding: 0 10px 9px; border-bottom: 1px solid var(--border); }
-td { padding: 11px 10px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; }
+/* ── BUTTONS ── */
+.btn {
+  padding: 9px 16px;
+  border-radius: var(--r);
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #0C0C0E;
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--gold2); }
+
+.btn-ghost {
+  background: var(--bg3);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+
+.btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(224,82,82,0.2);
+}
+.btn-danger:hover { background: rgba(224,82,82,0.2); }
+
+.btn-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(61,184,122,0.2);
+}
+
+.btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+.btn-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-icon i { font-size: 16px; }
+.btn-icon:hover { border-color: var(--gold-border); color: var(--gold); }
+.btn-icon.danger:hover { border-color: rgba(224,82,82,0.3); color: var(--danger); }
+
+/* ── TABLES ── */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table { width: 100%; border-collapse: collapse; min-width: 480px; }
+
+th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 12px;
+  font-size: 13.5px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,0.02); }
+tr:hover td { background: rgba(255,255,255,0.015); }
 
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 500; }
-.badge-success { background: rgba(74,158,110,0.15); color: #5dc88a; }
-.badge-danger  { background: rgba(200,74,74,0.15);  color: #e07a7a; }
-.badge-warning { background: rgba(200,144,58,0.15); color: #dba94a; }
-.badge-info    { background: rgba(74,126,200,0.15); color: #7aaae0; }
-.badge-gray    { background: rgba(255,255,255,0.05); color: var(--text3); }
-.badge-gold    { background: rgba(200,169,110,0.15); color: var(--gold); }
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-danger  { background: var(--danger-bg);  color: var(--danger); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-info    { background: var(--info-bg);    color: var(--info); }
+.badge-gray    { background: var(--bg4); color: var(--text3); }
+.badge-gold    { background: var(--gold-muted); color: var(--gold); border: 1px solid var(--gold-border); }
 
+/* ── FORMS ── */
 .form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 .form-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
-.form-group  { display: flex; flex-direction: column; gap: 5px; }
+.form-group  { display: flex; flex-direction: column; gap: 6px; }
 .form-group.full { grid-column: 1 / -1; }
-label { font-size: 11.5px; color: var(--text2); font-weight: 500; }
-input, select, textarea { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 11px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; transition: border 0.15s; width: 100%; }
-input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+
+label {
+  font-size: 11.5px;
+  color: var(--text2);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+input, select, textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 13px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px; /* ← mínimo 16px para evitar zoom no iOS */
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input::placeholder, textarea::placeholder { color: var(--text3); }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+}
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C5852' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
 select option { background: var(--bg3); }
-textarea { resize: vertical; min-height: 75px; }
-input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
+textarea { resize: vertical; min-height: 80px; }
+input[type="color"] { height: 42px; padding: 4px 8px; cursor: pointer; }
+input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark; }
 
 .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 
-.toggle-wrap { display: flex; align-items: center; gap: 9px; }
-.toggle { width: 36px; height: 19px; background: var(--bg4); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
+/* ── TOGGLE ── */
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+.toggle {
+  width: 40px;
+  height: 22px;
+  background: var(--bg5);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
 .toggle.on { background: var(--gold); border-color: var(--gold); }
-.toggle::after { content: ''; width: 13px; height: 13px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; }
-.toggle.on::after { transform: translateX(17px); }
+.toggle::after {
+  content: '';
+  width: 15px;
+  height: 15px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(18px); }
 
-.avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(200,169,110,0.18); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--gold); flex-shrink: 0; overflow: hidden; }
+/* ── AVATAR ── */
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--gold-muted);
+  border: 1px solid var(--gold-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+  overflow: hidden;
+}
 .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
-.prof-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+/* ── PROF ROW ── */
+.prof-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
 .prof-row:last-child { border-bottom: none; }
 .prof-info { flex: 1; min-width: 0; }
-.prof-info .nome { font-size: 13px; font-weight: 500; }
-.prof-info .spec { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.prof-info .nome { font-size: 14px; font-weight: 500; }
+.prof-info .spec { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
 .prof-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
 
-.empty { text-align: center; padding: 40px; color: var(--text3); }
-.empty i { font-size: 32px; display: block; margin-bottom: 10px; opacity: 0.35; }
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+.empty i { font-size: 34px; display: block; margin-bottom: 10px; opacity: 0.25; }
 .empty p { font-size: 13px; }
 
-#toast { position: fixed; bottom: 22px; right: 22px; padding: 11px 16px; border-radius: var(--radius); font-size: 13px; color: #fff; z-index: 9999; display: none; align-items: center; gap: 8px; animation: slideUp 0.2s ease; max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-@keyframes slideUp { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
-#toast.success { background: var(--success); display: flex; }
-#toast.danger  { background: var(--danger);  display: flex; }
-#toast.info    { background: var(--info);    display: flex; }
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 18px;
+  border-radius: var(--r-lg);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #fff;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  gap: 9px;
+  animation: slideUp 0.22s ease;
+  max-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+#toast.success { background: #1D4D37; border: 1px solid var(--success); display: flex; }
+#toast.danger  { background: #4D1D1D; border: 1px solid var(--danger);  display: flex; }
+#toast.info    { background: #1D2E4D; border: 1px solid var(--info);    display: flex; }
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+/* ── MODALS ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
 .modal-overlay.open { display: flex; }
-.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; padding: 22px 26px; position: relative; }
-.modal-lg { max-width: 700px; }
-.modal-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 18px; padding-right: 28px; }
-.modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 17px; line-height: 1; padding: 4px; border-radius: 6px; transition: color 0.15s; }
-.modal-close:hover { color: var(--text); }
-.modal-footer { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
 
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 20px 20px 32px;
+  position: relative;
+  animation: slideModal 0.25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideModal { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--bg5);
+  border-radius: 2px;
+  margin: 0 auto 18px;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.03em;
+  margin-bottom: 18px;
+  padding-right: 32px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+.modal-close:hover { color: var(--text); border-color: var(--border2); }
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+/* ── LOADING ── */
 .loading { text-align: center; padding: 36px; color: var(--text3); font-size: 13px; }
-.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 7px;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 18px; overflow-x: auto; }
-.tab { padding: 9px 16px; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; display:flex; align-items:center; gap:6px; }
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  gap: 2px;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .tab:hover { color: var(--text2); }
-.tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 500; }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-.filter-bar input, .filter-bar select { max-width: 180px; }
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-bar input, .filter-bar select { max-width: 200px; }
 
-.plano-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; transition: border-color 0.15s; }
-.plano-card:hover { border-color: var(--border2); }
+/* ── PLANO CARD ── */
+.plano-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.plano-card:hover { border-color: var(--gold-border); }
+.plano-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--gold-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.plano-icon i { font-size: 22px; color: var(--gold); }
 .plano-info { flex: 1; min-width: 0; }
-.plano-info h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.plano-info p  { font-size: 11.5px; color: var(--text3); }
-.plano-valor { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+.plano-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.plano-info p  { font-size: 12px; color: var(--text3); }
+.plano-valor {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.plano-valor span { font-size: 11px; font-family: var(--font); color: var(--text3); font-weight: 400; }
 .plano-actions { display: flex; gap: 5px; flex-shrink: 0; }
 
-.day-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+/* ── DAY ROW ── */
+.day-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
 .day-row:last-child { border-bottom: none; }
-.day-name { width: 82px; font-size: 13px; color: var(--text2); flex-shrink: 0; }
-.day-inputs { display: flex; align-items: center; gap: 7px; }
-.day-inputs input { max-width: 110px; }
+.day-name { width: 78px; font-size: 13.5px; color: var(--text2); flex-shrink: 0; }
+.day-inputs { display: flex; align-items: center; gap: 8px; }
+.day-inputs input { max-width: 120px; }
 .day-inputs span { color: var(--text3); font-size: 12px; }
 
-.com-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+/* ── COM ROW ── */
+.com-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
 .com-row:last-child { border-bottom: none; }
-.com-inputs { display: flex; gap: 8px; align-items: flex-end; }
-.com-inputs input { width: 80px; }
+.com-inputs { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.com-inputs input { width: 90px; }
 
-.lucro-bar { height: 7px; background: var(--bg3); border-radius: 999px; margin-top: 10px; overflow: hidden; }
-.lucro-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); border-radius: 999px; transition: width 0.8s ease; }
+/* ── LUCRO BAR ── */
+.lucro-bar { height: 8px; background: var(--bg4); border-radius: 999px; margin-top: 12px; overflow: hidden; }
+.lucro-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+  border-radius: 999px;
+  transition: width 0.9s ease;
+}
 
-.info-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+/* ── INFO ROW ── */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  gap: 10px;
+}
 .info-row:last-child { border-bottom: none; }
 .info-row .label { color: var(--text2); }
-.info-row .value { font-weight: 500; }
+.info-row .value { font-weight: 600; text-align: right; }
 
+/* ── INLINE ACTIONS ── */
 .inline-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
 
-.foto-preview { width: 52px; height: 52px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-.foto-preview img { width: 100%; height: 100%; object-fit: cover; }
-.foto-preview i { font-size: 20px; color: var(--text3); }
-
-.svc-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--bg3); border: 1px solid var(--border); flex-shrink: 0; }
-
-/* Horários por profissional */
-.prof-hr-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-left:2px solid transparent; transition:all .12s; color:var(--text2); }
-.prof-hr-item:hover { background:var(--bg3); color:var(--text); }
-.prof-hr-item.active { background:rgba(200,169,110,0.07); border-left-color:var(--gold); color:var(--gold); }
-
-#login-screen { display: flex; align-items: center; justify-content: center; width: 100%; height: 100vh; background: var(--bg); }
-.login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px 44px; width: 360px; }
-.login-logo { text-align: center; margin-bottom: 26px; }
-.login-logo h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--gold); }
-.login-logo p { font-size: 12.5px; color: var(--text3); margin-top: 4px; }
-.login-box .form-group { margin-bottom: 12px; }
-
-.confirm-body { font-size: 13.5px; color: var(--text2); line-height: 1.5; }
-
-@media (max-width: 768px) {
-  #sidebar { display: none; }
-  .form-grid, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+/* ── FOTO PREVIEW ── */
+.foto-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 2px solid var(--gold-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
 }
+.foto-preview img { width: 100%; height: 100%; object-fit: cover; }
+.foto-preview i { font-size: 22px; color: var(--text3); }
+
+.svc-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r);
+  object-fit: cover;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── PROF HR ── */
+.prof-hr-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  color: var(--text2);
+}
+.prof-hr-item:hover { background: var(--bg3); }
+.prof-hr-item.active { background: var(--gold-muted); border-left-color: var(--gold); color: var(--gold); }
+
+/* ── DASHBOARD GRID ── */
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── LOGIN ── */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--bg);
+  padding: 20px;
+}
+
+.login-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-brand-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--gold);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+.login-brand-icon i { font-size: 30px; color: #0C0C0E; }
+
+.login-brand h2 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  line-height: 1;
+}
+.login-brand p { font-size: 12.5px; color: var(--text3); margin-top: 4px; }
+
+.login-box .form-group { margin-bottom: 14px; }
+
+/* ── CONFIRM MODAL ── */
+.confirm-body { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+/* ── OVERLAY SIDEBAR (mobile) ── */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 199;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    transform: translateX(-100%);
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay.open { display: block; }
+  .menu-btn { display: flex; }
+  
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .form-grid, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+  .filter-bar input, .filter-bar select { max-width: 100%; }
+  
+  #content { padding: 14px; }
+  .topbar { padding: 0 14px; }
+
+  .modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  
+  .com-inputs { flex-direction: column; }
+  .com-inputs input { width: 100%; }
+  
+  .plano-valor { display: none; }
+  
+  #toast { bottom: 16px; right: 12px; left: 12px; max-width: none; }
+}
+
+@media (max-width: 480px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+  .prof-actions .btn-ghost { display: none; }
+}
+
+/* ── GOLD LINE ACCENTS ── */
+.gl-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  color: var(--text3);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.gl-divider::before,
+.gl-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.gold-rule { height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0.3; margin: 2px 0; }
 </style>
 </head>
 <body>
@@ -260,13 +978,14 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">
-      <h2>✂ Painel</h2>
-      <p>Acesse o painel da sua barbearia</p>
+    <div class="login-brand">
+      <div class="login-brand-icon"><i class="ti ti-scissors"></i></div>
+      <h2>GOLD LINE</h2>
+      <p>Painel de gestão da sua barbearia</p>
     </div>
     <div class="form-group">
       <label>Slug da barbearia</label>
-      <input id="l-slug" placeholder="ex: minha-barbearia" autocomplete="off">
+      <input id="l-slug" placeholder="minha-barbearia" autocomplete="off">
     </div>
     <div class="form-group">
       <label>Usuário</label>
@@ -276,53 +995,65 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
       <label>Senha</label>
       <input id="l-pass" type="password" placeholder="••••••">
     </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="fazerLogin()">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px;padding:13px;font-size:15px" onclick="fazerLogin()">
       <i class="ti ti-login"></i> Entrar
     </button>
-    <p id="l-erro" style="color:var(--danger);font-size:12px;margin-top:10px;display:none;text-align:center"></p>
+    <p id="l-erro" style="color:var(--danger);font-size:12.5px;margin-top:10px;display:none;text-align:center"></p>
   </div>
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;width:100%;height:100vh">
+<div id="app-shell" style="display:none">
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
   <aside id="sidebar">
-    <div class="sidebar-logo">
-      <h1 id="sb-nome">Barbearia</h1>
-      <span id="sb-cidade"></span>
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon"><i class="ti ti-scissors"></i></div>
+        <div class="brand-text">
+          <h1>GOLD LINE</h1>
+          <span id="sb-cidade">Barbearia</span>
+        </div>
+      </div>
     </div>
-    <div class="wa-badge" onclick="verificarWA()">
+
+    <div class="wa-pill" onclick="verificarWA()">
       <div class="wa-dot" id="wa-dot"></div>
       <span id="wa-txt">WhatsApp</span>
     </div>
+
+    <div class="gold-rule" style="margin:0 14px"></div>
+
     <nav>
-      <div class="nav-section">Geral</div>
+      <div class="nav-label">Geral</div>
       <div class="nav-item active" data-section="dashboard" onclick="nav(this)"><i class="ti ti-dashboard"></i> Dashboard</div>
       <div class="nav-item" data-section="agendamentos" onclick="nav(this)"><i class="ti ti-calendar"></i> Agendamentos</div>
-      <div class="nav-section">Gestão</div>
+      <div class="nav-label">Gestão</div>
       <div class="nav-item" data-section="profissionais" onclick="nav(this)"><i class="ti ti-users"></i> Profissionais</div>
       <div class="nav-item" data-section="servicos" onclick="nav(this)"><i class="ti ti-scissors"></i> Serviços</div>
       <div class="nav-item" data-section="horarios" onclick="nav(this)"><i class="ti ti-clock"></i> Horários</div>
-      <div class="nav-section">Financeiro</div>
+      <div class="nav-label">Financeiro</div>
       <div class="nav-item" data-section="financeiro" onclick="nav(this)"><i class="ti ti-chart-bar"></i> Lucro Real</div>
       <div class="nav-item" data-section="gastos" onclick="nav(this)"><i class="ti ti-receipt"></i> Gastos</div>
       <div class="nav-item" data-section="comissoes" onclick="nav(this)"><i class="ti ti-percentage"></i> Comissões</div>
-      <div class="nav-section">Planos</div>
+      <div class="nav-label">Planos</div>
       <div class="nav-item" data-section="planos" onclick="nav(this)"><i class="ti ti-crown"></i> Planos</div>
       <div class="nav-item" data-section="assinantes" onclick="nav(this)"><i class="ti ti-id-badge"></i> Assinantes</div>
-      <div class="nav-section">Config</div>
+      <div class="nav-label">Config</div>
       <div class="nav-item" data-section="config" onclick="nav(this)"><i class="ti ti-settings"></i> Configurações</div>
     </nav>
+
     <div class="sidebar-footer">
-      <div class="slug-info">Slug: <strong id="sb-slug-txt"></strong></div>
+      <div class="slug-chip"><i class="ti ti-hash" style="font-size:11px"></i><strong id="sb-slug-txt">—</strong></div>
       <button class="btn-sair" onclick="sair()"><i class="ti ti-logout"></i> Sair</button>
     </div>
   </aside>
 
-  <div id="main" style="display:flex;flex-direction:column;overflow:hidden;flex:1;min-width:0">
+  <div id="main">
     <div class="topbar">
-      <div>
+      <div class="topbar-left">
+        <div class="menu-btn" onclick="openSidebar()"><i class="ti ti-menu-2"></i></div>
         <div class="topbar-title" id="page-title">Dashboard</div>
-        <div class="topbar-sub" id="page-sub">Visão geral do sistema</div>
       </div>
       <div class="topbar-actions" id="topbar-actions"></div>
     </div>
@@ -331,15 +1062,41 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 
       <!-- DASHBOARD -->
       <div class="section active" id="section-dashboard">
-        <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)">
-          <div class="metric-card"><i class="ti ti-calendar metric-icon"></i><div class="metric-label">Agendamentos</div><div class="metric-value" id="d-ag">—</div><div class="metric-sub">pendentes hoje</div></div>
-          <div class="metric-card"><i class="ti ti-trending-up metric-icon"></i><div class="metric-label">Ganhos</div><div class="metric-value" id="d-ganhos" style="color:var(--success)">—</div><div class="metric-sub">concluídos</div></div>
-          <div class="metric-card"><i class="ti ti-trending-down metric-icon"></i><div class="metric-label">Gastos</div><div class="metric-value" id="d-gastos" style="color:var(--danger)">—</div><div class="metric-sub">despesas totais</div></div>
-          <div class="metric-card" style="border-color:var(--border2)"><i class="ti ti-cash metric-icon"></i><div class="metric-label">Lucro real</div><div class="metric-value" id="d-lucro" style="color:var(--gold)">—</div><div class="metric-sub">ganhos − gastos</div></div>
+        <div class="metrics-grid" style="grid-template-columns:repeat(4,minmax(140px,1fr))">
+          <div class="metric-card">
+            <div class="metric-icon-bg"><i class="ti ti-calendar"></i></div>
+            <div class="metric-label">Agendamentos</div>
+            <div class="metric-value" id="d-ag">—</div>
+            <div class="metric-sub">pendentes hoje</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-bg" style="background:var(--success-bg)"><i class="ti ti-trending-up" style="color:var(--success)"></i></div>
+            <div class="metric-label">Ganhos</div>
+            <div class="metric-value" id="d-ganhos" style="color:var(--success)">—</div>
+            <div class="metric-sub">concluídos</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-bg" style="background:var(--danger-bg)"><i class="ti ti-trending-down" style="color:var(--danger)"></i></div>
+            <div class="metric-label">Gastos</div>
+            <div class="metric-value" id="d-gastos" style="color:var(--danger)">—</div>
+            <div class="metric-sub">despesas</div>
+          </div>
+          <div class="metric-card" style="border-color:var(--gold-border)">
+            <div class="metric-icon-bg" style="background:var(--gold-muted)"><i class="ti ti-cash" style="color:var(--gold)"></i></div>
+            <div class="metric-label">Lucro Real</div>
+            <div class="metric-value" id="d-lucro" style="color:var(--gold)">—</div>
+            <div class="metric-sub">ganhos − gastos</div>
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-          <div class="card"><div class="card-header"><div class="card-title">Últimos agendamentos</div></div><div id="dash-ags"><div class="loading"><span class="spinner"></span>Carregando...</div></div></div>
-          <div class="card"><div class="card-header"><div class="card-title">Próximos hoje</div></div><div id="dash-hoje"><div class="loading"><span class="spinner"></span>Carregando...</div></div></div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Últimos Agendamentos</div></div>
+            <div id="dash-ags"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Próximos Hoje</div></div>
+            <div id="dash-hoje"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+          </div>
         </div>
       </div>
 
@@ -353,14 +1110,14 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
             <option value="concluido">Concluído</option>
             <option value="cancelado">Cancelado</option>
           </select>
-          <button class="btn btn-ghost btn-sm" onclick="carregarAgendamentos()"><i class="ti ti-refresh"></i> Atualizar</button>
-          <button class="btn btn-primary btn-sm" onclick="abrirModalAgNovo()"><i class="ti ti-plus"></i> Novo agendamento</button>
-          <button class="btn btn-danger btn-sm" onclick="apagarConcluidos()"><i class="ti ti-trash"></i> Apagar concluídos</button>
+          <button class="btn btn-ghost btn-sm" onclick="carregarAgendamentos()"><i class="ti ti-refresh"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalAgNovo()"><i class="ti ti-plus"></i> Novo</button>
+          <button class="btn btn-danger btn-sm" onclick="apagarConcluidos()"><i class="ti ti-trash"></i></button>
         </div>
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Cliente</th><th>Data</th><th>Horário</th><th>Profissional</th><th>Serviço</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>Cliente</th><th>Data</th><th>Hora</th><th>Profissional</th><th>Serviço</th><th>Valor</th><th>Status</th><th></th></tr></thead>
               <tbody id="tb-agendamentos"><tr><td colspan="8"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
             </table>
           </div>
@@ -372,7 +1129,7 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
         <div class="card">
           <div class="card-header">
             <div class="card-title">Equipe</div>
-            <button class="btn btn-primary btn-sm" onclick="abrirModalProf()"><i class="ti ti-plus"></i> Adicionar profissional</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalProf()"><i class="ti ti-plus"></i> Adicionar</button>
           </div>
           <div id="lista-profissionais"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
         </div>
@@ -381,8 +1138,8 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
       <!-- SERVIÇOS -->
       <div class="section" id="section-servicos">
         <div class="tabs">
-          <div class="tab active" onclick="abaServico(this,'tab-destaque')">Serviços destaque</div>
-          <div class="tab" onclick="abaServico(this,'tab-agendamento')">Serviços agendamento</div>
+          <div class="tab active" onclick="abaServico(this,'tab-destaque')">Serviços Destaque</div>
+          <div class="tab" onclick="abaServico(this,'tab-agendamento')">Serviços Agendamento</div>
         </div>
         <div id="tab-destaque">
           <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
@@ -406,48 +1163,44 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
         </div>
       </div>
 
-      <!-- HORÁRIOS — com tabs Global / Por Profissional -->
+      <!-- HORÁRIOS -->
       <div class="section" id="section-horarios">
         <div class="tabs" style="margin-bottom:0">
-          <div class="tab active" onclick="abaHorario(this,'hr-global')"><i class="ti ti-building-store"></i> Horário da barbearia</div>
-          <div class="tab" onclick="abaHorario(this,'hr-prof')"><i class="ti ti-users"></i> Por profissional</div>
+          <div class="tab active" onclick="abaHorario(this,'hr-global')"><i class="ti ti-building-store"></i> Barbearia</div>
+          <div class="tab" onclick="abaHorario(this,'hr-prof')"><i class="ti ti-users"></i> Por Profissional</div>
         </div>
-
-        <!-- ABA GLOBAL -->
         <div id="hr-global">
           <div class="card" style="margin-top:16px">
             <div class="card-header">
               <div>
-                <div class="card-title">Horário padrão da barbearia</div>
-                <div class="card-sub">Usado por profissionais sem horário individual configurado</div>
+                <div class="card-title">Horário Padrão</div>
+                <div class="card-sub">Usado por profissionais sem horário individual</div>
               </div>
               <button class="btn btn-primary btn-sm" onclick="salvarHorarios()"><i class="ti ti-device-floppy"></i> Salvar</button>
             </div>
-            <div class="form-group" style="margin-bottom:16px;max-width:200px">
+            <div class="form-group" style="margin-bottom:16px;max-width:220px">
               <label>Intervalo entre horários (min)</label>
               <input type="number" id="hr-intervalo" value="30">
             </div>
             <div id="dias-container"><div class="loading"><span class="spinner"></span></div></div>
             <hr class="divider">
-            <div class="card-title" style="margin-bottom:12px;font-size:13px">Pausa (almoço)</div>
+            <div class="card-title" style="margin-bottom:12px;font-size:14px">Pausa (almoço)</div>
             <div class="form-grid" style="max-width:400px">
               <div class="form-group"><label>Início</label><input type="time" id="hr-pausa-inicio"></div>
               <div class="form-group"><label>Fim</label><input type="time" id="hr-pausa-fim"></div>
             </div>
           </div>
         </div>
-
-        <!-- ABA POR PROFISSIONAL -->
         <div id="hr-prof" style="display:none">
-          <div style="display:grid;grid-template-columns:220px 1fr;gap:18px;margin-top:16px;align-items:start">
+          <div style="display:grid;grid-template-columns:220px 1fr;gap:16px;margin-top:16px;align-items:start">
             <div class="card" style="padding:10px 0;margin-bottom:0">
-              <div style="padding:10px 14px 8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:600">Profissionais</div>
+              <div style="padding:10px 14px 8px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);font-weight:600">Profissionais</div>
               <div id="hr-prof-lista"><div class="loading"><span class="spinner"></span></div></div>
             </div>
             <div id="hr-prof-painel">
               <div class="empty" style="padding:60px 0">
-                <i class="ti ti-arrow-left" style="font-size:28px;display:block;margin-bottom:10px;opacity:.3"></i>
-                <p>Selecione um profissional ao lado</p>
+                <i class="ti ti-arrow-left"></i>
+                <p>Selecione um profissional</p>
               </div>
             </div>
           </div>
@@ -457,14 +1210,14 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
       <!-- FINANCEIRO -->
       <div class="section" id="section-financeiro">
         <div class="metrics-grid" style="grid-template-columns:1fr 1fr 1fr">
-          <div class="metric-card"><i class="ti ti-trending-up metric-icon"></i><div class="metric-label">Total ganhos</div><div class="metric-value" id="f-ganhos" style="color:var(--success)">—</div></div>
-          <div class="metric-card"><i class="ti ti-trending-down metric-icon"></i><div class="metric-label">Total gastos</div><div class="metric-value" id="f-gastos" style="color:var(--danger)">—</div></div>
-          <div class="metric-card" style="border-color:var(--border2)"><i class="ti ti-cash metric-icon"></i><div class="metric-label">Lucro real</div><div class="metric-value" id="f-lucro" style="color:var(--gold)">—</div></div>
+          <div class="metric-card"><div class="metric-icon-bg" style="background:var(--success-bg)"><i class="ti ti-trending-up" style="color:var(--success)"></i></div><div class="metric-label">Total Ganhos</div><div class="metric-value" id="f-ganhos" style="color:var(--success)">—</div></div>
+          <div class="metric-card"><div class="metric-icon-bg" style="background:var(--danger-bg)"><i class="ti ti-trending-down" style="color:var(--danger)"></i></div><div class="metric-label">Total Gastos</div><div class="metric-value" id="f-gastos" style="color:var(--danger)">—</div></div>
+          <div class="metric-card" style="border-color:var(--gold-border)"><div class="metric-icon-bg" style="background:var(--gold-muted)"><i class="ti ti-cash" style="color:var(--gold)"></i></div><div class="metric-label">Lucro Real</div><div class="metric-value" id="f-lucro" style="color:var(--gold)">—</div></div>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:12px">Distribuição</div>
+          <div class="card-title" style="margin-bottom:14px">Distribuição do Faturamento</div>
           <div class="lucro-bar"><div class="lucro-fill" id="f-bar" style="width:0%"></div></div>
-          <p id="f-bar-pct" style="font-size:11px;color:var(--text3);margin-top:6px">—</p>
+          <p id="f-bar-pct" style="font-size:12px;color:var(--text3);margin-top:8px">—</p>
         </div>
       </div>
 
@@ -487,14 +1240,12 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
           <div class="tab" onclick="abaComissao(this,'tab-rel-com')">Relatório</div>
           <div class="tab" onclick="abaComissao(this,'tab-ajuste-com')">Ajustes</div>
         </div>
-
         <div id="tab-cfg-com">
           <div class="card">
-            <div class="card-header"><div class="card-title">Comissão por profissional</div></div>
+            <div class="card-header"><div class="card-title">Comissão por Profissional</div></div>
             <div id="lista-comissoes"><div class="loading"><span class="spinner"></span></div></div>
           </div>
         </div>
-
         <div id="tab-rel-com" style="display:none">
           <div class="filter-bar">
             <input type="month" id="com-mes" onchange="carregarRelComissoes()">
@@ -502,37 +1253,20 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
           </div>
           <div id="rel-comissoes"><div class="loading"><span class="spinner"></span></div></div>
         </div>
-
-        <!-- ABA AJUSTES — CORRIGIDA -->
         <div id="tab-ajuste-com" style="display:none">
           <div class="card">
-            <div class="card-header"><div class="card-title">Novo ajuste de comissão</div></div>
+            <div class="card-header"><div class="card-title">Novo Ajuste</div></div>
             <div class="form-grid-3">
-              <div class="form-group">
-                <label>Profissional</label>
-                <select id="aj-prof"><option value="">Selecione o profissional...</option></select>
-              </div>
-              <div class="form-group">
-                <label>Mês referência</label>
-                <input type="month" id="aj-mes">
-              </div>
-              <div class="form-group">
-                <label>Valor (negativo = desconto)</label>
-                <input id="aj-valor" type="number" step="0.01" placeholder="Ex: 50 ou -20">
-              </div>
+              <div class="form-group"><label>Profissional</label><select id="aj-prof"><option value="">Selecione...</option></select></div>
+              <div class="form-group"><label>Mês referência</label><input type="month" id="aj-mes"></div>
+              <div class="form-group"><label>Valor (negativo = desconto)</label><input id="aj-valor" type="number" step="0.01" placeholder="Ex: 50 ou -20"></div>
             </div>
-            <div class="form-group" style="margin-top:12px">
-              <label>Descrição</label>
-              <input id="aj-desc" placeholder="Ex: Bônus por meta, desconto adiantamento...">
-            </div>
-            <button class="btn btn-primary" style="margin-top:14px" onclick="addAjuste()">
-              <i class="ti ti-plus"></i> Salvar ajuste
-            </button>
+            <div class="form-group" style="margin-top:12px"><label>Descrição</label><input id="aj-desc" placeholder="Ex: Bônus por meta..."></div>
+            <button class="btn btn-primary" style="margin-top:14px" onclick="addAjuste()"><i class="ti ti-plus"></i> Salvar ajuste</button>
           </div>
-
           <div class="card" style="margin-top:0">
             <div class="card-header">
-              <div class="card-title">Ajustes do mês</div>
+              <div class="card-title">Ajustes do Mês</div>
               <div style="display:flex;gap:8px;align-items:center">
                 <input type="month" id="aj-filtro-mes" onchange="carregarAjustes()" style="max-width:160px">
                 <button class="btn btn-ghost btn-sm" onclick="carregarAjustes()"><i class="ti ti-refresh"></i></button>
@@ -562,7 +1296,7 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
             <option value="cancelado">Cancelado</option>
           </select>
           <button class="btn btn-ghost btn-sm" onclick="carregarAssinantes()"><i class="ti ti-refresh"></i></button>
-          <button class="btn btn-danger btn-sm" onclick="apagarCancelados()"><i class="ti ti-trash"></i> Apagar cancelados</button>
+          <button class="btn btn-danger btn-sm" onclick="apagarCancelados()"><i class="ti ti-trash"></i> Cancelados</button>
         </div>
         <div class="card">
           <div class="table-wrap">
@@ -576,46 +1310,47 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 
       <!-- CONFIG -->
       <div class="section" id="section-config">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Dados da barbearia</div>
+              <div class="card-title">Dados da Barbearia</div>
               <button class="btn btn-primary btn-sm" onclick="salvarConfig()"><i class="ti ti-device-floppy"></i> Salvar</button>
             </div>
-            <div class="form-group" style="margin-bottom:11px"><label>Nome</label><input id="cfg-nome"></div>
-            <div class="form-group" style="margin-bottom:11px"><label>Cidade</label><input id="cfg-cidade"></div>
-            <div class="form-group" style="margin-bottom:11px"><label>WhatsApp</label><input id="cfg-whatsapp" placeholder="5511999999999"></div>
-            <div class="form-group" style="margin-bottom:11px"><label>Chave PIX</label><input id="cfg-pix"></div>
-            <div class="form-group" style="margin-bottom:11px"><label>Cor primária</label><input type="color" id="cfg-cor"></div>
+            <div class="form-group" style="margin-bottom:12px"><label>Nome</label><input id="cfg-nome"></div>
+            <div class="form-group" style="margin-bottom:12px"><label>Cidade</label><input id="cfg-cidade"></div>
+            <div class="form-group" style="margin-bottom:12px"><label>WhatsApp</label><input id="cfg-whatsapp" placeholder="5511999999999"></div>
+            <div class="form-group" style="margin-bottom:12px"><label>Chave PIX</label><input id="cfg-pix"></div>
+            <div class="form-group" style="margin-bottom:12px"><label>Cor primária</label><input type="color" id="cfg-cor"></div>
             <div class="form-group"><label>Sobre</label><textarea id="cfg-sobre"></textarea></div>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title">Links do sistema</div></div>
-            <div class="info-row"><span class="label">Agendamento</span><a id="lk-ag" target="_blank" style="color:var(--gold)">—</a></div>
-            <div class="info-row"><span class="label">Painel admin</span><a id="lk-adm" target="_blank" style="color:var(--gold)">—</a></div>
-            <div class="info-row"><span class="label">Slug</span><span id="lk-slug" class="value">—</span></div>
+            <div class="card-header"><div class="card-title">Links do Sistema</div></div>
+            <div class="info-row"><span class="label">Agendamento</span><a id="lk-ag" target="_blank" style="color:var(--gold);font-size:12px;word-break:break-all">—</a></div>
+            <div class="info-row"><span class="label">Painel admin</span><a id="lk-adm" target="_blank" style="color:var(--gold);font-size:12px;word-break:break-all">—</a></div>
+            <div class="info-row"><span class="label">Slug</span><span id="lk-slug" class="value" style="font-size:12px">—</span></div>
             <hr class="divider">
-            <div class="card-title" style="margin-bottom:12px;font-size:13px">WhatsApp / Lembretes</div>
+            <div class="card-title" style="margin-bottom:12px;font-size:14px">WhatsApp / Lembretes</div>
             <div class="info-row"><span class="label">Status</span><span id="cfg-wa-status">—</span></div>
-            <p style="font-size:12px;color:var(--text3);margin-top:10px">Lembrete automático enviado ~1h antes via WhatsApp.</p>
+            <p style="font-size:12px;color:var(--text3);margin-top:10px">Lembrete automático ~1h antes via WhatsApp.</p>
           </div>
         </div>
       </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /app -->
+    </div>
+  </div>
+</div>
 
-<!-- ════ MODAIS ════ -->
+<!-- ════════════ MODAIS ════════════ -->
 
 <!-- NOVO AGENDAMENTO -->
 <div class="modal-overlay" id="modal-ag-novo">
   <div class="modal">
-    <div class="modal-title">Novo agendamento</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title">Novo Agendamento</div>
     <button class="modal-close" onclick="fecharModal('modal-ag-novo')"><i class="ti ti-x"></i></button>
     <div class="form-grid">
       <div class="form-group"><label>Nome do cliente *</label><input id="ag-nome" placeholder="Nome completo"></div>
-      <div class="form-group"><label>Telefone</label><input id="ag-tel" placeholder="11999999999"></div>
+      <div class="form-group"><label>Telefone</label><input id="ag-tel" placeholder="11999999999" type="tel"></div>
       <div class="form-group"><label>Data *</label><input type="date" id="ag-data"></div>
       <div class="form-group"><label>Horário *</label><input type="time" id="ag-hora"></div>
       <div class="form-group"><label>Profissional</label><select id="ag-prof"><option value="">Qualquer</option></select></div>
@@ -631,7 +1366,8 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <!-- PROFISSIONAL -->
 <div class="modal-overlay" id="modal-prof">
   <div class="modal">
-    <div class="modal-title" id="modal-prof-title">Adicionar profissional</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-prof-title">Adicionar Profissional</div>
     <button class="modal-close" onclick="fecharModal('modal-prof')"><i class="ti ti-x"></i></button>
     <input type="hidden" id="prof-id">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
@@ -639,14 +1375,14 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
       <div class="form-group" style="flex:1"><label>URL da foto</label><input id="prof-foto" placeholder="https://..." oninput="prevFoto(this.value,'prof-foto-prev')"></div>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label>Nome *</label><input id="prof-nome" placeholder="Nome do profissional"></div>
-      <div class="form-group"><label>Especialidade</label><input id="prof-espec" placeholder="Barbeiro, Colorista..."></div>
-      <div class="form-group"><label>WhatsApp</label><input id="prof-wa" placeholder="5511999999999"></div>
+      <div class="form-group"><label>Nome *</label><input id="prof-nome"></div>
+      <div class="form-group"><label>Especialidade</label><input id="prof-espec" placeholder="Barbeiro..."></div>
+      <div class="form-group"><label>WhatsApp</label><input id="prof-wa" type="tel"></div>
       <div class="form-group"><label>Ordem (exibição)</label><input type="number" id="prof-ordem" placeholder="0"></div>
     </div>
     <div class="toggle-wrap" style="margin-top:14px">
       <div class="toggle on" id="prof-disp"></div>
-      <span style="font-size:13px;color:var(--text2)">Disponível para agendamentos</span>
+      <span style="font-size:13.5px;color:var(--text2)">Disponível para agendamentos</span>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal('modal-prof')">Cancelar</button>
@@ -655,20 +1391,21 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
   </div>
 </div>
 
-<!-- PAUSA PROFISSIONAL -->
+<!-- PAUSA -->
 <div class="modal-overlay" id="modal-pausa">
   <div class="modal">
-    <div class="modal-title">Adicionar pausa / folga</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title">Adicionar Pausa / Folga</div>
     <button class="modal-close" onclick="fecharModal('modal-pausa')"><i class="ti ti-x"></i></button>
     <input type="hidden" id="pausa-prof-id">
-    <p id="pausa-prof-nome" style="font-size:12px;color:var(--text3);margin-bottom:14px"></p>
+    <p id="pausa-prof-nome" style="font-size:12.5px;color:var(--text3);margin-bottom:14px"></p>
     <div class="form-grid">
       <div class="form-group"><label>Data início</label><input type="date" id="pausa-inicio"></div>
       <div class="form-group"><label>Data fim</label><input type="date" id="pausa-fim"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal('modal-pausa')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarPausa()"><i class="ti ti-check"></i> Salvar pausa</button>
+      <button class="btn btn-primary" onclick="salvarPausa()"><i class="ti ti-check"></i> Salvar</button>
     </div>
   </div>
 </div>
@@ -676,7 +1413,8 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <!-- SERVIÇO DESTAQUE -->
 <div class="modal-overlay" id="modal-serv-dest">
   <div class="modal">
-    <div class="modal-title" id="modal-serv-dest-title">Novo serviço destaque</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-serv-dest-title">Novo Serviço Destaque</div>
     <button class="modal-close" onclick="fecharModal('modal-serv-dest')"><i class="ti ti-x"></i></button>
     <input type="hidden" id="sd-id">
     <div class="form-grid">
@@ -686,7 +1424,7 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
     </div>
     <div class="form-group" style="margin-top:12px"><label>Descrição</label><textarea id="sd-desc" placeholder="Descreva o serviço..."></textarea></div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
-      <div class="svc-thumb" id="sd-img-prev" style="display:flex;align-items:center;justify-content:center"><i class="ti ti-photo" style="color:var(--text3);font-size:18px"></i></div>
+      <div class="svc-thumb" id="sd-img-prev" style="display:flex;align-items:center;justify-content:center"><i class="ti ti-photo" style="color:var(--text3)"></i></div>
       <div class="form-group" style="flex:1"><label>URL da imagem</label><input id="sd-img" placeholder="https://..." oninput="prevImg(this.value,'sd-img-prev')"></div>
     </div>
     <div class="modal-footer">
@@ -699,16 +1437,17 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <!-- SERVIÇO AGENDAMENTO -->
 <div class="modal-overlay" id="modal-serv">
   <div class="modal">
-    <div class="modal-title" id="modal-serv-title">Novo serviço</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-serv-title">Novo Serviço</div>
     <button class="modal-close" onclick="fecharModal('modal-serv')"><i class="ti ti-x"></i></button>
     <input type="hidden" id="svc-id">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div class="svc-thumb" id="svc-img-prev" style="display:flex;align-items:center;justify-content:center"><i class="ti ti-photo" style="color:var(--text3);font-size:18px"></i></div>
+      <div class="svc-thumb" id="svc-img-prev" style="display:flex;align-items:center;justify-content:center"><i class="ti ti-photo" style="color:var(--text3)"></i></div>
       <div class="form-group" style="flex:1"><label>URL da imagem</label><input id="svc-img" placeholder="https://..." oninput="prevImg(this.value,'svc-img-prev')"></div>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label>Nome *</label><input id="svc-nome" placeholder="Corte simples"></div>
-      <div class="form-group"><label>Preço (R$) *</label><input id="svc-preco" type="number" placeholder="25"></div>
+      <div class="form-group"><label>Nome *</label><input id="svc-nome"></div>
+      <div class="form-group"><label>Preço (R$) *</label><input id="svc-preco" type="number"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal('modal-serv')">Cancelar</button>
@@ -720,7 +1459,8 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <!-- GASTO -->
 <div class="modal-overlay" id="modal-gasto">
   <div class="modal">
-    <div class="modal-title">Registrar despesa</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar Despesa</div>
     <button class="modal-close" onclick="fecharModal('modal-gasto')"><i class="ti ti-x"></i></button>
     <div class="form-grid">
       <div class="form-group"><label>Descrição *</label><input id="g-desc" placeholder="Aluguel, produto..."></div>
@@ -736,7 +1476,8 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <!-- PLANO -->
 <div class="modal-overlay" id="modal-plano">
   <div class="modal">
-    <div class="modal-title" id="modal-plano-title">Criar plano</div>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-plano-title">Criar Plano</div>
     <button class="modal-close" onclick="fecharModal('modal-plano')"><i class="ti ti-x"></i></button>
     <input type="hidden" id="pl-id">
     <div class="form-grid">
@@ -745,10 +1486,10 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
       <div class="form-group"><label>Cortes por mês</label><input id="pl-cortes" type="number" placeholder="4"></div>
       <div class="form-group"><label>Ordem</label><input id="pl-ordem" type="number" placeholder="0"></div>
     </div>
-    <div class="form-group" style="margin-top:12px"><label>Descrição / Benefícios</label><textarea id="pl-desc" placeholder="Descreva os benefícios..."></textarea></div>
+    <div class="form-group" style="margin-top:12px"><label>Descrição / Benefícios</label><textarea id="pl-desc"></textarea></div>
     <div class="toggle-wrap" style="margin-top:14px">
       <div class="toggle on" id="pl-ativo"></div>
-      <span style="font-size:13px;color:var(--text2)">Plano ativo (visível para clientes)</span>
+      <span style="font-size:13.5px;color:var(--text2)">Plano ativo (visível para clientes)</span>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal('modal-plano')">Cancelar</button>
@@ -759,7 +1500,8 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 
 <!-- CONFIRM -->
 <div class="modal-overlay" id="modal-confirm">
-  <div class="modal" style="max-width:380px">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-handle"></div>
     <div class="modal-title" id="confirm-title">Confirmar</div>
     <button class="modal-close" onclick="fecharModal('modal-confirm')"><i class="ti ti-x"></i></button>
     <p class="confirm-body" id="confirm-body"></p>
@@ -773,9 +1515,9 @@ input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
 <div id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // STATE
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 let SLUG = '', TOKEN = '';
 let _profissionais = [], _planos = [], _servicos = [];
 
@@ -791,9 +1533,21 @@ const fmtData = d => {
   return `${dia}/${m}/${a}`;
 };
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
+// SIDEBAR MOBILE
+// ══════════════════════════════════════════
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════
 // UTILS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 function toast(msg, tipo = 'success') {
   const t = document.getElementById('toast');
   t.className = tipo;
@@ -814,26 +1568,22 @@ function confirmar(titulo, corpo, fn) {
   abrirModal('modal-confirm');
 }
 
-function prevFoto(url, previewId) {
-  const el = document.getElementById(previewId);
-  if (url && url.startsWith('http')) {
-    el.innerHTML = `<img src="${url}" onerror="this.parentElement.innerHTML='<i class=\\'ti ti-user\\'></i>'">`;
-  } else {
-    el.innerHTML = '<i class="ti ti-user"></i>';
-  }
+function prevFoto(url, id) {
+  const el = document.getElementById(id);
+  el.innerHTML = (url && url.startsWith('http'))
+    ? `<img src="${url}" onerror="this.parentElement.innerHTML='<i class=\\'ti ti-user\\'></i>'">`
+    : '<i class="ti ti-user"></i>';
 }
-function prevImg(url, previewId) {
-  const el = document.getElementById(previewId);
-  if (url && url.startsWith('http')) {
-    el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<i class=\\'ti ti-photo\\'></i>'">`;
-  } else {
-    el.innerHTML = '<i class="ti ti-photo" style="color:var(--text3);font-size:18px"></i>';
-  }
+function prevImg(url, id) {
+  const el = document.getElementById(id);
+  el.innerHTML = (url && url.startsWith('http'))
+    ? `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<i class=\\'ti ti-photo\\'></i>'">`
+    : '<i class="ti ti-photo" style="color:var(--text3)"></i>';
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // LOGIN
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function fazerLogin() {
   const slug = document.getElementById('l-slug').value.trim();
   const user = document.getElementById('l-user').value.trim();
@@ -851,10 +1601,7 @@ async function fazerLogin() {
       localStorage.setItem('barb_slug', slug);
       localStorage.setItem('barb_token', d.token);
       iniciarApp();
-    } else {
-      erro.textContent = d.erro || 'Credenciais inválidas.';
-      erro.style.display = 'block';
-    }
+    } else { erro.textContent = d.erro || 'Credenciais inválidas.'; erro.style.display = 'block'; }
   } catch { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
 }
 
@@ -863,27 +1610,25 @@ document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key =
 (function autoLogin() {
   const s = localStorage.getItem('barb_slug');
   const t = localStorage.getItem('barb_token');
-  if (s && t) { SLUG = s; TOKEN = t; document.getElementById('l-slug').value = s; iniciarApp(); }
+  if (s && t) { SLUG = s; TOKEN = t; iniciarApp(); }
 })();
 
 function sair() {
-  localStorage.removeItem('barb_slug');
-  localStorage.removeItem('barb_token');
-  document.getElementById('app').style.display = 'none';
+  localStorage.removeItem('barb_slug'); localStorage.removeItem('barb_token');
+  document.getElementById('app-shell').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   SLUG = ''; TOKEN = '';
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // INIT APP
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function iniciarApp() {
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app-shell').style.display = 'flex';
   document.getElementById('sb-slug-txt').textContent = SLUG;
   document.getElementById('lk-slug').textContent = SLUG;
-  const ag  = `/${SLUG}`;
-  const adm = `/${SLUG}/admin`;
+  const ag  = `/${SLUG}`, adm = `/${SLUG}/admin`;
   document.getElementById('lk-ag').href  = ag;  document.getElementById('lk-ag').textContent  = ag;
   document.getElementById('lk-adm').href = adm; document.getElementById('lk-adm').textContent = adm;
   await carregarConfigSilent();
@@ -895,8 +1640,8 @@ async function iniciarApp() {
 async function carregarConfigSilent() {
   try {
     const d = await fetch(API('/config')).then(r => r.json());
-    if (d.nome)   document.getElementById('sb-nome').textContent   = d.nome;
-    if (d.cidade) document.getElementById('sb-cidade').textContent = d.cidade;
+    if (d.nome)   { document.getElementById('sb-cidade').textContent = d.nome; }
+    if (d.cidade) { document.getElementById('sb-cidade').textContent = d.cidade; }
   } catch {}
 }
 
@@ -913,21 +1658,21 @@ async function verificarWA() {
   } catch {}
 }
 
-// ══════════════════════════════════════════════
-// NAVEGAÇÃO
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
 const pageInfo = {
-  dashboard:    { title: 'Dashboard',     sub: 'Visão geral do sistema' },
-  agendamentos: { title: 'Agendamentos',  sub: 'Gerencie todos os agendamentos' },
-  profissionais:{ title: 'Profissionais', sub: 'Gerencie sua equipe' },
-  servicos:     { title: 'Serviços',      sub: 'Serviços oferecidos' },
-  horarios:     { title: 'Horários',      sub: 'Configure o funcionamento' },
-  financeiro:   { title: 'Lucro Real',    sub: 'Balanço financeiro' },
-  gastos:       { title: 'Gastos',        sub: 'Controle de despesas' },
-  comissoes:    { title: 'Comissões',     sub: 'Comissão dos profissionais' },
-  planos:       { title: 'Planos',        sub: 'Planos de assinatura' },
-  assinantes:   { title: 'Assinantes',    sub: 'Clientes com plano' },
-  config:       { title: 'Configurações', sub: 'Dados e preferências' },
+  dashboard:    { title: 'DASHBOARD',      sub: 'Visão geral' },
+  agendamentos: { title: 'AGENDAMENTOS',   sub: 'Gerencie todos os agendamentos' },
+  profissionais:{ title: 'PROFISSIONAIS',  sub: 'Sua equipe' },
+  servicos:     { title: 'SERVIÇOS',       sub: 'Serviços oferecidos' },
+  horarios:     { title: 'HORÁRIOS',       sub: 'Configuração de funcionamento' },
+  financeiro:   { title: 'LUCRO REAL',     sub: 'Balanço financeiro' },
+  gastos:       { title: 'GASTOS',         sub: 'Controle de despesas' },
+  comissoes:    { title: 'COMISSÕES',      sub: 'Comissão dos profissionais' },
+  planos:       { title: 'PLANOS',         sub: 'Planos de assinatura' },
+  assinantes:   { title: 'ASSINANTES',     sub: 'Clientes com plano' },
+  config:       { title: 'CONFIGURAÇÕES',  sub: 'Dados e preferências' },
 };
 
 function nav(el) {
@@ -938,34 +1683,31 @@ function nav(el) {
   document.getElementById('section-' + sec).classList.add('active');
   const info = pageInfo[sec] || {};
   document.getElementById('page-title').textContent = info.title || sec;
-  document.getElementById('page-sub').textContent   = info.sub   || '';
   document.getElementById('topbar-actions').innerHTML = '';
+  closeSidebar();
   carregarSecao(sec);
 }
 
 async function carregarSecao(sec) {
-  // Garante profissionais carregados ao entrar em horários ou comissões
-  if ((sec === 'horarios' || sec === 'comissoes') && !_profissionais.length) {
-    await carregarProfissionais();
-  }
+  if ((sec === 'horarios' || sec === 'comissoes') && !_profissionais.length) await carregarProfissionais();
   switch(sec) {
-    case 'dashboard':     carregarDashboard();     break;
-    case 'agendamentos':  carregarAgendamentos();  break;
+    case 'dashboard':     carregarDashboard(); break;
+    case 'agendamentos':  carregarAgendamentos(); break;
     case 'profissionais': carregarProfissionais(); break;
-    case 'servicos':      carregarServicos();      break;
-    case 'horarios':      carregarHorarios();      break;
-    case 'financeiro':    carregarFinanceiro();    break;
-    case 'gastos':        carregarGastos();        break;
-    case 'comissoes':     carregarComissoes();     break;
-    case 'planos':        carregarPlanos();        break;
-    case 'assinantes':    carregarAssinantes();    break;
-    case 'config':        carregarConfig();        break;
+    case 'servicos':      carregarServicos(); break;
+    case 'horarios':      carregarHorarios(); break;
+    case 'financeiro':    carregarFinanceiro(); break;
+    case 'gastos':        carregarGastos(); break;
+    case 'comissoes':     carregarComissoes(); break;
+    case 'planos':        carregarPlanos(); break;
+    case 'assinantes':    carregarAssinantes(); break;
+    case 'config':        carregarConfig(); break;
   }
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // DASHBOARD
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarDashboard() {
   try {
     const [lucro, ags] = await Promise.all([
@@ -981,32 +1723,38 @@ async function carregarDashboard() {
 
     const ult = (ags||[]).slice(0,5);
     document.getElementById('dash-ags').innerHTML = ult.length ? ult.map(a => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
-        <div><div style="font-size:13px;font-weight:500">${a.nome}</div><div style="font-size:11px;color:var(--text3)">${fmtData(a.data)} ${(a.horario||'').substring(0,5)}</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:13.5px;font-weight:500">${a.nome}</div>
+          <div style="font-size:11px;color:var(--text3)">${fmtData(a.data)} ${(a.horario||'').substring(0,5)}</div>
+        </div>
         <span class="badge badge-${a.status==='concluido'?'success':a.status==='cancelado'?'danger':'warning'}">${a.status}</span>
       </div>`).join('') : '<div class="empty"><p>Nenhum agendamento</p></div>';
 
     const prox = pendHoje.sort((a,b) => a.horario > b.horario ? 1 : -1).slice(0,6);
     document.getElementById('dash-hoje').innerHTML = prox.length ? prox.map(a => `
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
-        <div style="font-family:Syne,sans-serif;font-size:15px;font-weight:700;color:var(--gold);min-width:40px">${(a.horario||'').substring(0,5)}</div>
-        <div><div style="font-size:13px;font-weight:500">${a.nome}</div><div style="font-size:11px;color:var(--text3)">${a.profissional_nome||'Qualquer'}</div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-family:var(--font-display);font-size:18px;color:var(--gold);min-width:44px;letter-spacing:.03em">${(a.horario||'').substring(0,5)}</div>
+        <div>
+          <div style="font-size:13.5px;font-weight:500">${a.nome}</div>
+          <div style="font-size:11px;color:var(--text3)">${a.profissional_nome||'Qualquer'}</div>
+        </div>
       </div>`).join('') : '<div class="empty"><p>Nenhum agendamento hoje</p></div>';
   } catch(e) { console.error(e); }
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // AGENDAMENTOS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarAgendamentos() {
   document.getElementById('tb-agendamentos').innerHTML = '<tr><td colspan="8"><div class="loading"><span class="spinner"></span>Carregando...</div></td></tr>';
   try {
     const ags = await fetch(API('/agendamentos'), { headers: { Authorization: TOKEN } }).then(r => r.json());
-    const filtroData   = document.getElementById('ag-filtro-data').value;
-    const filtroStatus = document.getElementById('ag-filtro-status').value;
+    const fD = document.getElementById('ag-filtro-data').value;
+    const fS = document.getElementById('ag-filtro-status').value;
     let lista = ags || [];
-    if (filtroData)   lista = lista.filter(a => a.data?.split('T')[0] === filtroData);
-    if (filtroStatus) lista = lista.filter(a => a.status === filtroStatus);
+    if (fD) lista = lista.filter(a => a.data?.split('T')[0] === fD);
+    if (fS) lista = lista.filter(a => a.status === fS);
     document.getElementById('tb-agendamentos').innerHTML = lista.length ? lista.map(a => `
       <tr>
         <td><strong>${a.nome}</strong><br><span style="font-size:11px;color:var(--text3)">${a.telefone||'—'}</span></td>
@@ -1024,15 +1772,15 @@ async function carregarAgendamentos() {
             <button class="btn-icon danger" onclick="apagarAg(${a.id})"><i class="ti ti-trash"></i></button>
           </div>
         </td>
-      </tr>`).join('') : '<tr><td colspan="8"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento encontrado</p></div></td></tr>';
-  } catch { toast('Erro ao carregar agendamentos', 'danger'); }
+      </tr>`).join('') : '<tr><td colspan="8"><div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento</p></div></td></tr>';
+  } catch { toast('Erro ao carregar', 'danger'); }
 }
 
 async function criarAgendamento() {
   const nome = document.getElementById('ag-nome').value.trim();
-  const tel  = document.getElementById('ag-tel').value.trim();
   const data = document.getElementById('ag-data').value;
   const hora = document.getElementById('ag-hora').value;
+  const tel  = document.getElementById('ag-tel').value.trim();
   const prof = document.getElementById('ag-prof').value;
   const val  = document.getElementById('ag-valor').value;
   if (!nome || !data || !hora) { toast('Preencha nome, data e horário', 'danger'); return; }
@@ -1064,7 +1812,7 @@ async function apagarAg(id) {
   confirmar('Apagar agendamento', 'Este agendamento será removido permanentemente.', async () => {
     const r = await fetch(API(`/agendamentos/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
     if (r.sucesso) { toast('Agendamento apagado'); carregarAgendamentos(); }
-    else toast(r.erro || 'Erro ao apagar', 'danger');
+    else toast(r.erro || 'Erro', 'danger');
   });
 }
 
@@ -1076,19 +1824,14 @@ async function apagarConcluidos() {
 }
 
 function abrirModalAgNovo() {
-  document.getElementById('ag-nome').value  = '';
-  document.getElementById('ag-tel').value   = '';
-  document.getElementById('ag-data').value  = '';
-  document.getElementById('ag-hora').value  = '';
-  document.getElementById('ag-valor').value = '';
-  const sel = document.getElementById('ag-prof');
-  sel.innerHTML = '<option value="">Qualquer</option>' + _profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+  ['ag-nome','ag-tel','ag-data','ag-hora','ag-valor'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ag-prof').innerHTML = '<option value="">Qualquer</option>' + _profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
   abrirModal('modal-ag-novo');
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // PROFISSIONAIS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarProfissionais() {
   try {
     _profissionais = await fetch(API('/profissionais')).then(r => r.json()) || [];
@@ -1110,27 +1853,17 @@ function renderProfissionais() {
         <div class="toggle-wrap">
           <div class="toggle ${p.disponivel ? 'on' : ''}" id="tog-${p.id}" onclick="toggleDisp(${p.id},this)"></div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="abrirPausa(${p.id},'${(p.nome||'').replace(/'/g,'\\\'')}')" title="Pausas/folgas">
-          <i class="ti ti-calendar-pause"></i>
-        </button>
-        <button class="btn btn-ghost btn-sm" onclick="editarProf(${p.id})" title="Editar">
-          <i class="ti ti-pencil"></i>
-        </button>
-        <button class="btn-icon danger" onclick="deletarProf(${p.id},'${(p.nome||'').replace(/'/g,'\\\'')}')" title="Excluir">
-          <i class="ti ti-trash"></i>
-        </button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirPausa(${p.id},'${(p.nome||'').replace(/'/g,"\\'")}')"><i class="ti ti-calendar-pause"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="editarProf(${p.id})"><i class="ti ti-pencil"></i></button>
+        <button class="btn-icon danger" onclick="deletarProf(${p.id},'${(p.nome||'').replace(/'/g,"\\'")}')"><i class="ti ti-trash"></i></button>
       </div>
     </div>`).join('') : '<div class="empty"><i class="ti ti-users-off"></i><p>Nenhum profissional cadastrado</p></div>';
 }
 
 function abrirModalProf() {
-  document.getElementById('modal-prof-title').textContent = 'Adicionar profissional';
-  document.getElementById('prof-id').value       = '';
-  document.getElementById('prof-nome').value     = '';
-  document.getElementById('prof-espec').value    = '';
-  document.getElementById('prof-wa').value       = '';
-  document.getElementById('prof-ordem').value    = '';
-  document.getElementById('prof-foto').value     = '';
+  document.getElementById('modal-prof-title').textContent = 'Adicionar Profissional';
+  document.getElementById('prof-id').value = '';
+  ['prof-nome','prof-espec','prof-wa','prof-ordem','prof-foto'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('prof-foto-prev').innerHTML = '<i class="ti ti-user"></i>';
   document.getElementById('prof-disp').classList.add('on');
   abrirModal('modal-prof');
@@ -1139,45 +1872,35 @@ function abrirModalProf() {
 function editarProf(id) {
   const p = _profissionais.find(x => x.id === id);
   if (!p) return;
-  document.getElementById('modal-prof-title').textContent = 'Editar profissional';
-  document.getElementById('prof-id').value       = p.id;
-  document.getElementById('prof-nome').value     = p.nome || '';
-  document.getElementById('prof-espec').value    = p.especialidade || '';
-  document.getElementById('prof-wa').value       = p.whatsapp || '';
-  document.getElementById('prof-ordem').value    = p.ordem || 0;
-  document.getElementById('prof-foto').value     = p.foto_url || '';
+  document.getElementById('modal-prof-title').textContent = 'Editar Profissional';
+  document.getElementById('prof-id').value    = p.id;
+  document.getElementById('prof-nome').value  = p.nome || '';
+  document.getElementById('prof-espec').value = p.especialidade || '';
+  document.getElementById('prof-wa').value    = p.whatsapp || '';
+  document.getElementById('prof-ordem').value = p.ordem || 0;
+  document.getElementById('prof-foto').value  = p.foto_url || '';
   prevFoto(p.foto_url || '', 'prof-foto-prev');
-  const tog = document.getElementById('prof-disp');
-  p.disponivel ? tog.classList.add('on') : tog.classList.remove('on');
+  p.disponivel ? document.getElementById('prof-disp').classList.add('on') : document.getElementById('prof-disp').classList.remove('on');
   abrirModal('modal-prof');
 }
 
 async function salvarProfissional() {
-  const id    = document.getElementById('prof-id').value;
-  const nome  = document.getElementById('prof-nome').value.trim();
-  const espec = document.getElementById('prof-espec').value.trim();
-  const wa    = document.getElementById('prof-wa').value.trim();
-  const ordem = Number(document.getElementById('prof-ordem').value) || 0;
-  const foto  = document.getElementById('prof-foto').value.trim() || null;
-  const disp  = document.getElementById('prof-disp').classList.contains('on');
+  const id   = document.getElementById('prof-id').value;
+  const nome = document.getElementById('prof-nome').value.trim();
   if (!nome) { toast('Nome obrigatório', 'danger'); return; }
-  const body = { nome, especialidade: espec, whatsapp: wa, ordem, foto_url: foto, disponivel: disp };
+  const body = { nome, especialidade: document.getElementById('prof-espec').value.trim(), whatsapp: document.getElementById('prof-wa').value.trim(), ordem: Number(document.getElementById('prof-ordem').value)||0, foto_url: document.getElementById('prof-foto').value.trim()||null, disponivel: document.getElementById('prof-disp').classList.contains('on') };
   try {
-    const r = id
-      ? await fetch(API(`/profissionais/${id}`), { method: 'PUT',  headers: H(), body: JSON.stringify(body) }).then(r => r.json())
-      : await fetch(API('/profissionais'),         { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
-    if (r.sucesso) { toast(id ? 'Profissional atualizado!' : 'Profissional adicionado!'); fecharModal('modal-prof'); carregarProfissionais(); }
-    else toast(r.erro || 'Erro ao salvar', 'danger');
+    const r = id ? await fetch(API(`/profissionais/${id}`), { method: 'PUT', headers: H(), body: JSON.stringify(body) }).then(r => r.json()) : await fetch(API('/profissionais'), { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
+    if (r.sucesso) { toast(id ? 'Atualizado!' : 'Adicionado!'); fecharModal('modal-prof'); carregarProfissionais(); }
+    else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
 async function deletarProf(id, nome) {
   confirmar('Excluir profissional', `Deseja remover ${nome} da equipe?`, async () => {
-    try {
-      const r = await fetch(API(`/profissionais/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
-      if (r.sucesso) { toast('Profissional removido!'); carregarProfissionais(); }
-      else toast(r.erro || 'Erro ao remover', 'danger');
-    } catch { toast('Erro de conexão', 'danger'); }
+    const r = await fetch(API(`/profissionais/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
+    if (r.sucesso) { toast('Removido!'); carregarProfissionais(); }
+    else toast(r.erro || 'Erro', 'danger');
   });
 }
 
@@ -1185,19 +1908,16 @@ async function toggleDisp(id, el) {
   const novo = !el.classList.contains('on');
   el.classList.toggle('on');
   try {
-    const r = await fetch(API(`/profissionais/${id}/disponibilidade`), {
-      method: 'PUT', headers: H(), body: JSON.stringify({ disponivel: novo })
-    }).then(r => r.json());
+    const r = await fetch(API(`/profissionais/${id}/disponibilidade`), { method: 'PUT', headers: H(), body: JSON.stringify({ disponivel: novo }) }).then(r => r.json());
     if (!r.sucesso) { el.classList.toggle('on'); toast(r.erro || 'Erro', 'danger'); }
-    else toast(novo ? 'Profissional disponível' : 'Profissional indisponível');
+    else toast(novo ? 'Disponível' : 'Indisponível');
   } catch { el.classList.toggle('on'); toast('Erro', 'danger'); }
 }
 
 function abrirPausa(profId, nome) {
   document.getElementById('pausa-prof-id').value = profId;
   document.getElementById('pausa-prof-nome').textContent = `Profissional: ${nome}`;
-  document.getElementById('pausa-inicio').value = '';
-  document.getElementById('pausa-fim').value    = '';
+  ['pausa-inicio','pausa-fim'].forEach(id => document.getElementById(id).value = '');
   abrirModal('modal-pausa');
 }
 
@@ -1207,24 +1927,21 @@ async function salvarPausa() {
   const fim    = document.getElementById('pausa-fim').value;
   if (!ini || !fim) { toast('Preencha as datas', 'danger'); return; }
   try {
-    const r = await fetch(API(`/profissionais/${profId}/pausas`), {
-      method: 'POST', headers: H(), body: JSON.stringify({ data_inicio: ini, data_fim: fim })
-    }).then(r => r.json());
+    const r = await fetch(API(`/profissionais/${profId}/pausas`), { method: 'POST', headers: H(), body: JSON.stringify({ data_inicio: ini, data_fim: fim }) }).then(r => r.json());
     if (r.sucesso) { toast('Pausa salva!'); fecharModal('modal-pausa'); carregarProfissionais(); }
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // SERVIÇOS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 function abaServico(el, id) {
   document.querySelectorAll('#section-servicos .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('tab-destaque').style.display    = id === 'tab-destaque'    ? 'block' : 'none';
+  document.getElementById('tab-destaque').style.display    = id === 'tab-destaque' ? 'block' : 'none';
   document.getElementById('tab-agendamento').style.display = id === 'tab-agendamento' ? 'block' : 'none';
-  if (id === 'tab-destaque') carregarServicosDestaque();
-  else                       carregarServicosSimples();
+  id === 'tab-destaque' ? carregarServicosDestaque() : carregarServicosSimples();
 }
 
 async function carregarServicos() { carregarServicosDestaque(); }
@@ -1238,25 +1955,20 @@ async function carregarServicosDestaque() {
       <td><span style="font-size:12px;color:var(--text3)">${s.descricao||'—'}</span></td>
       <td>${fmt(s.preco)}</td>
       <td>${s.ordem}</td>
-      <td>
-        <div class="inline-actions">
-          <button class="btn-icon" onclick='editarServDest(${JSON.stringify(s)})'><i class="ti ti-pencil"></i></button>
-          <button class="btn-icon danger" onclick="delServicoDest(${s.id})"><i class="ti ti-trash"></i></button>
-        </div>
-      </td>
+      <td><div class="inline-actions"><button class="btn-icon" onclick='editarServDest(${JSON.stringify(s)})'><i class="ti ti-pencil"></i></button><button class="btn-icon danger" onclick="delServicoDest(${s.id})"><i class="ti ti-trash"></i></button></div></td>
     </tr>`).join('') : '<tr><td colspan="6"><div class="empty"><p>Nenhum serviço destaque</p></div></td></tr>';
 }
 
 function abrirModalServDest() {
-  document.getElementById('modal-serv-dest-title').textContent = 'Novo serviço destaque';
+  document.getElementById('modal-serv-dest-title').textContent = 'Novo Serviço Destaque';
   ['sd-id','sd-nome','sd-preco','sd-desc','sd-img'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('sd-ordem').value = '';
-  document.getElementById('sd-img-prev').innerHTML = '<i class="ti ti-photo" style="color:var(--text3);font-size:18px"></i>';
+  document.getElementById('sd-img-prev').innerHTML = '<i class="ti ti-photo" style="color:var(--text3)"></i>';
   abrirModal('modal-serv-dest');
 }
 
 function editarServDest(s) {
-  document.getElementById('modal-serv-dest-title').textContent = 'Editar serviço destaque';
+  document.getElementById('modal-serv-dest-title').textContent = 'Editar Serviço Destaque';
   document.getElementById('sd-id').value    = s.id;
   document.getElementById('sd-nome').value  = s.nome || '';
   document.getElementById('sd-preco').value = s.preco || '';
@@ -1268,22 +1980,20 @@ function editarServDest(s) {
 }
 
 async function salvarServDest() {
-  const id   = document.getElementById('sd-id').value;
+  const id = document.getElementById('sd-id').value;
   const nome = document.getElementById('sd-nome').value.trim();
   const preco = document.getElementById('sd-preco').value;
   if (!nome || !preco) { toast('Nome e preço obrigatórios', 'danger'); return; }
   const body = { nome, preco: Number(preco), descricao: document.getElementById('sd-desc').value.trim(), ordem: Number(document.getElementById('sd-ordem').value)||0, imagem: document.getElementById('sd-img').value.trim()||null };
   try {
-    const r = id
-      ? await fetch(API(`/servicos-destaque/${id}`), { method: 'PUT',  headers: H(), body: JSON.stringify(body) }).then(r => r.json())
-      : await fetch(API('/servicos-destaque'),         { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
+    const r = id ? await fetch(API(`/servicos-destaque/${id}`), { method: 'PUT', headers: H(), body: JSON.stringify(body) }).then(r => r.json()) : await fetch(API('/servicos-destaque'), { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
     if (r.sucesso) { toast(id ? 'Atualizado!' : 'Adicionado!'); fecharModal('modal-serv-dest'); carregarServicosDestaque(); }
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
 async function delServicoDest(id) {
-  confirmar('Remover serviço', 'Confirma a remoção deste serviço destaque?', async () => {
+  confirmar('Remover serviço', 'Confirma a remoção?', async () => {
     const r = await fetch(API(`/servicos-destaque/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
     if (r.sucesso) { toast('Removido!'); carregarServicosDestaque(); }
     else toast(r.erro || 'Erro', 'danger');
@@ -1297,24 +2007,19 @@ async function carregarServicosSimples() {
       <td>${s.imagem ? `<img src="${s.imagem}" class="svc-thumb">` : `<div class="svc-thumb" style="display:flex;align-items:center;justify-content:center"><i class="ti ti-photo" style="color:var(--text3)"></i></div>`}</td>
       <td><strong>${s.nome}</strong></td>
       <td>${fmt(s.preco)}</td>
-      <td>
-        <div class="inline-actions">
-          <button class="btn-icon" onclick='editarServ(${JSON.stringify(s)})'><i class="ti ti-pencil"></i></button>
-          <button class="btn-icon danger" onclick="delServ(${s.id})"><i class="ti ti-trash"></i></button>
-        </div>
-      </td>
+      <td><div class="inline-actions"><button class="btn-icon" onclick='editarServ(${JSON.stringify(s)})'><i class="ti ti-pencil"></i></button><button class="btn-icon danger" onclick="delServ(${s.id})"><i class="ti ti-trash"></i></button></div></td>
     </tr>`).join('') : '<tr><td colspan="4"><div class="empty"><p>Nenhum serviço</p></div></td></tr>';
 }
 
 function abrirModalServ() {
-  document.getElementById('modal-serv-title').textContent = 'Novo serviço';
+  document.getElementById('modal-serv-title').textContent = 'Novo Serviço';
   ['svc-id','svc-nome','svc-preco','svc-img'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('svc-img-prev').innerHTML = '<i class="ti ti-photo" style="color:var(--text3);font-size:18px"></i>';
+  document.getElementById('svc-img-prev').innerHTML = '<i class="ti ti-photo" style="color:var(--text3)"></i>';
   abrirModal('modal-serv');
 }
 
 function editarServ(s) {
-  document.getElementById('modal-serv-title').textContent = 'Editar serviço';
+  document.getElementById('modal-serv-title').textContent = 'Editar Serviço';
   document.getElementById('svc-id').value    = s.id;
   document.getElementById('svc-nome').value  = s.nome || '';
   document.getElementById('svc-preco').value = s.preco || '';
@@ -1324,38 +2029,36 @@ function editarServ(s) {
 }
 
 async function salvarServ() {
-  const id   = document.getElementById('svc-id').value;
+  const id = document.getElementById('svc-id').value;
   const nome = document.getElementById('svc-nome').value.trim();
   const preco = document.getElementById('svc-preco').value;
   if (!nome || !preco) { toast('Nome e preço obrigatórios', 'danger'); return; }
   const body = { nome, preco: Number(preco), imagem: document.getElementById('svc-img').value.trim()||null };
   try {
-    const r = id
-      ? await fetch(API(`/servicos/${id}`), { method: 'PUT',  headers: H(), body: JSON.stringify(body) }).then(r => r.json())
-      : await fetch(API('/servicos'),        { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
+    const r = id ? await fetch(API(`/servicos/${id}`), { method: 'PUT', headers: H(), body: JSON.stringify(body) }).then(r => r.json()) : await fetch(API('/servicos'), { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
     if (r.sucesso) { toast(id ? 'Atualizado!' : 'Adicionado!'); fecharModal('modal-serv'); carregarServicosSimples(); }
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
 async function delServ(id) {
-  confirmar('Remover serviço', 'Confirma a remoção deste serviço?', async () => {
+  confirmar('Remover serviço', 'Confirma a remoção?', async () => {
     const r = await fetch(API(`/servicos/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
     if (r.sucesso) { toast('Removido!'); carregarServicosSimples(); }
     else toast(r.erro || 'Erro', 'danger');
   });
 }
 
-// ══════════════════════════════════════════════
-// HORÁRIOS GLOBAL
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
+// HORÁRIOS
+// ══════════════════════════════════════════
 const DIAS_NOMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
 function abaHorario(el, id) {
   document.querySelectorAll('#section-horarios .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('hr-global').style.display = id === 'hr-global' ? 'block' : 'none';
-  document.getElementById('hr-prof').style.display   = id === 'hr-prof'   ? 'block' : 'none';
+  document.getElementById('hr-prof').style.display   = id === 'hr-prof' ? 'block' : 'none';
   if (id === 'hr-prof') carregarListaProfHorario();
 }
 
@@ -1365,43 +2068,37 @@ async function carregarHorarios() {
     document.getElementById('hr-intervalo').value    = d.intervalo_minutos || 30;
     document.getElementById('hr-pausa-inicio').value = d.pausa_inicio || '';
     document.getElementById('hr-pausa-fim').value    = d.pausa_fim    || '';
-    const cont = document.getElementById('dias-container');
-    cont.innerHTML = DIAS_NOMES.map((nome, i) => {
+    document.getElementById('dias-container').innerHTML = DIAS_NOMES.map((nome, i) => {
       const cfg = d[String(i)] || { aberto: i !== 0, hora_inicio: '08:00', hora_fim: '21:00' };
-      return `
-        <div class="day-row">
-          <div class="day-name">${nome}</div>
-          <div class="toggle-wrap">
-            <div class="toggle ${cfg.aberto ? 'on' : ''}" id="dt-${i}" onclick="this.classList.toggle('on');toggleDia(${i})"></div>
-          </div>
-          <div class="day-inputs" id="di-${i}" style="${cfg.aberto ? '' : 'opacity:0.3;pointer-events:none'}">
-            <input type="time" id="dh-ini-${i}" value="${cfg.hora_inicio||'08:00'}">
-            <span>até</span>
-            <input type="time" id="dh-fim-${i}" value="${cfg.hora_fim||'21:00'}">
-          </div>
-        </div>`;
+      return `<div class="day-row">
+        <div class="day-name">${nome}</div>
+        <div class="toggle-wrap">
+          <div class="toggle ${cfg.aberto?'on':''}" id="dt-${i}" onclick="this.classList.toggle('on');toggleDia(${i})"></div>
+        </div>
+        <div class="day-inputs" id="di-${i}" style="${cfg.aberto?'':'opacity:0.35;pointer-events:none'}">
+          <input type="time" id="dh-ini-${i}" value="${cfg.hora_inicio||'08:00'}">
+          <span>até</span>
+          <input type="time" id="dh-fim-${i}" value="${cfg.hora_fim||'21:00'}">
+        </div>
+      </div>`;
     }).join('');
   } catch(e) { console.error(e); }
 }
 
 function toggleDia(i) {
-  const aberto = document.getElementById(`dt-${i}`).classList.contains('on');
+  const ab = document.getElementById(`dt-${i}`).classList.contains('on');
   const di = document.getElementById(`di-${i}`);
-  di.style.opacity       = aberto ? '1' : '0.3';
-  di.style.pointerEvents = aberto ? 'auto' : 'none';
+  di.style.opacity = ab ? '1' : '0.35';
+  di.style.pointerEvents = ab ? 'auto' : 'none';
 }
 
 async function salvarHorarios() {
   const config = { intervalo_minutos: Number(document.getElementById('hr-intervalo').value) };
   for (let i = 0; i <= 6; i++) {
-    config[String(i)] = {
-      aberto:      !!document.getElementById(`dt-${i}`)?.classList.contains('on'),
-      hora_inicio: document.getElementById(`dh-ini-${i}`)?.value || '08:00',
-      hora_fim:    document.getElementById(`dh-fim-${i}`)?.value || '21:00',
-    };
+    config[String(i)] = { aberto: !!document.getElementById(`dt-${i}`)?.classList.contains('on'), hora_inicio: document.getElementById(`dh-ini-${i}`)?.value||'08:00', hora_fim: document.getElementById(`dh-fim-${i}`)?.value||'21:00' };
   }
-  config.pausa_inicio = document.getElementById('hr-pausa-inicio').value || null;
-  config.pausa_fim    = document.getElementById('hr-pausa-fim').value    || null;
+  config.pausa_inicio = document.getElementById('hr-pausa-inicio').value||null;
+  config.pausa_fim    = document.getElementById('hr-pausa-fim').value||null;
   try {
     const r = await fetch(API('/horarios'), { method: 'POST', headers: H(), body: JSON.stringify(config) }).then(r => r.json());
     if (r.sucesso) toast('Horários salvos!');
@@ -1409,21 +2106,13 @@ async function salvarHorarios() {
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
-// ══════════════════════════════════════════════
-// HORÁRIOS POR PROFISSIONAL
-// ══════════════════════════════════════════════
 async function carregarListaProfHorario() {
   const lista = document.getElementById('hr-prof-lista');
   if (!_profissionais.length) await carregarProfissionais();
-  if (!_profissionais.length) {
-    lista.innerHTML = '<div class="empty" style="padding:20px"><p>Nenhum profissional</p></div>';
-    return;
-  }
+  if (!_profissionais.length) { lista.innerHTML = '<div class="empty" style="padding:20px"><p>Nenhum profissional</p></div>'; return; }
   lista.innerHTML = _profissionais.map(p => `
     <div class="prof-hr-item" id="phi-${p.id}" onclick="selecionarProfHorario(${p.id})">
-      <div class="avatar" style="width:28px;height:28px;font-size:10px;flex-shrink:0">
-        ${p.foto_url ? `<img src="${p.foto_url}" alt="">` : (p.nome||'').substring(0,2).toUpperCase()}
-      </div>
+      <div class="avatar" style="width:28px;height:28px;font-size:10px">${p.foto_url ? `<img src="${p.foto_url}" alt="">` : (p.nome||'').substring(0,2).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nome}</div>
         <div style="font-size:10.5px;color:var(--text3)">${p.especialidade||'Barbeiro'}</div>
@@ -1432,140 +2121,103 @@ async function carregarListaProfHorario() {
 }
 
 async function selecionarProfHorario(profId) {
-  // Destaca ativo
   document.querySelectorAll('.prof-hr-item').forEach(el => el.classList.remove('active'));
   const ativo = document.getElementById(`phi-${profId}`);
   if (ativo) ativo.classList.add('active');
-
-  const prof   = _profissionais.find(p => p.id === profId);
+  const prof = _profissionais.find(p => p.id === profId);
   const painel = document.getElementById('hr-prof-painel');
   painel.innerHTML = '<div class="loading"><span class="spinner"></span>Carregando...</div>';
-
   try {
     const d = await fetch(API(`/profissionais/${profId}/horarios`)).then(r => r.json());
     painel.innerHTML = renderPainelHorarioProf(prof, d);
-  } catch {
-    painel.innerHTML = '<div class="empty"><p>Erro ao carregar horários</p></div>';
-  }
+  } catch { painel.innerHTML = '<div class="empty"><p>Erro ao carregar</p></div>'; }
 }
 
 function renderPainelHorarioProf(prof, d) {
   const usaGlobal = d._usa_global !== false;
-  const diasHtml  = DIAS_NOMES.map((nome, i) => {
+  const diasHtml = DIAS_NOMES.map((nome, i) => {
     const cfg = d[String(i)] || { aberto: i !== 0, hora_inicio: '08:00', hora_fim: '21:00' };
-    return `
-      <div class="day-row">
-        <div class="day-name">${nome}</div>
-        <div class="toggle-wrap">
-          <div class="toggle ${cfg.aberto ? 'on' : ''}" id="pdt-${prof.id}-${i}"
-            onclick="this.classList.toggle('on');toggleDiaProf(${prof.id},${i})"></div>
-        </div>
-        <div class="day-inputs" id="pdi-${prof.id}-${i}"
-          style="${cfg.aberto ? '' : 'opacity:0.3;pointer-events:none'}">
-          <input type="time" id="pdh-ini-${prof.id}-${i}" value="${cfg.hora_inicio||'08:00'}">
-          <span>até</span>
-          <input type="time" id="pdh-fim-${prof.id}-${i}" value="${cfg.hora_fim||'21:00'}">
-        </div>
-      </div>`;
-  }).join('');
-
-  return `
-    <div class="card" style="margin-bottom:0">
-      <div class="card-header">
-        <div>
-          <div class="card-title" style="display:flex;align-items:center;gap:9px">
-            <div class="avatar" style="width:30px;height:30px;font-size:11px;flex-shrink:0">
-              ${prof.foto_url ? `<img src="${prof.foto_url}" alt="">` : (prof.nome||'').substring(0,2).toUpperCase()}
-            </div>
-            ${prof.nome}
-          </div>
-          <div class="card-sub">${prof.especialidade||''}</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="salvarHorarioProf(${prof.id})">
-          <i class="ti ti-device-floppy"></i> Salvar
-        </button>
-      </div>
-
-      <!-- Toggle global / individual -->
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
-                  padding:12px 14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
-        <div class="toggle ${usaGlobal ? '' : 'on'}" id="prof-hr-tog-${prof.id}"
-          onclick="toggleModoHorarioProf(${prof.id})"></div>
-        <div>
-          <div style="font-size:13px;font-weight:500">Horário individual</div>
-          <div id="prof-hr-desc-${prof.id}" style="font-size:11.5px;color:var(--text3);margin-top:2px">
-            ${usaGlobal ? 'Usando o horário padrão da barbearia' : 'Usando horário próprio deste profissional'}
-          </div>
-        </div>
-      </div>
-
-      <!-- Dias -->
-      <div id="prof-hr-dias-${prof.id}" style="${usaGlobal ? 'opacity:0.4;pointer-events:none' : ''}">
-        ${diasHtml}
-        <hr class="divider">
-        <div style="font-size:13px;font-weight:600;font-family:Syne,sans-serif;margin-bottom:12px">Pausa (almoço)</div>
-        <div class="form-grid" style="max-width:400px">
-          <div class="form-group"><label>Início</label><input type="time" id="phr-ini-${prof.id}" value="${d.pausa_inicio||''}"></div>
-          <div class="form-group"><label>Fim</label><input type="time" id="phr-fim-${prof.id}" value="${d.pausa_fim||''}"></div>
-        </div>
+    return `<div class="day-row">
+      <div class="day-name">${nome}</div>
+      <div class="toggle-wrap"><div class="toggle ${cfg.aberto?'on':''}" id="pdt-${prof.id}-${i}" onclick="this.classList.toggle('on');toggleDiaProf(${prof.id},${i})"></div></div>
+      <div class="day-inputs" id="pdi-${prof.id}-${i}" style="${cfg.aberto?'':'opacity:0.35;pointer-events:none'}">
+        <input type="time" id="pdh-ini-${prof.id}-${i}" value="${cfg.hora_inicio||'08:00'}">
+        <span>até</span>
+        <input type="time" id="pdh-fim-${prof.id}-${i}" value="${cfg.hora_fim||'21:00'}">
       </div>
     </div>`;
+  }).join('');
+  return `<div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <div>
+        <div class="card-title" style="display:flex;align-items:center;gap:9px">
+          <div class="avatar" style="width:30px;height:30px;font-size:11px">${prof.foto_url ? `<img src="${prof.foto_url}" alt="">` : (prof.nome||'').substring(0,2).toUpperCase()}</div>
+          ${prof.nome}
+        </div>
+        <div class="card-sub">${prof.especialidade||''}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="salvarHorarioProf(${prof.id})"><i class="ti ti-device-floppy"></i> Salvar</button>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      <div class="toggle ${usaGlobal?'':'on'}" id="prof-hr-tog-${prof.id}" onclick="toggleModoHorarioProf(${prof.id})"></div>
+      <div>
+        <div style="font-size:13.5px;font-weight:500">Horário individual</div>
+        <div id="prof-hr-desc-${prof.id}" style="font-size:11.5px;color:var(--text3);margin-top:2px">${usaGlobal?'Usando horário padrão da barbearia':'Usando horário próprio'}</div>
+      </div>
+    </div>
+    <div id="prof-hr-dias-${prof.id}" style="${usaGlobal?'opacity:0.4;pointer-events:none':''}">
+      ${diasHtml}
+      <hr class="divider">
+      <div class="card-title" style="margin-bottom:12px;font-size:14px">Pausa (almoço)</div>
+      <div class="form-grid" style="max-width:400px">
+        <div class="form-group"><label>Início</label><input type="time" id="phr-ini-${prof.id}" value="${d.pausa_inicio||''}"></div>
+        <div class="form-group"><label>Fim</label><input type="time" id="phr-fim-${prof.id}" value="${d.pausa_fim||''}"></div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function toggleModoHorarioProf(profId) {
-  const tog  = document.getElementById(`prof-hr-tog-${profId}`);
+  const tog = document.getElementById(`prof-hr-tog-${profId}`);
   const dias = document.getElementById(`prof-hr-dias-${profId}`);
   const desc = document.getElementById(`prof-hr-desc-${profId}`);
-  const individual = tog.classList.toggle('on');
-  dias.style.opacity       = individual ? '1'    : '0.4';
-  dias.style.pointerEvents = individual ? 'auto' : 'none';
-  desc.textContent = individual
-    ? 'Usando horário próprio deste profissional'
-    : 'Usando o horário padrão da barbearia';
+  const ind = tog.classList.toggle('on');
+  dias.style.opacity = ind ? '1' : '0.4';
+  dias.style.pointerEvents = ind ? 'auto' : 'none';
+  desc.textContent = ind ? 'Usando horário próprio' : 'Usando horário padrão da barbearia';
 }
 
 function toggleDiaProf(profId, i) {
-  const aberto = document.getElementById(`pdt-${profId}-${i}`).classList.contains('on');
-  const di     = document.getElementById(`pdi-${profId}-${i}`);
-  di.style.opacity       = aberto ? '1'    : '0.3';
-  di.style.pointerEvents = aberto ? 'auto' : 'none';
+  const ab = document.getElementById(`pdt-${profId}-${i}`).classList.contains('on');
+  const di = document.getElementById(`pdi-${profId}-${i}`);
+  di.style.opacity = ab ? '1' : '0.35';
+  di.style.pointerEvents = ab ? 'auto' : 'none';
 }
 
 async function salvarHorarioProf(profId) {
   const individual = document.getElementById(`prof-hr-tog-${profId}`)?.classList.contains('on');
-
   if (!individual) {
-    const r = await fetch(API(`/profissionais/${profId}/horarios`), {
-      method: 'POST', headers: H(), body: JSON.stringify({ usa_global: true })
-    }).then(r => r.json());
+    const r = await fetch(API(`/profissionais/${profId}/horarios`), { method: 'POST', headers: H(), body: JSON.stringify({ usa_global: true }) }).then(r => r.json());
     if (r.sucesso) toast('Voltou para horário global!');
     else toast(r.erro || 'Erro', 'danger');
     return;
   }
-
   const config = { usa_global: false };
   for (let i = 0; i <= 6; i++) {
-    config[String(i)] = {
-      aberto:      !!document.getElementById(`pdt-${profId}-${i}`)?.classList.contains('on'),
-      hora_inicio: document.getElementById(`pdh-ini-${profId}-${i}`)?.value || '08:00',
-      hora_fim:    document.getElementById(`pdh-fim-${profId}-${i}`)?.value || '21:00',
-    };
+    config[String(i)] = { aberto: !!document.getElementById(`pdt-${profId}-${i}`)?.classList.contains('on'), hora_inicio: document.getElementById(`pdh-ini-${profId}-${i}`)?.value||'08:00', hora_fim: document.getElementById(`pdh-fim-${profId}-${i}`)?.value||'21:00' };
   }
-  config.pausa_inicio = document.getElementById(`phr-ini-${profId}`)?.value || null;
-  config.pausa_fim    = document.getElementById(`phr-fim-${profId}`)?.value || null;
-
+  config.pausa_inicio = document.getElementById(`phr-ini-${profId}`)?.value||null;
+  config.pausa_fim    = document.getElementById(`phr-fim-${profId}`)?.value||null;
   try {
-    const r = await fetch(API(`/profissionais/${profId}/horarios`), {
-      method: 'POST', headers: H(), body: JSON.stringify(config)
-    }).then(r => r.json());
+    const r = await fetch(API(`/profissionais/${profId}/horarios`), { method: 'POST', headers: H(), body: JSON.stringify(config) }).then(r => r.json());
     if (r.sucesso) toast('Horário salvo!');
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // FINANCEIRO
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarFinanceiro() {
   try {
     const d = await fetch(API('/lucro-real'), { headers: { Authorization: TOKEN } }).then(r => r.json());
@@ -1578,9 +2230,9 @@ async function carregarFinanceiro() {
   } catch {}
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // GASTOS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarGastos() {
   const r = await fetch(API('/gastos'), { headers: { Authorization: TOKEN } }).then(r => r.json()).catch(() => []);
   document.getElementById('tb-gastos').innerHTML = r.length ? r.map(g => `
@@ -1598,27 +2250,22 @@ async function addGasto() {
   if (!desc || !valor) { toast('Preencha todos os campos', 'danger'); return; }
   try {
     const r = await fetch(API('/gastos'), { method: 'POST', headers: H(), body: JSON.stringify({ descricao: desc, valor: Number(valor) }) }).then(r => r.json());
-    if (r.sucesso) {
-      toast('Gasto registrado!');
-      document.getElementById('g-desc').value  = '';
-      document.getElementById('g-valor').value = '';
-      fecharModal('modal-gasto');
-      carregarGastos();
-    } else toast(r.erro || 'Erro', 'danger');
+    if (r.sucesso) { toast('Gasto registrado!'); document.getElementById('g-desc').value = ''; document.getElementById('g-valor').value = ''; fecharModal('modal-gasto'); carregarGastos(); }
+    else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 
 async function delGasto(id) {
-  confirmar('Remover gasto', 'Deseja remover este registro de despesa?', async () => {
+  confirmar('Remover gasto', 'Deseja remover este registro?', async () => {
     const r = await fetch(API(`/gastos/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
     if (r.sucesso) { toast('Removido!'); carregarGastos(); }
     else toast(r.erro || 'Erro', 'danger');
   });
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // COMISSÕES
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 function abaComissao(el, id) {
   document.querySelectorAll('#section-comissoes .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -1634,7 +2281,7 @@ async function carregarComissoes() {
   document.getElementById('lista-comissoes').innerHTML = r.length ? r.map(p => `
     <div class="com-row">
       <div class="avatar">${p.foto_url ? `<img src="${p.foto_url}" alt="">` : (p.nome||'').substring(0,2).toUpperCase()}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:500">${p.nome}</div><div style="font-size:11px;color:var(--text3)">${p.especialidade||''}</div></div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:500">${p.nome}</div><div style="font-size:11px;color:var(--text3)">${p.especialidade||''}</div></div>
       <div class="com-inputs">
         <div class="form-group"><label style="font-size:10px">% Comissão</label><input type="number" id="cp-${p.id}" value="${p.comissao_percentual}" min="0" max="100"></div>
         <div class="form-group"><label style="font-size:10px">Fixo/corte</label><input type="number" id="cf-${p.id}" value="${p.comissao_valor_fixo}" min="0"></div>
@@ -1644,9 +2291,7 @@ async function carregarComissoes() {
 }
 
 async function salvarComissao(id) {
-  const pct = document.getElementById(`cp-${id}`).value;
-  const fix = document.getElementById(`cf-${id}`).value;
-  const r = await fetch(API(`/comissoes/config/${id}`), { method: 'PUT', headers: H(), body: JSON.stringify({ percentual: Number(pct), valor_fixo: Number(fix) }) }).then(r => r.json());
+  const r = await fetch(API(`/comissoes/config/${id}`), { method: 'PUT', headers: H(), body: JSON.stringify({ percentual: Number(document.getElementById(`cp-${id}`).value), valor_fixo: Number(document.getElementById(`cf-${id}`).value) }) }).then(r => r.json());
   if (r.sucesso) toast('Comissão salva!');
   else toast(r.erro || 'Erro', 'danger');
 }
@@ -1657,76 +2302,31 @@ async function carregarRelComissoes() {
   try {
     const d = await fetch(API(`/comissoes/relatorio?mes=${mes}`), { headers: { Authorization: TOKEN } }).then(r => r.json());
     const rel = d.relatorio || [];
-    document.getElementById('rel-comissoes').innerHTML = rel.length ? `
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Profissional</th><th>Cortes</th><th>Faturamento</th><th>Base</th><th>Ajustes</th><th>Total</th></tr></thead>
-            <tbody>${rel.map(p => `
-              <tr>
-                <td><strong>${p.profissional_nome}</strong></td>
-                <td>${p.total_cortes}</td>
-                <td>${fmt(p.faturamento)}</td>
-                <td>${fmt(p.comissao_base)}</td>
-                <td style="color:${p.total_ajustes >= 0 ? 'var(--success)' : 'var(--danger)'}">${p.total_ajustes >= 0 ? '+' : ''}${fmt(p.total_ajustes)}</td>
-                <td><strong style="color:var(--gold)">${fmt(p.comissao_final)}</strong></td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : '<div class="empty"><p>Nenhum dado para este período</p></div>';
-  } catch { toast('Erro ao carregar relatório', 'danger'); }
+    document.getElementById('rel-comissoes').innerHTML = rel.length ? `<div class="card"><div class="table-wrap"><table><thead><tr><th>Profissional</th><th>Cortes</th><th>Faturamento</th><th>Base</th><th>Ajustes</th><th>Total</th></tr></thead><tbody>${rel.map(p => `<tr><td><strong>${p.profissional_nome}</strong></td><td>${p.total_cortes}</td><td>${fmt(p.faturamento)}</td><td>${fmt(p.comissao_base)}</td><td style="color:${p.total_ajustes>=0?'var(--success)':'var(--danger)'}">${p.total_ajustes>=0?'+':''}${fmt(p.total_ajustes)}</td><td><strong style="color:var(--gold)">${fmt(p.comissao_final)}</strong></td></tr>`).join('')}</tbody></table></div></div>` : '<div class="empty"><p>Nenhum dado para este período</p></div>';
+  } catch { toast('Erro ao carregar', 'danger'); }
 }
 
-// ── AJUSTES (corrigido) ───────────────────────────────────────
 async function carregarAbaAjuste() {
   if (!_profissionais.length) await carregarProfissionais();
-
   const sel = document.getElementById('aj-prof');
-  sel.innerHTML = '<option value="">Selecione o profissional...</option>'
-    + _profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-
+  sel.innerHTML = '<option value="">Selecione...</option>' + _profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
   const mesInput = document.getElementById('aj-mes');
   if (!mesInput.value) mesInput.value = new Date().toISOString().substring(0,7);
-
   const filtro = document.getElementById('aj-filtro-mes');
   if (filtro && !filtro.value) filtro.value = new Date().toISOString().substring(0,7);
-
   carregarAjustes();
 }
 
 async function carregarAjustes() {
-  const mes   = document.getElementById('aj-filtro-mes')?.value
-             || document.getElementById('aj-mes')?.value
-             || new Date().toISOString().substring(0,7);
+  const mes = document.getElementById('aj-filtro-mes')?.value || document.getElementById('aj-mes')?.value || new Date().toISOString().substring(0,7);
   const lista = document.getElementById('lista-ajustes');
   if (!lista) return;
   lista.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
   try {
     const d = await fetch(API(`/comissoes/relatorio?mes=${mes}`), { headers: { Authorization: TOKEN } }).then(r => r.json());
-    const todos = (d.relatorio || [])
-      .flatMap(p => (p.ajustes||[]).map(aj => ({ ...aj, profissional_nome: p.profissional_nome })))
-      .sort((a,b) => new Date(b.criado_em) - new Date(a.criado_em));
-    lista.innerHTML = todos.length ? `
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Profissional</th><th>Descrição</th><th>Valor</th><th>Data</th><th></th></tr></thead>
-          <tbody>${todos.map(aj => `
-            <tr>
-              <td><strong>${aj.profissional_nome}</strong></td>
-              <td>${aj.descricao}</td>
-              <td style="color:${Number(aj.valor)>=0?'var(--success)':'var(--danger)'}">
-                ${Number(aj.valor)>=0?'+':''}${fmt(aj.valor)}
-              </td>
-              <td style="font-size:12px">${fmtData(aj.criado_em)}</td>
-              <td><button class="btn-icon danger" onclick="delAjuste(${aj.id})"><i class="ti ti-trash"></i></button></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>` : '<div class="empty"><p>Nenhum ajuste neste mês</p></div>';
-  } catch {
-    lista.innerHTML = '<div class="empty"><p>Erro ao carregar ajustes</p></div>';
-  }
+    const todos = (d.relatorio || []).flatMap(p => (p.ajustes||[]).map(aj => ({ ...aj, profissional_nome: p.profissional_nome }))).sort((a,b) => new Date(b.criado_em) - new Date(a.criado_em));
+    lista.innerHTML = todos.length ? `<div class="table-wrap"><table><thead><tr><th>Profissional</th><th>Descrição</th><th>Valor</th><th>Data</th><th></th></tr></thead><tbody>${todos.map(aj => `<tr><td><strong>${aj.profissional_nome}</strong></td><td>${aj.descricao}</td><td style="color:${Number(aj.valor)>=0?'var(--success)':'var(--danger)'}">${Number(aj.valor)>=0?'+':''}${fmt(aj.valor)}</td><td style="font-size:12px">${fmtData(aj.criado_em)}</td><td><button class="btn-icon danger" onclick="delAjuste(${aj.id})"><i class="ti ti-trash"></i></button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty"><p>Nenhum ajuste neste mês</p></div>';
+  } catch { lista.innerHTML = '<div class="empty"><p>Erro ao carregar</p></div>'; }
 }
 
 async function addAjuste() {
@@ -1734,25 +2334,13 @@ async function addAjuste() {
   const mes    = document.getElementById('aj-mes').value;
   const valor  = document.getElementById('aj-valor').value;
   const desc   = document.getElementById('aj-desc').value.trim();
-
   if (!profId) { toast('Selecione um profissional', 'danger'); return; }
-  if (!mes)    { toast('Informe o mês de referência', 'danger'); return; }
+  if (!mes)    { toast('Informe o mês', 'danger'); return; }
   if (!valor)  { toast('Informe o valor', 'danger'); return; }
   if (!desc)   { toast('Informe uma descrição', 'danger'); return; }
-
-  const r = await fetch(API('/comissoes/ajuste'), {
-    method: 'POST', headers: H(),
-    body: JSON.stringify({ profissional_id: Number(profId), referencia_mes: mes, valor: Number(valor), descricao: desc })
-  }).then(r => r.json());
-
-  if (r.sucesso) {
-    toast('Ajuste salvo!');
-    document.getElementById('aj-desc').value  = '';
-    document.getElementById('aj-valor').value = '';
-    const filtro = document.getElementById('aj-filtro-mes');
-    if (filtro) filtro.value = mes;
-    carregarAjustes();
-  } else toast(r.erro || 'Erro ao salvar', 'danger');
+  const r = await fetch(API('/comissoes/ajuste'), { method: 'POST', headers: H(), body: JSON.stringify({ profissional_id: Number(profId), referencia_mes: mes, valor: Number(valor), descricao: desc }) }).then(r => r.json());
+  if (r.sucesso) { toast('Ajuste salvo!'); document.getElementById('aj-desc').value = ''; document.getElementById('aj-valor').value = ''; const filtro = document.getElementById('aj-filtro-mes'); if (filtro) filtro.value = mes; carregarAjustes(); }
+  else toast(r.erro || 'Erro', 'danger');
 }
 
 async function delAjuste(id) {
@@ -1763,61 +2351,54 @@ async function delAjuste(id) {
   });
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // PLANOS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarPlanos() {
   _planos = await fetch(API('/planos')).then(r => r.json()).catch(() => []);
   const el = document.getElementById('lista-planos');
   el.innerHTML = _planos.length ? _planos.map(p => `
     <div class="plano-card">
-      <i class="ti ti-crown" style="font-size:24px;color:var(--gold);opacity:0.5"></i>
+      <div class="plano-icon"><i class="ti ti-crown"></i></div>
       <div class="plano-info">
         <h4>${p.nome}</h4>
         <p>${p.descricao||''} · ${p.cortes_mes} cortes/mês</p>
       </div>
-      <div class="plano-valor">${fmt(p.valor)}<span style="font-size:11px;font-weight:400;color:var(--text3)">/mês</span></div>
+      <div class="plano-valor">${fmt(p.valor)}<span>/mês</span></div>
       <div class="plano-actions">
         <button class="btn-icon" onclick='editarPlano(${JSON.stringify(p)})'><i class="ti ti-pencil"></i></button>
-        <button class="btn-icon danger" onclick="deletarPlano(${p.id},'${(p.nome||'').replace(/'/g,'\\\'')}')" ><i class="ti ti-trash"></i></button>
+        <button class="btn-icon danger" onclick="deletarPlano(${p.id},'${(p.nome||'').replace(/'/g,"\\'")}')"><i class="ti ti-trash"></i></button>
       </div>
     </div>`).join('') : '<div class="empty"><i class="ti ti-crown-off"></i><p>Nenhum plano cadastrado</p></div>';
 }
 
 function abrirModalPlano() {
-  document.getElementById('modal-plano-title').textContent = 'Criar plano';
+  document.getElementById('modal-plano-title').textContent = 'Criar Plano';
   ['pl-id','pl-nome','pl-valor','pl-cortes','pl-ordem','pl-desc'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pl-ativo').classList.add('on');
   abrirModal('modal-plano');
 }
 
 function editarPlano(p) {
-  document.getElementById('modal-plano-title').textContent = 'Editar plano';
+  document.getElementById('modal-plano-title').textContent = 'Editar Plano';
   document.getElementById('pl-id').value     = p.id;
   document.getElementById('pl-nome').value   = p.nome || '';
   document.getElementById('pl-valor').value  = p.valor || '';
   document.getElementById('pl-cortes').value = p.cortes_mes || '';
   document.getElementById('pl-ordem').value  = p.ordem || 0;
   document.getElementById('pl-desc').value   = p.descricao || '';
-  const tog = document.getElementById('pl-ativo');
-  p.ativo !== false ? tog.classList.add('on') : tog.classList.remove('on');
+  p.ativo !== false ? document.getElementById('pl-ativo').classList.add('on') : document.getElementById('pl-ativo').classList.remove('on');
   abrirModal('modal-plano');
 }
 
 async function salvarPlano() {
-  const id     = document.getElementById('pl-id').value;
-  const nome   = document.getElementById('pl-nome').value.trim();
-  const valor  = document.getElementById('pl-valor').value;
-  const cortes = document.getElementById('pl-cortes').value;
-  const ordem  = document.getElementById('pl-ordem').value || 0;
-  const desc   = document.getElementById('pl-desc').value.trim();
-  const ativo  = document.getElementById('pl-ativo').classList.contains('on');
+  const id = document.getElementById('pl-id').value;
+  const nome = document.getElementById('pl-nome').value.trim();
+  const valor = document.getElementById('pl-valor').value;
   if (!nome || !valor) { toast('Nome e valor obrigatórios', 'danger'); return; }
-  const body = { nome, valor: Number(valor), cortes_mes: Number(cortes)||0, descricao: desc, ordem: Number(ordem), ativo };
+  const body = { nome, valor: Number(valor), cortes_mes: Number(document.getElementById('pl-cortes').value)||0, descricao: document.getElementById('pl-desc').value.trim(), ordem: Number(document.getElementById('pl-ordem').value)||0, ativo: document.getElementById('pl-ativo').classList.contains('on') };
   try {
-    const r = id
-      ? await fetch(API(`/planos/${id}`), { method: 'PUT',  headers: H(), body: JSON.stringify(body) }).then(r => r.json())
-      : await fetch(API('/planos'),        { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
+    const r = id ? await fetch(API(`/planos/${id}`), { method: 'PUT', headers: H(), body: JSON.stringify(body) }).then(r => r.json()) : await fetch(API('/planos'), { method: 'POST', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
     if (r.sucesso) { toast(id ? 'Plano atualizado!' : 'Plano criado!'); fecharModal('modal-plano'); carregarPlanos(); }
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
@@ -1825,17 +2406,15 @@ async function salvarPlano() {
 
 async function deletarPlano(id, nome) {
   confirmar('Excluir plano', `Deseja excluir o plano "${nome}"?`, async () => {
-    try {
-      const r = await fetch(API(`/planos/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
-      if (r.sucesso) { toast('Plano excluído!'); carregarPlanos(); }
-      else toast(r.erro || 'Erro', 'danger');
-    } catch { toast('Erro de conexão', 'danger'); }
+    const r = await fetch(API(`/planos/${id}`), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
+    if (r.sucesso) { toast('Plano excluído!'); carregarPlanos(); }
+    else toast(r.erro || 'Erro', 'danger');
   });
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // ASSINANTES
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarAssinantes() {
   try {
     const r = await fetch(API('/assinantes'), { headers: { Authorization: TOKEN } }).then(r => r.json());
@@ -1851,18 +2430,18 @@ async function carregarAssinantes() {
         <td><span class="badge badge-${a.status==='ativo'?'success':a.status==='aguardando'?'warning':a.status==='vencido'?'danger':'gray'}">${a.status}</span></td>
         <td>
           <div class="inline-actions">
-            ${a.status==='aguardando' ? `<button class="btn btn-success btn-sm" onclick="acaoAssinante(${a.id},'confirmar')"><i class="ti ti-check"></i> Confirmar</button>` : ''}
+            ${a.status==='aguardando' ? `<button class="btn btn-success btn-sm" onclick="acaoAssinante(${a.id},'confirmar')"><i class="ti ti-check"></i></button>` : ''}
             ${a.status==='ativo' ? `<button class="btn btn-ghost btn-sm" onclick="acaoAssinante(${a.id},'usar-corte')"><i class="ti ti-scissors"></i></button>` : ''}
             ${a.status==='ativo'||a.status==='vencido' ? `<button class="btn btn-ghost btn-sm" onclick="acaoAssinante(${a.id},'renovar')">Renovar</button>` : ''}
             <button class="btn btn-danger btn-sm" onclick="acaoAssinante(${a.id},'cancelar')"><i class="ti ti-x"></i></button>
           </div>
         </td>
-      </tr>`).join('') : '<tr><td colspan="7"><div class="empty"><p>Nenhum assinante encontrado</p></div></td></tr>';
-  } catch { toast('Erro ao carregar assinantes', 'danger'); }
+      </tr>`).join('') : '<tr><td colspan="7"><div class="empty"><p>Nenhum assinante</p></div></td></tr>';
+  } catch { toast('Erro ao carregar', 'danger'); }
 }
 
 async function acaoAssinante(id, acao) {
-  const msgs = { confirmar:'Confirmar assinatura?', 'usar-corte':'Registrar uso de corte?', renovar:'Renovar assinatura por mais 30 dias?', cancelar:'Cancelar assinatura deste cliente?' };
+  const msgs = { confirmar:'Confirmar assinatura?', 'usar-corte':'Registrar uso de corte?', renovar:'Renovar por mais 30 dias?', cancelar:'Cancelar assinatura?' };
   confirmar('Confirmar ação', msgs[acao]||'Confirmar?', async () => {
     const r = await fetch(API(`/assinantes/${id}/${acao}`), { method: 'PUT', headers: { Authorization: TOKEN } }).then(r => r.json());
     if (r.sucesso) { toast('Ação realizada!'); carregarAssinantes(); }
@@ -1871,16 +2450,16 @@ async function acaoAssinante(id, acao) {
 }
 
 async function apagarCancelados() {
-  confirmar('Apagar cancelados', 'Todos os assinantes cancelados serão removidos permanentemente.', async () => {
+  confirmar('Apagar cancelados', 'Todos os assinantes cancelados serão removidos.', async () => {
     const r = await fetch(API('/assinantes/cancelados'), { method: 'DELETE', headers: { Authorization: TOKEN } }).then(r => r.json());
-    if (r.sucesso) { toast('Cancelados removidos!'); carregarAssinantes(); }
+    if (r.sucesso) { toast('Removidos!'); carregarAssinantes(); }
     else toast(r.erro || 'Erro', 'danger');
   });
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 // CONFIG
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════
 async function carregarConfig() {
   try {
     const d = await fetch(API('/config')).then(r => r.json());
@@ -1888,25 +2467,18 @@ async function carregarConfig() {
     document.getElementById('cfg-cidade').value   = d.cidade     || '';
     document.getElementById('cfg-whatsapp').value = d.whatsapp   || '';
     document.getElementById('cfg-pix').value      = d.pix_chave  || '';
-    document.getElementById('cfg-cor').value      = d.cor_primaria || '#c8a96e';
+    document.getElementById('cfg-cor').value      = d.cor_primaria || '#c9a84c';
     document.getElementById('cfg-sobre').value    = d.sobre      || '';
     verificarWA();
   } catch {}
 }
 
 async function salvarConfig() {
-  const body = {
-    nome:         document.getElementById('cfg-nome').value.trim(),
-    cidade:       document.getElementById('cfg-cidade').value.trim(),
-    whatsapp:     document.getElementById('cfg-whatsapp').value.trim(),
-    pix_chave:    document.getElementById('cfg-pix').value.trim(),
-    cor_primaria: document.getElementById('cfg-cor').value,
-    sobre:        document.getElementById('cfg-sobre').value.trim(),
-  };
+  const body = { nome: document.getElementById('cfg-nome').value.trim(), cidade: document.getElementById('cfg-cidade').value.trim(), whatsapp: document.getElementById('cfg-whatsapp').value.trim(), pix_chave: document.getElementById('cfg-pix').value.trim(), cor_primaria: document.getElementById('cfg-cor').value, sobre: document.getElementById('cfg-sobre').value.trim() };
   try {
     const r = await fetch(API('/config'), { method: 'PUT', headers: H(), body: JSON.stringify(body) }).then(r => r.json());
     if (r.sucesso) { toast('Configurações salvas!'); carregarConfigSilent(); }
-    else toast(r.erro || 'Erro ao salvar', 'danger');
+    else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
 }
 </script>
