@@ -2553,6 +2553,7 @@ async function apagarCancelados() {
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
+
 async function carregarConfig() {
   try {
     const d = await fetch(API('/config')).then(r => r.json());

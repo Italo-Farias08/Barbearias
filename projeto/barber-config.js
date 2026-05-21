@@ -10,7 +10,7 @@
 // Este arquivo é importado por todos os outros JS da barbearia.
 // ─────────────────────────────────────────────────────────
  
-const BARBER_SLUG = "italo"; // ← altere aqui para cada barbearia
+const BARBER_SLUG = "italo";
  
 const BASE_URL =
   window.location.hostname === "localhost" ||
