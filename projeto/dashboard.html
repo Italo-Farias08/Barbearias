@@ -947,6 +947,66 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+.wa-qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0 4px;
+}
+.wa-qr-img {
+  width: 220px;
+  height: 220px;
+  border-radius: 12px;
+  border: 2px solid var(--gold-border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.wa-qr-img img { width: 100%; height: 100%; object-fit: contain; }
+.wa-steps {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  max-width: 280px;
+}
+.wa-steps strong { color: var(--text); }
+.wa-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.wa-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: waPulse 1.2s ease-in-out infinite;
+}
+@keyframes waPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+.wa-connected-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--success-bg);
+  border: 2px solid var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px auto 0;
+}
+.wa-connected-icon i { font-size: 30px; color: var(--success); }
 .gl-divider::before,
 .gl-divider::after {
   content: '';
@@ -1108,10 +1168,11 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
       </div>
     </div>
 
-    <div class="wa-pill" onclick="verificarWA()">
-      <div class="wa-dot" id="wa-dot"></div>
-      <span id="wa-txt">WhatsApp</span>
-    </div>
+    <div class="wa-pill" onclick="abrirModalWA()" style="cursor:pointer" title="Clique para gerenciar WhatsApp">
+  <div class="wa-dot" id="wa-dot"></div>
+  <span id="wa-txt">WhatsApp</span>
+  <i class="ti ti-chevron-right" style="margin-left:auto;font-size:12px;color:var(--text3)"></i>
+</div>
 
     <div class="gold-rule" style="margin:0 14px"></div>
 
@@ -1602,6 +1663,76 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
       <button class="btn btn-ghost" onclick="fecharModal('modal-confirm')">Cancelar</button>
       <button class="btn btn-danger" id="confirm-btn"><i class="ti ti-check"></i> Confirmar</button>
     </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-wa">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-handle"></div>
+    <div class="modal-title">WhatsApp da Barbearia</div>
+    <button class="modal-close" onclick="fecharModalWA()"><i class="ti ti-x"></i></button>
+
+    <!-- Estado: desconectado -->
+    <div id="wa-state-off">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6">
+        Vincule o WhatsApp da barbearia para enviar lembretes automáticos de agendamentos.
+        É grátis e usa a sua própria conta do WhatsApp.
+      </p>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px"
+              onclick="iniciarConexaoWA()">
+        <i class="ti ti-brand-whatsapp"></i> Gerar QR Code para vincular
+      </button>
+    </div>
+
+    <!-- Estado: gerando QR -->
+    <div id="wa-state-loading" style="display:none">
+      <div class="wa-qr-box">
+        <div class="wa-status-badge" style="background:var(--gold-muted);color:var(--gold);border:1px solid var(--gold-border)">
+          <div class="wa-pulse"></div> Gerando QR Code...
+        </div>
+        <div class="wa-qr-img">
+          <span class="spinner" style="width:32px;height:32px;border-width:3px"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado: QR pronto -->
+    <div id="wa-state-qr" style="display:none">
+      <div class="wa-qr-box">
+        <div class="wa-status-badge" style="background:var(--gold-muted);color:var(--gold);border:1px solid var(--gold-border)">
+          <div class="wa-pulse"></div> Aguardando escaneamento...
+        </div>
+        <div class="wa-qr-img" id="wa-qr-container">
+          <!-- QR injetado pelo JS -->
+        </div>
+        <div class="wa-steps">
+          <strong>Como conectar:</strong><br>
+          1. Abra o WhatsApp no celular<br>
+          2. Toque em <strong>⋮ → Dispositivos vinculados</strong><br>
+          3. Toque em <strong>Vincular um dispositivo</strong><br>
+          4. Escaneie o QR code acima
+        </div>
+        <p style="font-size:11px;color:var(--text3);text-align:center">
+          O QR expira em ~60s. A página atualiza automaticamente.
+        </p>
+      </div>
+    </div>
+
+    <!-- Estado: conectado -->
+    <div id="wa-state-ok" style="display:none">
+      <div class="wa-qr-box">
+        <div class="wa-connected-icon"><i class="ti ti-check"></i></div>
+        <div class="wa-status-badge" style="background:var(--success-bg);color:var(--success);border:1px solid rgba(61,184,122,.25)">
+          <i class="ti ti-circle-check"></i> WhatsApp conectado!
+        </div>
+        <p style="font-size:13px;color:var(--text2);text-align:center;line-height:1.6;max-width:280px">
+          Lembretes automáticos estão ativos. Os clientes receberão mensagem ~1h antes do horário.
+        </p>
+        <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="desconectarWA()">
+          <i class="ti ti-unlink"></i> Desconectar
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2574,6 +2705,122 @@ async function salvarConfig() {
     if (r.sucesso) { toast('Configurações salvas!'); carregarConfigSilent(); }
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
+}
+let _waPollInterval = null;
+
+function abrirModalWA() {
+  abrirModal('modal-wa');
+  _waSetState('loading');
+  _waVerificarStatus();
+}
+
+function fecharModalWA() {
+  fecharModal('modal-wa');
+  clearInterval(_waPollInterval);
+  _waPollInterval = null;
+}
+
+function _waSetState(state) {
+  // state: 'off' | 'loading' | 'qr' | 'ok'
+  ['off','loading','qr','ok'].forEach(s =>
+    document.getElementById(`wa-state-${s}`).style.display = s === state ? 'block' : 'none'
+  );
+}
+
+async function _waVerificarStatus() {
+  try {
+    const d = await fetch(API('/whatsapp-status'), { headers: { Authorization: TOKEN } }).then(r => r.json());
+
+    if (d.conectado) {
+      _waSetState('ok');
+      _atualizarWADot(true);
+      clearInterval(_waPollInterval);
+      return;
+    }
+
+    if (d.temQr) {
+      // Já tem QR gerado — busca direto
+      const q = await fetch(API('/whatsapp/qr'), { headers: { Authorization: TOKEN } }).then(r => r.json());
+      if (q.qr) { _mostrarQR(q.qr); return; }
+    }
+
+    // Sem sessão ativa
+    _waSetState('off');
+    _atualizarWADot(false);
+  } catch {
+    _waSetState('off');
+  }
+}
+
+async function iniciarConexaoWA() {
+  _waSetState('loading');
+  try {
+    const r = await fetch(API('/whatsapp/conectar'), { method: 'POST', headers: H() }).then(r => r.json());
+
+    if (r.conectado) { _waSetState('ok'); _atualizarWADot(true); return; }
+
+    if (r.qr) {
+      _mostrarQR(r.qr);
+    } else {
+      // QR ainda sendo gerado — inicia polling
+      _iniciarPollingQR();
+    }
+  } catch {
+    toast('Erro ao iniciar WhatsApp', 'danger');
+    _waSetState('off');
+  }
+}
+
+function _mostrarQR(base64) {
+  _waSetState('qr');
+  const cont = document.getElementById('wa-qr-container');
+  cont.innerHTML = `<img src="${base64}" alt="QR Code WhatsApp">`;
+  _atualizarWADot(false);
+  _iniciarPollingQR();
+}
+
+function _iniciarPollingQR() {
+  clearInterval(_waPollInterval);
+  _waPollInterval = setInterval(async () => {
+    try {
+      const d = await fetch(API('/whatsapp/qr'), { headers: { Authorization: TOKEN } }).then(r => r.json());
+
+      if (d.status === 'conectado') {
+        clearInterval(_waPollInterval);
+        _waSetState('ok');
+        _atualizarWADot(true);
+        // Atualiza pill da sidebar
+        document.getElementById('wa-txt').textContent = 'WhatsApp conectado';
+        document.getElementById('wa-dot').className = 'wa-dot on';
+        return;
+      }
+
+      if (d.qr) {
+        // QR atualizado (expira e gera novo)
+        _mostrarQR(d.qr);
+      }
+    } catch {}
+  }, 3000);
+}
+
+async function desconectarWA() {
+  if (!confirm('Desconectar o WhatsApp desta barbearia?')) return;
+  try {
+    const r = await fetch(API('/whatsapp/desconectar'), { method: 'POST', headers: H() }).then(r => r.json());
+    if (r.sucesso) {
+      toast('WhatsApp desconectado', 'info');
+      _waSetState('off');
+      _atualizarWADot(false);
+    }
+  } catch { toast('Erro ao desconectar', 'danger'); }
+}
+
+function _atualizarWADot(conectado) {
+  const dot = document.getElementById('wa-dot');
+  const txt = document.getElementById('wa-txt');
+  if (!dot || !txt) return;
+  if (conectado) { dot.className = 'wa-dot on'; txt.textContent = 'WhatsApp conectado'; }
+  else           { dot.className = 'wa-dot off'; txt.textContent = 'WhatsApp offline'; }
 }
 </script>
 </body>
