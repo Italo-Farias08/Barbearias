@@ -1922,6 +1922,60 @@ app.get("/debug-wa-erro/:slug", async (req, res) => {
     res.json({ ok: false, logs, erro: err.message, stack: err.stack?.substring(0, 500) });
   }
 });
+// ROTA TEMPORÁRIA
+app.get("/debug-wa-socket/:slug", async (req, res) => {
+  const slug = req.params.slug;
+  const logs = [];
+  try {
+    const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+    const pino = require("pino");
+    const qrcode = require("qrcode");
+
+    const AUTH_DIR = `./auth_wa/${slug}`;
+    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    const { version } = await fetchLatestBaileysVersion();
+    logs.push("criando socket...");
+
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      logger: pino({ level: "silent" }),
+    });
+
+    logs.push("socket criado, aguardando QR por 15s...");
+
+    await new Promise((resolve) => {
+      sock.ev.on("connection.update", async ({ connection, qr, lastDisconnect }) => {
+        if (qr) {
+          logs.push("QR GERADO!");
+          const qrBase64 = await qrcode.toDataURL(qr);
+          res.json({ ok: true, logs, qr: qrBase64 });
+          resolve();
+        }
+        if (connection === "open") {
+          logs.push("CONECTADO!");
+          res.json({ ok: true, logs, conectado: true });
+          resolve();
+        }
+        if (connection === "close") {
+          const erro = lastDisconnect?.error?.message || "desconhecido";
+          logs.push("FECHOU: " + erro);
+          res.json({ ok: false, logs });
+          resolve();
+        }
+      });
+      setTimeout(() => {
+        logs.push("timeout — nenhum evento em 15s");
+        res.json({ ok: false, logs });
+        resolve();
+      }, 15000);
+    });
+
+  } catch (err) {
+    res.json({ ok: false, logs, erro: err.message });
+  }
+});
 
 app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
