@@ -1896,6 +1896,32 @@ app.get("/forcar-wa/:slug", async (req, res) => {
     qr: s?.qrBase64 || null
   });
 });
+// ROTA TEMPORÁRIA DE DIAGNÓSTICO DETALHADO
+app.get("/debug-wa-erro/:slug", async (req, res) => {
+  const slug = req.params.slug;
+  const logs = [];
+  try {
+    logs.push("1. importando baileys...");
+    const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+    const qrcode = require("qrcode");
+    const pino = require("pino");
+    logs.push("2. baileys importado");
+
+    const AUTH_DIR = `./auth_wa/${slug}`;
+    if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
+    logs.push("3. pasta criada");
+
+    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    logs.push("4. auth state ok");
+
+    const { version } = await fetchLatestBaileysVersion();
+    logs.push("5. versao obtida: " + JSON.stringify(version));
+
+    res.json({ ok: true, logs });
+  } catch (err) {
+    res.json({ ok: false, logs, erro: err.message, stack: err.stack?.substring(0, 500) });
+  }
+});
 
 app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
