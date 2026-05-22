@@ -188,6 +188,19 @@ function resetarEstado(slug, jid) {
     if (k !== "etapa" && k !== "ultimo") delete e[k];
   });
 }
+// Limpa estados inativos a cada 30 minutos
+setInterval(() => {
+  const agora = Date.now();
+  for (const slug in botEstados) {
+    for (const jid in botEstados[slug]) {
+      const estado = botEstados[slug][jid];
+      // Reseta se inativo por mais de 30 minutos
+      if (agora - estado.ultimo > 30 * 60 * 1000) {
+        resetarEstado(slug, jid);
+      }
+    }
+  }
+}, 10 * 60 * 1000);
 
 // ── BUSCAR DADOS DA BARBEARIA ─────────────────────────────────────────────
 async function getDadosBarbearia(slug) {
