@@ -1884,6 +1884,19 @@ app.get("/testar-wa/:slug", async (req, res) => {
     res.json({ ok: false, erro: err.message, code: err.code });
   }
 });
+// ROTA TEMPORÁRIA
+app.get("/forcar-wa/:slug", async (req, res) => {
+  const slug = req.params.slug;
+  await iniciarWhatsAppSlug(slug);
+  await new Promise(r => setTimeout(r, 8000));
+  const s = waSessoes[slug];
+  res.json({
+    status: s?.status || "nenhuma",
+    temQr: !!s?.qrBase64,
+    qr: s?.qrBase64 || null
+  });
+});
+
 app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
   const sessao = waSessoes[slug];
