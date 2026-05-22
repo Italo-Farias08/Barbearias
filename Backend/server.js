@@ -1,4 +1,6 @@
 // server.js — Multi-tenant PostgreSQL + WhatsApp via Baileys
+const crypto = require("crypto");
+globalThis.crypto = crypto.webcrypto;
 require("dotenv").config();
 const express = require("express");
 const cors    = require("cors");
