@@ -133,6 +133,34 @@ async function iniciarWhatsAppSlug(slug) {
 
     sock.ev.on("creds.update", saveCreds);
 
+    // ── BOT DE ATENDIMENTO ──────────────────────────────────────────────
+    sock.ev.on("messages.upsert", async ({ messages, type }) => {
+      if (type !== "notify") return;
+
+      for (const msg of messages) {
+        // Ignora mensagens próprias, de grupos e status
+        if (msg.key.fromMe)                          continue;
+        if (msg.key.remoteJid?.endsWith("@g.us"))   continue;
+        if (msg.key.remoteJid === "status@broadcast") continue;
+
+        const jid  = msg.key.remoteJid;
+        const body = (
+          msg.message?.conversation ||
+          msg.message?.extendedTextMessage?.text ||
+          msg.message?.imageMessage?.caption ||
+          ""
+        ).trim().toLowerCase();
+
+        if (!body) continue;
+
+        try {
+          await processarMensagemBot(sock, jid, body, slug);
+        } catch (err) {
+          console.error(`Erro no bot (${slug}):`, err.message);
+        }
+      }
+    });
+
   } catch (err) {
     if (err.code === "MODULE_NOT_FOUND") {
       console.log("ℹ️  Dependência faltando — rode: npm i @whiskeysockets/baileys qrcode pino");
@@ -140,6 +168,328 @@ async function iniciarWhatsAppSlug(slug) {
       console.error(`Erro ao iniciar WA (${slug}):`, err.message);
       setTimeout(() => iniciarWhatsAppSlug(slug), 10000);
     }
+  }
+}
+
+// ── ESTADO DO BOT POR USUÁRIO ─────────────────────────────────────────────
+// botEstados[slug][jid] = { ultimo: timestamp, aguardando: null }
+const botEstados = {};
+
+function getEstado(slug, jid) {
+  if (!botEstados[slug])      botEstados[slug] = {};
+  if (!botEstados[slug][jid]) botEstados[slug][jid] = { ultimo: 0 };
+  return botEstados[slug][jid];
+}
+
+// ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
+async function processarMensagemBot(sock, jid, body, slug) {
+  const estado = getEstado(slug, jid);
+  const agora  = Date.now();
+
+  // Anti-spam: ignora se a última resposta foi há menos de 1s
+  if (agora - estado.ultimo < 1000) return;
+  estado.ultimo = agora;
+
+  const enviar = async (texto) => {
+    await sock.sendMessage(jid, { text: texto });
+  };
+
+  // Palavras que ativam o menu principal
+  const ativaMenu = ["oi", "olá", "ola", "ola!", "oi!", "hello", "bom dia", "boa tarde",
+    "boa noite", "menu", "ajuda", "help", "1", "2", "3", "4", "5", "0", "inicio", "início"];
+
+  const ehSaudacao = ["oi", "olá", "ola", "hello", "bom dia", "boa tarde", "boa noite", "menu",
+    "ajuda", "help", "inicio", "início"].some(s => body === s || body.startsWith(s + " "));
+
+  // Volta ao menu
+  if (body === "0" || body === "menu" || body === "inicio" || body === "início") {
+    await enviarMenu(sock, jid, slug);
+    return;
+  }
+
+  // Saudação → menu
+  if (ehSaudacao) {
+    await enviarBoasVindas(sock, jid, slug);
+    return;
+  }
+
+  // Opções do menu
+  switch (body) {
+    case "1": await enviarServicos(sock, jid, slug);      break;
+    case "2": await enviarHorarios(sock, jid, slug);      break;
+    case "3": await enviarProfissionais(sock, jid, slug); break;
+    case "4": await enviarComoAgendar(sock, jid, slug);   break;
+    case "5": await enviarPagamento(sock, jid, slug);     break;
+    case "6": await enviarPlanos(sock, jid, slug);        break;
+    default:
+      // Qualquer outra mensagem → menu
+      await enviarMenu(sock, jid, slug);
+  }
+}
+
+// ── BUSCAR DADOS DA BARBEARIA ─────────────────────────────────────────────
+async function getDadosBarbearia(slug) {
+  const r = await db.query(
+    `SELECT nome, cidade, whatsapp, horario_func, pix_chave, sobre, cor_primaria
+     FROM barbearias WHERE slug = $1`,
+    [slug]
+  );
+  return r.rows[0] || {};
+}
+
+// ── BOAS-VINDAS ───────────────────────────────────────────────────────────
+async function enviarBoasVindas(sock, jid, slug) {
+  const barb = await getDadosBarbearia(slug);
+  const nome = barb.nome || "nossa barbearia";
+
+  const txt =
+    `✂️ *${nome}*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `Olá! Seja bem-vindo(a)! 👋\n\n` +
+    `Estamos aqui para te atender.\n` +
+    `Digite o número da opção desejada:\n\n` +
+    `*1* — Serviços e preços 💈\n` +
+    `*2* — Horários de funcionamento 🕐\n` +
+    `*3* — Nossos profissionais 👨‍💼\n` +
+    `*4* — Como agendar 📅\n` +
+    `*5* — Formas de pagamento 💳\n` +
+    `*6* — Planos e assinaturas 👑\n\n` +
+    `_Digite *0* a qualquer momento para voltar ao menu._`;
+
+  await sock.sendMessage(jid, { text: txt });
+}
+
+// ── MENU PRINCIPAL ────────────────────────────────────────────────────────
+async function enviarMenu(sock, jid, slug) {
+  const barb = await getDadosBarbearia(slug);
+  const nome = barb.nome || "nossa barbearia";
+
+  const txt =
+    `✂️ *${nome} — Menu*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `*1* — Serviços e preços 💈\n` +
+    `*2* — Horários de funcionamento 🕐\n` +
+    `*3* — Nossos profissionais 👨‍💼\n` +
+    `*4* — Como agendar 📅\n` +
+    `*5* — Formas de pagamento 💳\n` +
+    `*6* — Planos e assinaturas 👑\n\n` +
+    `_Digite o número da opção desejada._`;
+
+  await sock.sendMessage(jid, { text: txt });
+}
+
+// ── SERVIÇOS ──────────────────────────────────────────────────────────────
+async function enviarServicos(sock, jid, slug) {
+  try {
+    // Tenta destaque primeiro, senão usa serviços de agendamento
+    const dest = await db.query(
+      `SELECT nome, descricao, preco FROM servicos_destaque
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+       ORDER BY ordem, id`,
+      [slug]
+    );
+
+    const simples = await db.query(
+      `SELECT nome, preco FROM servicos
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+       ORDER BY id`,
+      [slug]
+    );
+
+    const barb = await getDadosBarbearia(slug);
+    let txt = `💈 *Serviços — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (dest.rows.length > 0) {
+      dest.rows.forEach(s => {
+        const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        txt += `✦ *${s.nome}* — ${preco}\n`;
+        if (s.descricao) txt += `  _${s.descricao}_\n`;
+        txt += "\n";
+      });
+    } else if (simples.rows.length > 0) {
+      simples.rows.forEach(s => {
+        const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        txt += `✦ *${s.nome}* — ${preco}\n`;
+      });
+    } else {
+      txt += "_Nenhum serviço cadastrado ainda._\n";
+    }
+
+    txt += `\n_Digite *0* para voltar ao menu._`;
+    await sock.sendMessage(jid, { text: txt });
+  } catch (err) {
+    console.error("Bot serviços:", err.message);
+  }
+}
+
+// ── HORÁRIOS ──────────────────────────────────────────────────────────────
+async function enviarHorarios(sock, jid, slug) {
+  try {
+    const barb = await getDadosBarbearia(slug);
+    const hr   = await db.query(
+      `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
+       FROM horarios_barbearia
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
+      [slug]
+    );
+
+    const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+    let txt = `🕐 *Horários — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (hr.rows.length > 0) {
+      const row  = hr.rows[0];
+      const dias = typeof row.dias_semana === "string"
+        ? JSON.parse(row.dias_semana)
+        : (row.dias_semana || {});
+
+      for (let i = 0; i <= 6; i++) {
+        const cfg = dias[String(i)];
+        if (!cfg) continue;
+        if (!cfg.aberto) {
+          txt += `${DIAS[i]}: _Fechado_\n`;
+        } else {
+          const ini = (cfg.hora_inicio || row.hora_inicio || "08:00").substring(0, 5);
+          const fim = (cfg.hora_fim    || row.hora_fim    || "21:00").substring(0, 5);
+          txt += `*${DIAS[i]}:* ${ini} às ${fim}\n`;
+        }
+      }
+
+      if (row.pausa_inicio && row.pausa_fim) {
+        txt += `\n⚠️ _Pausa: ${row.pausa_inicio.substring(0,5)} às ${row.pausa_fim.substring(0,5)}_\n`;
+      }
+    } else if (barb.horario_func) {
+      txt += barb.horario_func + "\n";
+    } else {
+      txt += "_Horários não configurados. Entre em contato para mais informações._\n";
+    }
+
+    txt += `\n_Digite *0* para voltar ao menu._`;
+    await sock.sendMessage(jid, { text: txt });
+  } catch (err) {
+    console.error("Bot horários:", err.message);
+  }
+}
+
+// ── PROFISSIONAIS ─────────────────────────────────────────────────────────
+async function enviarProfissionais(sock, jid, slug) {
+  try {
+    const barb  = await getDadosBarbearia(slug);
+    const profs = await db.query(
+      `SELECT nome, especialidade, disponivel FROM profissionais
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+         AND ativo = true
+       ORDER BY ordem`,
+      [slug]
+    );
+
+    let txt = `👨‍💼 *Profissionais — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (profs.rows.length > 0) {
+      profs.rows.forEach(p => {
+        const disp = p.disponivel ? "✅ Disponível" : "⏸ Indisponível";
+        txt += `✦ *${p.nome}*`;
+        if (p.especialidade) txt += ` — _${p.especialidade}_`;
+        txt += `\n  ${disp}\n\n`;
+      });
+    } else {
+      txt += "_Nenhum profissional cadastrado ainda._\n\n";
+    }
+
+    txt += `_Digite *0* para voltar ao menu._`;
+    await sock.sendMessage(jid, { text: txt });
+  } catch (err) {
+    console.error("Bot profissionais:", err.message);
+  }
+}
+
+// ── COMO AGENDAR ──────────────────────────────────────────────────────────
+async function enviarComoAgendar(sock, jid, slug) {
+  try {
+    const barb = await getDadosBarbearia(slug);
+    const nome = barb.nome || "nossa barbearia";
+
+    const txt =
+      `📅 *Como Agendar — ${nome}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Você pode agendar pelo nosso sistema online:\n\n` +
+      `🔗 *Link de agendamento:*\n` +
+      `https://vtrip.com.br/${slug}\n\n` +
+      `No site você pode:\n` +
+      `• Escolher o serviço\n` +
+      `• Escolher o profissional\n` +
+      `• Ver os horários disponíveis\n` +
+      `• Confirmar seu agendamento\n\n` +
+      `_É rápido e fácil! 😊_\n\n` +
+      `_Digite *0* para voltar ao menu._`;
+
+    await sock.sendMessage(jid, { text: txt });
+  } catch (err) {
+    console.error("Bot agendar:", err.message);
+  }
+}
+
+// ── FORMAS DE PAGAMENTO ───────────────────────────────────────────────────
+async function enviarPagamento(sock, jid, slug) {
+  try {
+    const barb = await getDadosBarbearia(slug);
+    const nome = barb.nome || "nossa barbearia";
+
+    let txt =
+      `💳 *Formas de Pagamento — ${nome}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Aceitamos:\n\n` +
+      `💵 Dinheiro\n` +
+      `💳 Cartão de débito e crédito\n`;
+
+    if (barb.pix_chave) {
+      txt +=
+        `\n📱 *PIX:*\n` +
+        `\`${barb.pix_chave}\`\n\n` +
+        `_Copie a chave acima para pagar via PIX._\n`;
+    } else {
+      txt += `📱 PIX (solicite a chave no local)\n`;
+    }
+
+    txt += `\n_Digite *0* para voltar ao menu._`;
+    await sock.sendMessage(jid, { text: txt });
+  } catch (err) {
+    console.error("Bot pagamento:", err.message);
+  }
+}
+
+// ── PLANOS ────────────────────────────────────────────────────────────────
+async function enviarPlanos(sock, jid, slug) {
+  try {
+    const barb   = await getDadosBarbearia(slug);
+    const planos = await db.query(
+      `SELECT nome, descricao, cortes_mes, valor FROM planos
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+         AND ativo = true
+       ORDER BY ordem, valor`,
+      [slug]
+    );
+
+    let txt = `👑 *Planos e Assinaturas — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (planos.rows.length > 0) {
+      planos.rows.forEach(p => {
+        const valor = Number(p.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        txt += `✦ *${p.nome}* — ${valor}/mês\n`;
+        if (p.cortes_mes) txt += `  📋 ${p.cortes_mes} corte(s) por mês\n`;
+        if (p.descricao)  txt += `  _${p.descricao}_\n`;
+        txt += "\n";
+      });
+      txt +=
+        `Para assinar um plano, acesse:\n` +
+        `🔗 https://vtrip.com.br/${slug}\n\n`;
+    } else {
+      txt += "_Nenhum plano disponível no momento._\n\n";
+    }
+
+    txt += `_Digite *0* para voltar ao menu._`;
+    await sock.sendMessage(jid, { text: txt });
+  } catch (err) {
+    console.error("Bot planos:", err.message);
   }
 }
 
