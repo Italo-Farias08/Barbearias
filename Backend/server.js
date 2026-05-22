@@ -6,8 +6,6 @@ const db      = require("./db");
 const fs      = require("fs");
 const path    = require("path");
 
-// ── ARQUIVOS ESTÁTICOS — DEVE FICAR APÓS TODAS AS ROTAS (ver final do arquivo)
-
 const app = express();
 
 app.set('trust proxy', 1);
@@ -57,77 +55,116 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// WHATSAPP COM BAILEYS
-let waSocket    = null;
-let waConectado = false;
+// ── WHATSAPP MULTI-TENANT ─────────────────────────────────────────────────
+// Uma sessão por barbearia (slug), armazenada em ./auth_wa/{slug}/
+// waSessoes[slug] = { socket, conectado, qrBase64, status }
 
-async function iniciarWhatsApp() {
+const waSessoes = {};
+
+async function iniciarWhatsAppSlug(slug) {
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return;
+  if (waSessoes[slug]?.status === "conectado") return;
+
   try {
     const {
       default: makeWASocket,
       useMultiFileAuthState,
       DisconnectReason,
-      fetchLatestBaileysVersion
+      fetchLatestBaileysVersion,
     } = require("@whiskeysockets/baileys");
 
-    const qrcode = require("qrcode-terminal");
+    const qrcode = require("qrcode");
+    const pino   = require("pino");
 
-    const AUTH_DIR = "./auth_info_baileys";
-    if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR);
+    const AUTH_DIR = `./auth_wa/${slug}`;
+    if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     const { version }          = await fetchLatestBaileysVersion();
 
-    waSocket = makeWASocket({
+    const sessao = {
+      socket:    null,
+      conectado: false,
+      qrBase64:  null,
+      status:    "aguardando_qr",
+    };
+    waSessoes[slug] = sessao;
+
+    const sock = makeWASocket({
       version,
-      auth: state,
+      auth:              state,
       printQRInTerminal: false,
-      logger: require("pino")({ level: "silent" })
+      logger:            pino({ level: "silent" }),
     });
 
-    waSocket.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+    sessao.socket = sock;
+
+    sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
       if (qr) {
-        console.log("\n╔══════════════════════════════════════╗");
-        console.log("║  ESCANEIE O QR CODE NO SEU WHATSAPP  ║");
-        console.log("╚══════════════════════════════════════╝\n");
-        qrcode.generate(qr, { small: true });
+        sessao.qrBase64 = await qrcode.toDataURL(qr);
+        sessao.status   = "aguardando_qr";
+        console.log(`📱 QR gerado para: ${slug}`);
       }
+
       if (connection === "open") {
-        waConectado = true;
-        console.log("✅ WhatsApp conectado! Lembretes automáticos ativos.");
+        sessao.conectado = true;
+        sessao.status    = "conectado";
+        sessao.qrBase64  = null;
+        console.log(`✅ WhatsApp conectado: ${slug}`);
       }
+
       if (connection === "close") {
-        waConectado = false;
-        const codigo = lastDisconnect?.error?.output?.statusCode;
+        sessao.conectado = false;
+        const codigo         = lastDisconnect?.error?.output?.statusCode;
         const deveReconectar = codigo !== DisconnectReason.loggedOut;
-        console.log(`⚠️  WhatsApp desconectado. Código: ${codigo}`);
+        console.log(`⚠️  WhatsApp desconectado (${slug}). Código: ${codigo}`);
         if (deveReconectar) {
-          console.log("🔄 Reconectando em 5s...");
-          setTimeout(iniciarWhatsApp, 5000);
+          sessao.status = "aguardando_qr";
+          setTimeout(() => iniciarWhatsAppSlug(slug), 5000);
         } else {
-          console.log("❌ Sessão encerrada. Delete a pasta auth_info_baileys e reinicie.");
+          sessao.status   = "desconectado";
+          sessao.qrBase64 = null;
+          const AUTH_DIR2 = `./auth_wa/${slug}`;
+          if (fs.existsSync(AUTH_DIR2)) fs.rmSync(AUTH_DIR2, { recursive: true, force: true });
+          console.log(`❌ Sessão encerrada (${slug}). Auth limpa.`);
         }
       }
     });
 
-    waSocket.ev.on("creds.update", saveCreds);
+    sock.ev.on("creds.update", saveCreds);
 
   } catch (err) {
     if (err.code === "MODULE_NOT_FOUND") {
-      console.log("ℹ️  Baileys não instalado — WhatsApp desativado.");
+      console.log("ℹ️  Dependência faltando — rode: npm i @whiskeysockets/baileys qrcode pino");
     } else {
-      console.error("Erro ao iniciar WhatsApp:", err.message);
-      setTimeout(iniciarWhatsApp, 10000);
+      console.error(`Erro ao iniciar WA (${slug}):`, err.message);
+      setTimeout(() => iniciarWhatsAppSlug(slug), 10000);
     }
   }
 }
 
-iniciarWhatsApp();
+// Reconecta automaticamente slugs que já tinham sessão salva ao reiniciar servidor
+async function reconectarSessoesSalvas() {
+  const AUTH_ROOT = "./auth_wa";
+  if (!fs.existsSync(AUTH_ROOT)) return;
+  const slugs = fs.readdirSync(AUTH_ROOT).filter(f =>
+    fs.statSync(path.join(AUTH_ROOT, f)).isDirectory()
+  );
+  for (const slug of slugs) {
+    console.log(`🔄 Reconectando sessão salva: ${slug}`);
+    iniciarWhatsAppSlug(slug);
+    await new Promise(r => setTimeout(r, 1500)); // evita burst
+  }
+}
 
-// LEMBRETE VIA WHATSAPP
+reconectarSessoesSalvas();
+
+// ── ENVIO DE LEMBRETE ─────────────────────────────────────────────────────
+
 async function enviarLembrete(ag) {
-  if (!waSocket || !waConectado) {
-    console.log(`⚠️  WhatsApp offline — lembrete não enviado para ${ag.nome}`);
+  const sessao = waSessoes[ag.slug];
+  if (!sessao?.conectado || !sessao.socket) {
+    console.log(`⚠️  WA offline (${ag.slug}) — lembrete não enviado para ${ag.nome}`);
     return;
   }
 
@@ -143,20 +180,21 @@ async function enviarLembrete(ag) {
   const jid = `55${telefone}@s.whatsapp.net`;
 
   try {
-    await waSocket.sendMessage(jid, { text: mensagem });
-    console.log(`✅ Lembrete enviado → ${ag.nome} (${telefone})`);
+    await sessao.socket.sendMessage(jid, { text: mensagem });
+    console.log(`✅ Lembrete enviado (${ag.slug}) → ${ag.nome} (${telefone})`);
   } catch (err) {
-    console.error(`❌ Erro ao enviar lembrete para ${ag.nome}:`, err.message);
+    console.error(`❌ Erro lembrete (${ag.slug}) → ${ag.nome}:`, err.message);
   }
 }
 
-// JOB DE LEMBRETES — a cada 60s, dispara ~1h antes
+// ── JOB DE LEMBRETES ──────────────────────────────────────────────────────
+
 async function verificarLembretes() {
   try {
     const agora  = new Date();
     const result = await db.query(`
       SELECT a.id, a.nome, a.telefone, a.data, a.horario,
-             b.nome AS nome_barbearia
+             b.nome AS nome_barbearia, b.slug
       FROM agendamentos a
       JOIN barbearias b ON b.id = a.barbearia_id
       WHERE a.status = 'pendente'
@@ -172,7 +210,7 @@ async function verificarLembretes() {
 
       const [ano, mes, dia] = dataStr.split("-");
       const [hora, min]     = ag.horario.substring(0, 5).split(":");
-      const dataHorario     = new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(min), 0);
+      const dataHorario     = new Date(+ano, +mes - 1, +dia, +hora, +min, 0);
       const diffMin         = (dataHorario - agora) / 60000;
 
       if (diffMin >= 55 && diffMin <= 65) {
@@ -191,9 +229,12 @@ async function verificarLembretes() {
 setInterval(verificarLembretes, 60 * 1000);
 verificarLembretes();
 
-// STATUS WHATSAPP
+// ── ROTAS WHATSAPP GLOBAIS (compatibilidade) ──────────────────────────────
+
 app.get("/whatsapp-status", (req, res) => {
-  res.json({ conectado: waConectado });
+  // Retorna true se QUALQUER sessão estiver conectada (legado)
+  const algumConectado = Object.values(waSessoes).some(s => s.conectado);
+  res.json({ conectado: algumConectado });
 });
 
 app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
@@ -419,7 +460,7 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   } catch { res.json([]); }
 });
 
-// ── HORÁRIOS DA BARBEARIA (configuração) ──────────────────────────────────
+// ── HORÁRIOS DA BARBEARIA ─────────────────────────────────────────────────
 
 app.get("/api/:slug/horarios", async (req, res) => {
   try {
@@ -576,7 +617,7 @@ app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ── SERVIÇOS (agendamento) ────────────────────────────────────────────────
+// ── SERVIÇOS ──────────────────────────────────────────────────────────────
 
 app.get("/api/:slug/servicos", async (req, res) => {
   try {
@@ -802,7 +843,7 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
   } catch (err) { console.error(err); res.json({ erro: "Erro ao executar ação" }); }
 });
 
-// ── SERVIÇOS DESTAQUE (vitrine) ───────────────────────────────────────────
+// ── SERVIÇOS DESTAQUE ─────────────────────────────────────────────────────
 
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
@@ -1029,7 +1070,6 @@ app.post("/cadastro", async (req, res) => {
       return res.status(409).json({ erro: "Este usuário já está em uso. Escolha outro." });
 
     const slug = await gerarSlug(barbearia.nome.trim());
-
     const vencimento = new Date();
     vencimento.setDate(vencimento.getDate() + 30);
 
@@ -1110,7 +1150,6 @@ app.post("/cadastro", async (req, res) => {
     }
 
     console.log(`✅ Nova barbearia: ${barbSlug} (id ${barbId})`);
-
     res.status(201).json({
       sucesso: true,
       slug: barbSlug,
@@ -1131,11 +1170,8 @@ app.get("/debug-path", (req, res) => {
   const existe = fs.existsSync(dir);
   res.json({ dir, existe, arquivos: existe ? fs.readdirSync(dir) : [] });
 });
-// ══════════════════════════════════════════════════════════════
-// ROTAS FALTANDO — cole no server.js antes do express.static
-// ══════════════════════════════════════════════════════════════
 
-// ── CONFIG (salvar) ───────────────────────────────────────────
+// ── CONFIG (salvar) ───────────────────────────────────────────────────────
 
 app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
   const { nome, cidade, whatsapp, pix_chave, cor_primaria, sobre } = req.body;
@@ -1147,15 +1183,7 @@ app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
        SET nome = $1, cidade = $2, whatsapp = $3,
            pix_chave = $4, cor_primaria = $5, sobre = $6
        WHERE slug = $7`,
-      [
-        nome.trim(),
-        cidade    || "",
-        whatsapp  || "",
-        pix_chave || "",
-        cor_primaria || "#c8a96e",
-        sobre     || "",
-        req.params.slug
-      ]
+      [nome.trim(), cidade || "", whatsapp || "", pix_chave || "", cor_primaria || "#c8a96e", sobre || "", req.params.slug]
     );
     res.json({ sucesso: true });
   } catch (err) {
@@ -1164,9 +1192,8 @@ app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
   }
 });
 
-// ── PROFISSIONAIS (CRUD completo) ─────────────────────────────
+// ── PROFISSIONAIS CRUD ────────────────────────────────────────────────────
 
-// Adicionar
 app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
   const { nome, especialidade, whatsapp, ordem, foto_url, disponivel } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1177,15 +1204,7 @@ app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
          (barbearia_id, nome, especialidade, whatsapp, ordem, foto_url, disponivel, ativo)
        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
        RETURNING id`,
-      [
-        req.barbearia.id,
-        nome.trim(),
-        especialidade || "",
-        whatsapp      || "",
-        Number(ordem) || 0,
-        foto_url      || null,
-        disponivel !== false
-      ]
+      [req.barbearia.id, nome.trim(), especialidade || "", whatsapp || "", Number(ordem) || 0, foto_url || null, disponivel !== false]
     );
     res.json({ sucesso: true, id: result.rows[0].id });
   } catch (err) {
@@ -1194,11 +1213,9 @@ app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
   }
 });
 
-// Editar
 app.put("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { nome, especialidade, whatsapp, ordem, foto_url, disponivel } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
     return res.status(400).json({ erro: "Nome inválido" });
@@ -1209,19 +1226,9 @@ app.put("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) =>
            ordem = $4, foto_url = $5, disponivel = $6
        WHERE id = $7 AND barbearia_id = $8
        RETURNING id`,
-      [
-        nome.trim(),
-        especialidade || "",
-        whatsapp      || "",
-        Number(ordem) || 0,
-        foto_url      || null,
-        disponivel !== false,
-        id,
-        req.barbearia.id
-      ]
+      [nome.trim(), especialidade || "", whatsapp || "", Number(ordem) || 0, foto_url || null, disponivel !== false, id, req.barbearia.id]
     );
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
@@ -1229,21 +1236,15 @@ app.put("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) =>
   }
 });
 
-// Deletar
 app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    // Soft delete: marca como inativo em vez de apagar
     const result = await db.query(
-      `UPDATE profissionais SET ativo = false
-       WHERE id = $1 AND barbearia_id = $2
-       RETURNING id`,
+      `UPDATE profissionais SET ativo = false WHERE id = $1 AND barbearia_id = $2 RETURNING id`,
       [id, req.barbearia.id]
     );
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     res.json({ sucesso: true });
   } catch (err) {
     console.error(err);
@@ -1251,26 +1252,18 @@ app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res)
   }
 });
 
-// ── SERVIÇOS DE AGENDAMENTO (CRUD completo) ───────────────────
+// ── SERVIÇOS ADMIN CRUD ───────────────────────────────────────────────────
 
-// Listar — substituir a rota GET existente que não retorna id
-// (a rota original só retorna nome, preco, imagem — sem id)
-// Adicione esta logo ANTES da rota GET existente ou substitua ela:
 app.get("/api/:slug/servicos/admin", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, nome, preco, imagem FROM servicos
-       WHERE barbearia_id = $1 ORDER BY id`,
+      `SELECT id, nome, preco, imagem FROM servicos WHERE barbearia_id = $1 ORDER BY id`,
       [req.barbearia.id]
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+  } catch (err) { console.error(err); res.json([]); }
 });
 
-// Adicionar
 app.post("/api/:slug/servicos", verificarAssinatura, async (req, res) => {
   const { nome, preco, imagem } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length === 0)
@@ -1279,23 +1272,16 @@ app.post("/api/:slug/servicos", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Preço inválido" });
   try {
     const result = await db.query(
-      `INSERT INTO servicos (barbearia_id, nome, preco, imagem)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id`,
+      `INSERT INTO servicos (barbearia_id, nome, preco, imagem) VALUES ($1, $2, $3, $4) RETURNING id`,
       [req.barbearia.id, nome.trim(), Number(preco), imagem || null]
     );
     res.json({ sucesso: true, id: result.rows[0].id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao adicionar serviço" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao adicionar serviço" }); }
 });
 
-// Editar
 app.put("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { nome, preco, imagem } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length === 0)
     return res.status(400).json({ erro: "Nome inválido" });
@@ -1303,40 +1289,25 @@ app.put("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Preço inválido" });
   try {
     const result = await db.query(
-      `UPDATE servicos SET nome = $1, preco = $2, imagem = $3
-       WHERE id = $4 AND barbearia_id = $5
-       RETURNING id`,
+      `UPDATE servicos SET nome = $1, preco = $2, imagem = $3 WHERE id = $4 AND barbearia_id = $5 RETURNING id`,
       [nome.trim(), Number(preco), imagem || null, id, req.barbearia.id]
     );
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Serviço não encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Serviço não encontrado" });
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao editar serviço" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao editar serviço" }); }
 });
 
-// Deletar
 app.delete("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    await db.query(
-      `DELETE FROM servicos WHERE id = $1 AND barbearia_id = $2`,
-      [id, req.barbearia.id]
-    );
+    await db.query(`DELETE FROM servicos WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao deletar serviço" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao deletar serviço" }); }
 });
 
-// ── PLANOS (CRUD completo) ────────────────────────────────────
+// ── PLANOS CRUD ───────────────────────────────────────────────────────────
 
-// Criar
 app.post("/api/:slug/planos", verificarAssinatura, async (req, res) => {
   const { nome, valor, cortes_mes, descricao, ordem, ativo } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length === 0)
@@ -1345,32 +1316,17 @@ app.post("/api/:slug/planos", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Valor inválido" });
   try {
     const result = await db.query(
-      `INSERT INTO planos
-         (barbearia_id, nome, descricao, cortes_mes, valor, ativo, ordem)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id`,
-      [
-        req.barbearia.id,
-        nome.trim(),
-        descricao  || "",
-        Number(cortes_mes) || 0,
-        Number(valor),
-        ativo !== false,
-        Number(ordem) || 0
-      ]
+      `INSERT INTO planos (barbearia_id, nome, descricao, cortes_mes, valor, ativo, ordem)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [req.barbearia.id, nome.trim(), descricao || "", Number(cortes_mes) || 0, Number(valor), ativo !== false, Number(ordem) || 0]
     );
     res.json({ sucesso: true, id: result.rows[0].id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao criar plano" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao criar plano" }); }
 });
 
-// Editar
 app.put("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { nome, valor, cortes_mes, descricao, ordem, ativo } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length === 0)
     return res.status(400).json({ erro: "Nome inválido" });
@@ -1378,114 +1334,60 @@ app.put("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Valor inválido" });
   try {
     const result = await db.query(
-      `UPDATE planos
-       SET nome = $1, descricao = $2, cortes_mes = $3,
-           valor = $4, ativo = $5, ordem = $6
-       WHERE id = $7 AND barbearia_id = $8
-       RETURNING id`,
-      [
-        nome.trim(),
-        descricao  || "",
-        Number(cortes_mes) || 0,
-        Number(valor),
-        ativo !== false,
-        Number(ordem) || 0,
-        id,
-        req.barbearia.id
-      ]
+      `UPDATE planos SET nome = $1, descricao = $2, cortes_mes = $3, valor = $4, ativo = $5, ordem = $6
+       WHERE id = $7 AND barbearia_id = $8 RETURNING id`,
+      [nome.trim(), descricao || "", Number(cortes_mes) || 0, Number(valor), ativo !== false, Number(ordem) || 0, id, req.barbearia.id]
     );
-    if (result.rows.length === 0)
-      return res.status(404).json({ erro: "Plano não encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Plano não encontrado" });
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao editar plano" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao editar plano" }); }
 });
 
-// Deletar
 app.delete("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    // Verifica se há assinantes ativos vinculados
     const check = await db.query(
-      `SELECT COUNT(*) AS total FROM assinantes
-       WHERE plano_id = $1 AND barbearia_id = $2 AND status IN ('ativo','aguardando')`,
+      `SELECT COUNT(*) AS total FROM assinantes WHERE plano_id = $1 AND barbearia_id = $2 AND status IN ('ativo','aguardando')`,
       [id, req.barbearia.id]
     );
     if (Number(check.rows[0].total) > 0)
-      return res.status(409).json({
-        erro: "Existem assinantes ativos neste plano. Cancele-os antes de excluir."
-      });
-
-    await db.query(
-      `DELETE FROM planos WHERE id = $1 AND barbearia_id = $2`,
-      [id, req.barbearia.id]
-    );
+      return res.status(409).json({ erro: "Existem assinantes ativos neste plano. Cancele-os antes de excluir." });
+    await db.query(`DELETE FROM planos WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao deletar plano" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao deletar plano" }); }
 });
-// ══════════════════════════════════════════════════════════════
-// ROTAS: HORÁRIOS POR PROFISSIONAL
-// Cole no server.js ANTES de app.use(express.static(...))
-// ══════════════════════════════════════════════════════════════
 
-// Você também precisará rodar este SQL no seu banco:
-/*
-CREATE TABLE IF NOT EXISTS profissional_horarios (
-  id              SERIAL PRIMARY KEY,
-  profissional_id INTEGER NOT NULL REFERENCES profissionais(id) ON DELETE CASCADE,
-  barbearia_id    INTEGER NOT NULL,
-  dias_semana     JSONB   NOT NULL DEFAULT '{}',
-  pausa_inicio    TIME,
-  pausa_fim       TIME,
-  criado_em       TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (profissional_id, barbearia_id)
-);
-*/
+// ── HORÁRIOS POR PROFISSIONAL ─────────────────────────────────────────────
 
-// ── GET: buscar horários de um profissional ───────────────────
 app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
   const profId = Number(req.params.id);
-  if (!Number.isInteger(profId) || profId <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
+  if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
     const result = await db.query(
       `SELECT dias_semana, pausa_inicio, pausa_fim
-       FROM profissional_horarios
-       WHERE profissional_id = $1 AND barbearia_id = $2`,
+       FROM profissional_horarios WHERE profissional_id = $1 AND barbearia_id = $2`,
       [profId, req.barbearia.id]
     );
 
     if (result.rows.length === 0) {
-      // Fallback: retorna horários globais da barbearia como padrão
       const global = await db.query(
-        `SELECT dias_semana, pausa_inicio, pausa_fim
-         FROM horarios_barbearia WHERE barbearia_id = $1`,
+        `SELECT dias_semana, pausa_inicio, pausa_fim FROM horarios_barbearia WHERE barbearia_id = $1`,
         [req.barbearia.id]
       );
       if (global.rows.length > 0) {
         const row = global.rows[0];
-        const cfg = typeof row.dias_semana === "string"
-          ? JSON.parse(row.dias_semana)
-          : (row.dias_semana || {});
+        const cfg = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : (row.dias_semana || {});
         cfg.pausa_inicio = row.pausa_inicio || null;
         cfg.pausa_fim    = row.pausa_fim    || null;
-        cfg._usa_global  = true; // sinaliza que não tem cfg própria
+        cfg._usa_global  = true;
         return res.json(cfg);
       }
       return res.json({ _usa_global: true });
     }
 
     const row = result.rows[0];
-    const cfg = typeof row.dias_semana === "string"
-      ? JSON.parse(row.dias_semana)
-      : (row.dias_semana || {});
+    const cfg = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : (row.dias_semana || {});
     cfg.pausa_inicio = row.pausa_inicio || null;
     cfg.pausa_fim    = row.pausa_fim    || null;
     cfg._usa_global  = false;
@@ -1496,49 +1398,31 @@ app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
   }
 });
 
-// ── POST/PUT: salvar horários de um profissional ──────────────
 app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.id);
-  if (!Number.isInteger(profId) || profId <= 0)
-    return res.status(400).json({ erro: "ID inválido" });
-
+  if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
   const { pausa_inicio, pausa_fim, usa_global, ...diasConfig } = req.body;
-
   try {
-    // Verifica se o profissional pertence à barbearia
     const check = await db.query(
       `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
       [profId, req.barbearia.id]
     );
-    if (check.rows.length === 0)
-      return res.status(404).json({ erro: "Profissional não encontrado" });
+    if (check.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
 
     if (usa_global) {
-      // Remove config individual → vai usar global
       await db.query(
-        `DELETE FROM profissional_horarios
-         WHERE profissional_id = $1 AND barbearia_id = $2`,
+        `DELETE FROM profissional_horarios WHERE profissional_id = $1 AND barbearia_id = $2`,
         [profId, req.barbearia.id]
       );
       return res.json({ sucesso: true, modo: "global" });
     }
 
     await db.query(
-      `INSERT INTO profissional_horarios
-         (profissional_id, barbearia_id, dias_semana, pausa_inicio, pausa_fim)
+      `INSERT INTO profissional_horarios (profissional_id, barbearia_id, dias_semana, pausa_inicio, pausa_fim)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (profissional_id, barbearia_id)
-       DO UPDATE SET
-         dias_semana  = $3,
-         pausa_inicio = $4,
-         pausa_fim    = $5`,
-      [
-        profId,
-        req.barbearia.id,
-        JSON.stringify(diasConfig),
-        pausa_inicio || null,
-        pausa_fim    || null
-      ]
+       DO UPDATE SET dias_semana = $3, pausa_inicio = $4, pausa_fim = $5`,
+      [profId, req.barbearia.id, JSON.stringify(diasConfig), pausa_inicio || null, pausa_fim || null]
     );
     res.json({ sucesso: true, modo: "individual" });
   } catch (err) {
@@ -1547,8 +1431,76 @@ app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (re
   }
 });
 
-// ── ARQUIVOS ESTÁTICOS — deve ficar DEPOIS de todas as rotas ──────────────
-// Isso evita que o Express tente servir /cadastro/check-username como arquivo
+// ── ROTAS WHATSAPP POR SLUG ───────────────────────────────────────────────
+
+// Status da sessão desta barbearia
+app.get("/api/:slug/whatsapp-status", (req, res) => {
+  const sessao = waSessoes[req.params.slug];
+  res.json({
+    conectado: sessao?.conectado || false,
+    status:    sessao?.status    || "desconectado",
+    temQr:     !!sessao?.qrBase64,
+  });
+});
+
+// Iniciar conexão e devolver QR
+app.post("/api/:slug/whatsapp/conectar", verificarAssinatura, async (req, res) => {
+  const slug   = req.params.slug;
+  const sessao = waSessoes[slug];
+
+  if (sessao?.status === "conectado") {
+    return res.json({ conectado: true, status: "conectado" });
+  }
+
+  if (sessao?.status === "aguardando_qr" && sessao.qrBase64) {
+    return res.json({ status: "aguardando_qr", qr: sessao.qrBase64 });
+  }
+
+  iniciarWhatsAppSlug(slug);
+
+  // Aguarda até 8s pelo QR
+  let tentativas = 0;
+  await new Promise(resolve => {
+    const check = setInterval(() => {
+      const s = waSessoes[slug];
+      tentativas++;
+      if (s?.qrBase64 || s?.status === "conectado" || tentativas > 16) {
+        clearInterval(check);
+        resolve();
+      }
+    }, 500);
+  });
+
+  const s = waSessoes[slug];
+  if (s?.status === "conectado") return res.json({ conectado: true, status: "conectado" });
+  if (s?.qrBase64)               return res.json({ status: "aguardando_qr", qr: s.qrBase64 });
+  res.json({ status: "aguardando_qr", qr: null, msg: "QR ainda sendo gerado. Tente novamente em 2s." });
+});
+
+// Polling do QR
+app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
+  const sessao = waSessoes[req.params.slug];
+  if (!sessao)                       return res.json({ status: "desconectado" });
+  if (sessao.status === "conectado") return res.json({ status: "conectado" });
+  if (sessao.qrBase64)               return res.json({ status: "aguardando_qr", qr: sessao.qrBase64 });
+  res.json({ status: sessao.status || "desconectado" });
+});
+
+// Desconectar e limpar sessão
+app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
+  const slug   = req.params.slug;
+  const sessao = waSessoes[slug];
+  try {
+    if (sessao?.socket) await sessao.socket.logout().catch(() => {});
+  } catch {}
+  const AUTH_DIR = `./auth_wa/${slug}`;
+  if (fs.existsSync(AUTH_DIR)) fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+  delete waSessoes[slug];
+  res.json({ sucesso: true });
+});
+
+// ── ARQUIVOS ESTÁTICOS ────────────────────────────────────────────────────
+
 app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
 // ── BANCO + START ─────────────────────────────────────────────────────────
