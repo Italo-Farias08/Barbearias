@@ -14,7 +14,9 @@ app.use(express.json({ limit: "10kb" }));
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 
 app.use(rateLimit({
   windowMs: 60 * 1000,
@@ -56,9 +58,6 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 // ── WHATSAPP MULTI-TENANT ─────────────────────────────────────────────────
-// Uma sessão por barbearia (slug), armazenada em ./auth_wa/{slug}/
-// waSessoes[slug] = { socket, conectado, qrBase64, status }
-
 const waSessoes = {};
 
 async function iniciarWhatsAppSlug(slug) {
@@ -138,9 +137,8 @@ async function iniciarWhatsAppSlug(slug) {
       if (type !== "notify") return;
 
       for (const msg of messages) {
-        // Ignora mensagens próprias, de grupos e status
-        if (msg.key.fromMe)                          continue;
-        if (msg.key.remoteJid?.endsWith("@g.us"))   continue;
+        if (msg.key.fromMe)                           continue;
+        if (msg.key.remoteJid?.endsWith("@g.us"))    continue;
         if (msg.key.remoteJid === "status@broadcast") continue;
 
         const jid  = msg.key.remoteJid;
@@ -172,59 +170,21 @@ async function iniciarWhatsAppSlug(slug) {
 }
 
 // ── ESTADO DO BOT POR USUÁRIO ─────────────────────────────────────────────
-// botEstados[slug][jid] = { ultimo: timestamp, aguardando: null }
 const botEstados = {};
 
 function getEstado(slug, jid) {
   if (!botEstados[slug])      botEstados[slug] = {};
-  if (!botEstados[slug][jid]) botEstados[slug][jid] = { ultimo: 0 };
+  if (!botEstados[slug][jid]) botEstados[slug][jid] = { etapa: "inicio", ultimo: 0 };
   return botEstados[slug][jid];
 }
 
-// ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
-async function processarMensagemBot(sock, jid, body, slug) {
-  const estado = getEstado(slug, jid);
-  const agora  = Date.now();
-
-  // Anti-spam: ignora se a última resposta foi há menos de 1s
-  if (agora - estado.ultimo < 1000) return;
-  estado.ultimo = agora;
-
-  const enviar = async (texto) => {
-    await sock.sendMessage(jid, { text: texto });
-  };
-
-  // Palavras que ativam o menu principal
-  const ativaMenu = ["oi", "olá", "ola", "ola!", "oi!", "hello", "bom dia", "boa tarde",
-    "boa noite", "menu", "ajuda", "help", "1", "2", "3", "4", "5", "0", "inicio", "início"];
-
-  const ehSaudacao = ["oi", "olá", "ola", "hello", "bom dia", "boa tarde", "boa noite", "menu",
-    "ajuda", "help", "inicio", "início"].some(s => body === s || body.startsWith(s + " "));
-
-  // Volta ao menu
-  if (body === "0" || body === "menu" || body === "inicio" || body === "início") {
-    await enviarMenu(sock, jid, slug);
-    return;
-  }
-
-  // Saudação → menu
-  if (ehSaudacao) {
-    await enviarBoasVindas(sock, jid, slug);
-    return;
-  }
-
-  // Opções do menu
-  switch (body) {
-    case "1": await enviarServicos(sock, jid, slug);      break;
-    case "2": await enviarHorarios(sock, jid, slug);      break;
-    case "3": await enviarProfissionais(sock, jid, slug); break;
-    case "4": await enviarComoAgendar(sock, jid, slug);   break;
-    case "5": await enviarPagamento(sock, jid, slug);     break;
-    case "6": await enviarPlanos(sock, jid, slug);        break;
-    default:
-      // Qualquer outra mensagem → menu
-      await enviarMenu(sock, jid, slug);
-  }
+function resetarEstado(slug, jid) {
+  const e = botEstados[slug][jid];
+  e.etapa = "inicio";
+  e.ultimo = 0;
+  Object.keys(e).forEach(k => {
+    if (k !== "etapa" && k !== "ultimo") delete e[k];
+  });
 }
 
 // ── BUSCAR DADOS DA BARBEARIA ─────────────────────────────────────────────
@@ -237,263 +197,380 @@ async function getDadosBarbearia(slug) {
   return r.rows[0] || {};
 }
 
-// ── BOAS-VINDAS ───────────────────────────────────────────────────────────
-async function enviarBoasVindas(sock, jid, slug) {
-  const barb = await getDadosBarbearia(slug);
-  const nome = barb.nome || "nossa barbearia";
+// ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
+async function processarMensagemBot(sock, jid, body, slug) {
+  const estado = getEstado(slug, jid);
+  const agora  = Date.now();
+  console.log(`[BOT] body="${body}" etapa="${estado.etapa}" diff=${agora - estado.ultimo}ms`);
+  if (agora - estado.ultimo < 500) {
+    console.log(`[DEBOUNCE] bloqueado`);
+    return;
+  }
+  estado.ultimo = agora;
 
-  const txt =
-    `✂️ *${nome}*\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `Olá! Seja bem-vindo(a)! 👋\n\n` +
-    `Estamos aqui para te atender.\n` +
-    `Digite o número da opção desejada:\n\n` +
-    `*1* — Serviços e preços 💈\n` +
-    `*2* — Horários de funcionamento 🕐\n` +
-    `*3* — Nossos profissionais 👨‍💼\n` +
-    `*4* — Como agendar 📅\n` +
-    `*5* — Formas de pagamento 💳\n` +
-    `*6* — Planos e assinaturas 👑\n\n` +
-    `_Digite *0* a qualquer momento para voltar ao menu._`;
+  const enviar = async (texto) => {
+    try {
+      await sock.sendMessage(jid, { text: texto });
+      console.log(`[ENVIADO] para ${jid}`);
+    } catch (err) {
+      console.error(`[ERRO ENVIO]`, err.message);
+    }
+  };
 
-  await sock.sendMessage(jid, { text: txt });
-}
+  const saudacoes = ["oi", "olá", "ola", "hello", "bom dia", "boa tarde", "boa noite", "menu", "inicio", "início", "ajuda", "help"];
+  const ehSaudacao = saudacoes.some(s => body === s || body.startsWith(s + " "));
 
-// ── MENU PRINCIPAL ────────────────────────────────────────────────────────
-async function enviarMenu(sock, jid, slug) {
-  const barb = await getDadosBarbearia(slug);
-  const nome = barb.nome || "nossa barbearia";
+  if (body === "cancelar" || body === "sair" || body === "0") {
+    resetarEstado(slug, jid);
+    await enviar(`Tudo bem! Se precisar de algo, é só mandar um "oi" 😊`);
+    return;
+  }
 
-  const txt =
-    `✂️ *${nome} — Menu*\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `*1* — Serviços e preços 💈\n` +
-    `*2* — Horários de funcionamento 🕐\n` +
-    `*3* — Nossos profissionais 👨‍💼\n` +
-    `*4* — Como agendar 📅\n` +
-    `*5* — Formas de pagamento 💳\n` +
-    `*6* — Planos e assinaturas 👑\n\n` +
-    `_Digite o número da opção desejada._`;
+  // ── ETAPA: INICIO ────────────────────────────────────────────────────
+  if (estado.etapa === "inicio") {
+    estado.etapa = "aguardando_nome";
+    const barb = await getDadosBarbearia(slug);
+    await enviar(
+      `✂️ *${barb.nome || "Barbearia"}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Olá! Seja bem-vindo(a)! 👋\n\n` +
+      `Vou te ajudar a fazer seu agendamento.\n\n` +
+      `Qual é o seu *nome*?`
+    );
+    return;
+  }
 
-  await sock.sendMessage(jid, { text: txt });
-}
+  // ── MENU/SAUDAÇÃO EM QUALQUER ETAPA ─────────────────────────────────
+  if (ehSaudacao && estado.etapa !== "aguardando_nome") {
+    resetarEstado(slug, jid);
+    estado.etapa = "aguardando_nome";
+    const barb = await getDadosBarbearia(slug);
+    await enviar(
+      `✂️ *${barb.nome || "Barbearia"}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Olá! Seja bem-vindo(a)! 👋\n\n` +
+      `Vou te ajudar a fazer seu agendamento.\n\n` +
+      `Qual é o seu *nome*?`
+    );
+    return;
+  }
 
-// ── SERVIÇOS ──────────────────────────────────────────────────────────────
-async function enviarServicos(sock, jid, slug) {
-  try {
-    // Tenta destaque primeiro, senão usa serviços de agendamento
-    const dest = await db.query(
-      `SELECT nome, descricao, preco FROM servicos_destaque
+  // ── ETAPA: NOME ──────────────────────────────────────────────────────
+  if (estado.etapa === "aguardando_nome") {
+    if (body.length < 2) {
+      await enviar(`Por favor, me diga seu nome 😊`);
+      return;
+    }
+    estado.nome  = body.split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+    estado.etapa = "aguardando_profissional";
+
+    const profs = await db.query(
+      `SELECT id, nome, especialidade FROM profissionais
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+         AND ativo = true AND disponivel = true
+       ORDER BY ordem`,
+      [slug]
+    );
+
+    if (profs.rows.length === 0) {
+      await enviar(`Olá, *${estado.nome}*! 😊\n\nNenhum profissional disponível no momento. Tente mais tarde.`);
+      resetarEstado(slug, jid);
+      return;
+    }
+
+    estado._profissionais = profs.rows;
+
+    let txt = `Prazer, *${estado.nome}*! 😊\n\nCom qual profissional você quer ser atendido?\n\n`;
+    profs.rows.forEach((p, i) => {
+      txt += `*${i + 1}* — ${p.nome}`;
+      if (p.especialidade) txt += ` _(${p.especialidade})_`;
+      txt += `\n`;
+    });
+    txt += `\n_Digite o número da opção._`;
+    await enviar(txt);
+    return;
+  }
+
+  // ── ETAPA: PROFISSIONAL ──────────────────────────────────────────────
+  if (estado.etapa === "aguardando_profissional") {
+    const idx   = parseInt(body) - 1;
+    const lista = estado._profissionais || [];
+
+    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
+      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+      return;
+    }
+
+    estado.profissional_id   = lista[idx].id;
+    estado.profissional_nome = lista[idx].nome;
+    estado.etapa             = "aguardando_servico";
+
+    const servs = await db.query(
+      `SELECT id, nome, preco FROM servicos_destaque
        WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
        ORDER BY ordem, id`,
       [slug]
     );
 
-    const simples = await db.query(
-      `SELECT nome, preco FROM servicos
-       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
-       ORDER BY id`,
+    let rows = servs.rows;
+    if (rows.length === 0) {
+      const servs2 = await db.query(
+        `SELECT id, nome, preco FROM servicos
+         WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+         ORDER BY id`,
+        [slug]
+      );
+      rows = servs2.rows;
+    }
+
+    if (rows.length === 0) {
+      await enviar(`Nenhum serviço cadastrado no momento. Entre em contato com a barbearia.`);
+      resetarEstado(slug, jid);
+      return;
+    }
+
+    estado._servicos = rows;
+
+    let txt = `Ótimo! Você escolheu *${estado.profissional_nome}* ✅\n\nQual serviço você deseja?\n\n`;
+    rows.forEach((s, i) => {
+      const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      txt += `*${i + 1}* — ${s.nome} — ${preco}\n`;
+    });
+    txt += `\n_Digite o número da opção._`;
+    await enviar(txt);
+    return;
+  }
+
+  // ── ETAPA: SERVIÇO ───────────────────────────────────────────────────
+  if (estado.etapa === "aguardando_servico") {
+    const idx   = parseInt(body) - 1;
+    const lista = estado._servicos || [];
+
+    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
+      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+      return;
+    }
+
+    estado.servico       = lista[idx].nome;
+    estado.servico_preco = lista[idx].preco;
+    estado.etapa         = "aguardando_dia";
+
+    const hrConfig2 = await db.query(
+      `SELECT dias_semana FROM horarios_barbearia
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
       [slug]
     );
 
-    const barb = await getDadosBarbearia(slug);
-    let txt = `💈 *Serviços — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+    const DIAS_NOMES = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+    const hoje2 = new Date();
+    hoje2.setHours(0,0,0,0);
+    const diasDisponiveis = [];
 
-    if (dest.rows.length > 0) {
-      dest.rows.forEach(s => {
-        const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        txt += `✦ *${s.nome}* — ${preco}\n`;
-        if (s.descricao) txt += `  _${s.descricao}_\n`;
-        txt += "\n";
-      });
-    } else if (simples.rows.length > 0) {
-      simples.rows.forEach(s => {
-        const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        txt += `✦ *${s.nome}* — ${preco}\n`;
-      });
-    } else {
-      txt += "_Nenhum serviço cadastrado ainda._\n";
+    for (let i = 0; i <= 13; i++) {
+      const d = new Date(hoje2);
+      d.setDate(hoje2.getDate() + i);
+      const diaSemana = d.getDay();
+      if (hrConfig2.rows.length > 0) {
+        const dias = typeof hrConfig2.rows[0].dias_semana === "string"
+          ? JSON.parse(hrConfig2.rows[0].dias_semana)
+          : hrConfig2.rows[0].dias_semana;
+        const cfg = dias[String(diaSemana)];
+        if (!cfg || !cfg.aberto) continue;
+      }
+      const dd   = String(d.getDate()).padStart(2, "0");
+      const mm   = String(d.getMonth() + 1).padStart(2, "0");
+      const aaaa = d.getFullYear();
+      const label = i === 0
+        ? `Hoje (${DIAS_NOMES[diaSemana]})`
+        : i === 1
+          ? `Amanhã (${DIAS_NOMES[diaSemana]})`
+          : `${DIAS_NOMES[diaSemana]} ${dd}/${mm}`;
+      diasDisponiveis.push({ label, dataISO: `${aaaa}-${mm}-${dd}`, dataFormatada: `${dd}/${mm}/${aaaa}` });
     }
 
-    txt += `\n_Digite *0* para voltar ao menu._`;
-    await sock.sendMessage(jid, { text: txt });
-  } catch (err) {
-    console.error("Bot serviços:", err.message);
-  }
-}
+    if (diasDisponiveis.length === 0) {
+      await enviar(`Não há dias disponíveis nos próximos 14 dias. Entre em contato com a barbearia.`);
+      resetarEstado(slug, jid);
+      return;
+    }
 
-// ── HORÁRIOS ──────────────────────────────────────────────────────────────
-async function enviarHorarios(sock, jid, slug) {
-  try {
-    const barb = await getDadosBarbearia(slug);
-    const hr   = await db.query(
+    estado._dias = diasDisponiveis;
+    let txt2 = `Serviço: *${estado.servico}* ✅\n\nQual dia você prefere?\n\n`;
+    diasDisponiveis.forEach((d, i) => { txt2 += `*${i + 1}* — ${d.label}\n`; });
+    txt2 += `\n_Digite o número do dia._`;
+    await enviar(txt2);
+    return;
+  }
+
+  // ── ETAPA: DIA ───────────────────────────────────────────────────────
+  if (estado.etapa === "aguardando_dia") {
+    const idx   = parseInt(body) - 1;
+    const lista = estado._dias || [];
+
+    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
+      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+      return;
+    }
+
+    const diaEscolhido   = lista[idx];
+    estado.data          = diaEscolhido.dataISO;
+    estado.dataFormatada = diaEscolhido.dataFormatada;
+    estado.etapa         = "aguardando_horario";
+
+    const hrConfig = await db.query(
       `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
        FROM horarios_barbearia
        WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
       [slug]
     );
 
-    const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-    let txt = `🕐 *Horários — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+    const dataObj   = new Date(estado.data + "T00:00:00");
+    const diaSemana = dataObj.getDay();
+    let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
+    let pausaIni = null, pausaFim = null;
 
-    if (hr.rows.length > 0) {
-      const row  = hr.rows[0];
-      const dias = typeof row.dias_semana === "string"
-        ? JSON.parse(row.dias_semana)
-        : (row.dias_semana || {});
+    if (hrConfig.rows.length > 0) {
+      const row  = hrConfig.rows[0];
+      const dias = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : row.dias_semana;
+      const cfg  = dias[String(diaSemana)];
+      horaInicio = cfg?.hora_inicio || row.hora_inicio || "08:00";
+      horaFim    = cfg?.hora_fim    || row.hora_fim    || "21:00";
+      intervalo  = row.intervalo_minutos || 30;
+      pausaIni   = row.pausa_inicio || null;
+      pausaFim   = row.pausa_fim    || null;
+    }
 
-      for (let i = 0; i <= 6; i++) {
-        const cfg = dias[String(i)];
-        if (!cfg) continue;
-        if (!cfg.aberto) {
-          txt += `${DIAS[i]}: _Fechado_\n`;
-        } else {
-          const ini = (cfg.hora_inicio || row.hora_inicio || "08:00").substring(0, 5);
-          const fim = (cfg.hora_fim    || row.hora_fim    || "21:00").substring(0, 5);
-          txt += `*${DIAS[i]}:* ${ini} às ${fim}\n`;
-        }
+    const ocupados = await db.query(
+      `SELECT TRIM(horario) AS horario FROM agendamentos
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+         AND data = $2 AND profissional_id = $3 AND status = 'pendente'`,
+      [slug, estado.data, estado.profissional_id]
+    );
+    const ocupadosSet = new Set(ocupados.rows.map(r => r.horario.substring(0, 5)));
+
+    const [hIni, mIni] = horaInicio.substring(0, 5).split(":").map(Number);
+    const [hFim, mFim] = horaFim.substring(0, 5).split(":").map(Number);
+    const inicioMin    = hIni * 60 + mIni;
+    const fimMin       = hFim * 60 + mFim;
+
+    const agora2   = new Date();
+    const ehHoje   = dataObj.toDateString() === agora2.toDateString();
+    const agoraMin = ehHoje ? agora2.getHours() * 60 + agora2.getMinutes() + 30 : 0;
+
+    const pausaIniMin = pausaIni ? (() => { const [h,m] = pausaIni.split(":").map(Number); return h*60+m; })() : null;
+    const pausaFimMin = pausaFim ? (() => { const [h,m] = pausaFim.split(":").map(Number); return h*60+m; })() : null;
+
+    const horariosLivres = [];
+    for (let t = inicioMin; t < fimMin; t += intervalo) {
+      if (t < agoraMin) continue;
+      if (pausaIniMin && pausaFimMin && t >= pausaIniMin && t < pausaFimMin) continue;
+      const hh  = String(Math.floor(t / 60)).padStart(2, "0");
+      const mm  = String(t % 60).padStart(2, "0");
+      if (!ocupadosSet.has(`${hh}:${mm}`)) horariosLivres.push(`${hh}:${mm}`);
+    }
+
+    if (horariosLivres.length === 0) {
+      await enviar(`Não há horários disponíveis para *${diaEscolhido.label}*. Escolha outro dia.`);
+      estado.etapa = "aguardando_dia";
+      return;
+    }
+
+    estado._horarios = horariosLivres;
+    let txt = `Dia: *${diaEscolhido.label}* ✅\n\nHorários disponíveis:\n\n`;
+    horariosLivres.forEach((h, i) => { txt += `*${i + 1}* — ${h}\n`; });
+    txt += `\n_Digite o número do horário desejado._`;
+    await enviar(txt);
+    return;
+  }
+
+  // ── ETAPA: HORÁRIO ───────────────────────────────────────────────────
+  if (estado.etapa === "aguardando_horario") {
+    const idx   = parseInt(body) - 1;
+    const lista = estado._horarios || [];
+
+    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
+      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+      return;
+    }
+
+    estado.horario = lista[idx];
+    estado.etapa   = "aguardando_confirmacao";
+
+    const preco = Number(estado.servico_preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    await enviar(
+      `Confira seu agendamento:\n\n` +
+      `👤 *Nome:* ${estado.nome}\n` +
+      `✂️ *Profissional:* ${estado.profissional_nome}\n` +
+      `💈 *Serviço:* ${estado.servico} — ${preco}\n` +
+      `📅 *Data:* ${estado.dataFormatada}\n` +
+      `🕐 *Horário:* ${estado.horario}\n\n` +
+      `Digite *1* para *confirmar* ou *2* para *cancelar*.`
+    );
+    return;
+  }
+
+  // ── ETAPA: CONFIRMAÇÃO ───────────────────────────────────────────────
+  if (estado.etapa === "aguardando_confirmacao") {
+    if (body === "2" || body === "cancelar" || body === "nao" || body === "não") {
+      resetarEstado(slug, jid);
+      await enviar(`Agendamento cancelado. Mande "oi" para tentar novamente 😊`);
+      return;
+    }
+
+    if (body !== "1" && body !== "sim" && body !== "confirmar" && body !== "ok") {
+      await enviar(`Digite *1* para confirmar ou *2* para cancelar.`);
+      return;
+    }
+
+    try {
+      const barbResult = await db.query(`SELECT id FROM barbearias WHERE slug = $1`, [slug]);
+      const barbId = barbResult.rows[0]?.id;
+      if (!barbId) throw new Error("Barbearia não encontrada");
+
+      const conflito = await db.query(
+        `SELECT id FROM agendamentos
+         WHERE barbearia_id = $1 AND data = $2 AND horario = $3
+           AND profissional_id = $4 AND status = 'pendente'`,
+        [barbId, estado.data, estado.horario, estado.profissional_id]
+      );
+
+      if (conflito.rows.length > 0) {
+        await enviar(`Esse horário acabou de ser reservado! Mande "oi" para escolher outro horário.`);
+        resetarEstado(slug, jid);
+        return;
       }
 
-      if (row.pausa_inicio && row.pausa_fim) {
-        txt += `\n⚠️ _Pausa: ${row.pausa_inicio.substring(0,5)} às ${row.pausa_fim.substring(0,5)}_\n`;
-      }
-    } else if (barb.horario_func) {
-      txt += barb.horario_func + "\n";
-    } else {
-      txt += "_Horários não configurados. Entre em contato para mais informações._\n";
+      const telefone = jid.replace("@s.whatsapp.net", "").replace(/\D/g, "");
+
+      await db.query(
+        `INSERT INTO agendamentos (barbearia_id, nome, telefone, data, horario, valor, profissional_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [barbId, estado.nome, telefone, estado.data, estado.horario, Number(estado.servico_preco) || 0, estado.profissional_id]
+      );
+
+      await enviar(
+        `✅ *Agendamento confirmado!*\n\n` +
+        `👤 ${estado.nome}\n` +
+        `✂️ ${estado.profissional_nome}\n` +
+        `💈 ${estado.servico}\n` +
+        `📅 ${estado.dataFormatada} às ${estado.horario}\n\n` +
+        `Te esperamos! 😊`
+      );
+
+      resetarEstado(slug, jid);
+    } catch (err) {
+      console.error(`Erro ao salvar agendamento bot (${slug}):`, err.message);
+      await enviar(`Erro ao confirmar agendamento. Tente novamente ou entre em contato conosco.`);
+      resetarEstado(slug, jid);
     }
-
-    txt += `\n_Digite *0* para voltar ao menu._`;
-    await sock.sendMessage(jid, { text: txt });
-  } catch (err) {
-    console.error("Bot horários:", err.message);
+    return;
   }
+
+  await enviar(`Não entendi 😅 Mande *"oi"* para começar o agendamento ou *"cancelar"* para sair.`);
 }
 
-// ── PROFISSIONAIS ─────────────────────────────────────────────────────────
-async function enviarProfissionais(sock, jid, slug) {
-  try {
-    const barb  = await getDadosBarbearia(slug);
-    const profs = await db.query(
-      `SELECT nome, especialidade, disponivel FROM profissionais
-       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
-         AND ativo = true
-       ORDER BY ordem`,
-      [slug]
-    );
-
-    let txt = `👨‍💼 *Profissionais — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-    if (profs.rows.length > 0) {
-      profs.rows.forEach(p => {
-        const disp = p.disponivel ? "✅ Disponível" : "⏸ Indisponível";
-        txt += `✦ *${p.nome}*`;
-        if (p.especialidade) txt += ` — _${p.especialidade}_`;
-        txt += `\n  ${disp}\n\n`;
-      });
-    } else {
-      txt += "_Nenhum profissional cadastrado ainda._\n\n";
-    }
-
-    txt += `_Digite *0* para voltar ao menu._`;
-    await sock.sendMessage(jid, { text: txt });
-  } catch (err) {
-    console.error("Bot profissionais:", err.message);
-  }
-}
-
-// ── COMO AGENDAR ──────────────────────────────────────────────────────────
-async function enviarComoAgendar(sock, jid, slug) {
-  try {
-    const barb = await getDadosBarbearia(slug);
-    const nome = barb.nome || "nossa barbearia";
-
-    const txt =
-      `📅 *Como Agendar — ${nome}*\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `Você pode agendar pelo nosso sistema online:\n\n` +
-      `🔗 *Link de agendamento:*\n` +
-      `https://vtrip.com.br/${slug}\n\n` +
-      `No site você pode:\n` +
-      `• Escolher o serviço\n` +
-      `• Escolher o profissional\n` +
-      `• Ver os horários disponíveis\n` +
-      `• Confirmar seu agendamento\n\n` +
-      `_É rápido e fácil! 😊_\n\n` +
-      `_Digite *0* para voltar ao menu._`;
-
-    await sock.sendMessage(jid, { text: txt });
-  } catch (err) {
-    console.error("Bot agendar:", err.message);
-  }
-}
-
-// ── FORMAS DE PAGAMENTO ───────────────────────────────────────────────────
-async function enviarPagamento(sock, jid, slug) {
-  try {
-    const barb = await getDadosBarbearia(slug);
-    const nome = barb.nome || "nossa barbearia";
-
-    let txt =
-      `💳 *Formas de Pagamento — ${nome}*\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `Aceitamos:\n\n` +
-      `💵 Dinheiro\n` +
-      `💳 Cartão de débito e crédito\n`;
-
-    if (barb.pix_chave) {
-      txt +=
-        `\n📱 *PIX:*\n` +
-        `\`${barb.pix_chave}\`\n\n` +
-        `_Copie a chave acima para pagar via PIX._\n`;
-    } else {
-      txt += `📱 PIX (solicite a chave no local)\n`;
-    }
-
-    txt += `\n_Digite *0* para voltar ao menu._`;
-    await sock.sendMessage(jid, { text: txt });
-  } catch (err) {
-    console.error("Bot pagamento:", err.message);
-  }
-}
-
-// ── PLANOS ────────────────────────────────────────────────────────────────
-async function enviarPlanos(sock, jid, slug) {
-  try {
-    const barb   = await getDadosBarbearia(slug);
-    const planos = await db.query(
-      `SELECT nome, descricao, cortes_mes, valor FROM planos
-       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
-         AND ativo = true
-       ORDER BY ordem, valor`,
-      [slug]
-    );
-
-    let txt = `👑 *Planos e Assinaturas — ${barb.nome || "Barbearia"}*\n━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-    if (planos.rows.length > 0) {
-      planos.rows.forEach(p => {
-        const valor = Number(p.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        txt += `✦ *${p.nome}* — ${valor}/mês\n`;
-        if (p.cortes_mes) txt += `  📋 ${p.cortes_mes} corte(s) por mês\n`;
-        if (p.descricao)  txt += `  _${p.descricao}_\n`;
-        txt += "\n";
-      });
-      txt +=
-        `Para assinar um plano, acesse:\n` +
-        `🔗 https://vtrip.com.br/${slug}\n\n`;
-    } else {
-      txt += "_Nenhum plano disponível no momento._\n\n";
-    }
-
-    txt += `_Digite *0* para voltar ao menu._`;
-    await sock.sendMessage(jid, { text: txt });
-  } catch (err) {
-    console.error("Bot planos:", err.message);
-  }
-}
-
-// Reconecta automaticamente slugs que já tinham sessão salva ao reiniciar servidor
+// ── RECONECTAR SESSÕES SALVAS ─────────────────────────────────────────────
 async function reconectarSessoesSalvas() {
   const AUTH_ROOT = "./auth_wa";
   if (!fs.existsSync(AUTH_ROOT)) return;
@@ -503,14 +580,13 @@ async function reconectarSessoesSalvas() {
   for (const slug of slugs) {
     console.log(`🔄 Reconectando sessão salva: ${slug}`);
     iniciarWhatsAppSlug(slug);
-    await new Promise(r => setTimeout(r, 1500)); // evita burst
+    await new Promise(r => setTimeout(r, 1500));
   }
 }
 
 reconectarSessoesSalvas();
 
 // ── ENVIO DE LEMBRETE ─────────────────────────────────────────────────────
-
 async function enviarLembrete(ag) {
   const sessao = waSessoes[ag.slug];
   if (!sessao?.conectado || !sessao.socket) {
@@ -538,7 +614,6 @@ async function enviarLembrete(ag) {
 }
 
 // ── JOB DE LEMBRETES ──────────────────────────────────────────────────────
-
 async function verificarLembretes() {
   try {
     const agora  = new Date();
@@ -579,10 +654,8 @@ async function verificarLembretes() {
 setInterval(verificarLembretes, 60 * 1000);
 verificarLembretes();
 
-// ── ROTAS WHATSAPP GLOBAIS (compatibilidade) ──────────────────────────────
-
+// ── ROTAS WHATSAPP GLOBAIS ────────────────────────────────────────────────
 app.get("/whatsapp-status", (req, res) => {
-  // Retorna true se QUALQUER sessão estiver conectada (legado)
   const algumConectado = Object.values(waSessoes).some(s => s.conectado);
   res.json({ conectado: algumConectado });
 });
@@ -590,7 +663,6 @@ app.get("/whatsapp-status", (req, res) => {
 app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
-
 function slugValido(slug) {
   return /^[a-z0-9-]+$/.test(slug);
 }
@@ -626,7 +698,6 @@ async function gerarSlug(nome) {
 }
 
 // ── MIDDLEWARES ───────────────────────────────────────────────────────────
-
 async function resolveBarbearia(req, res, next) {
   const { slug } = req.params;
   if (!slugValido(slug)) return res.status(400).json({ erro: "Slug inválido" });
@@ -654,7 +725,6 @@ async function verificarAssinatura(req, res, next) {
 app.use("/api/:slug", resolveBarbearia);
 
 // ── CONFIG PÚBLICA ────────────────────────────────────────────────────────
-
 app.get("/api/:slug/config", async (req, res) => {
   try {
     const result = await db.query(
@@ -671,7 +741,6 @@ app.get("/api/:slug/config", async (req, res) => {
 });
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
-
 app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password || typeof username !== "string" || typeof password !== "string")
@@ -700,7 +769,6 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
 });
 
 // ── AGENDAR ───────────────────────────────────────────────────────────────
-
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
@@ -775,7 +843,6 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
 });
 
 // ── LISTAR AGENDAMENTOS ───────────────────────────────────────────────────
-
 app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -791,7 +858,6 @@ app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
 });
 
 // ── HORÁRIOS OCUPADOS POR DATA ────────────────────────────────────────────
-
 app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   const { data } = req.params;
   const { profissional_id } = req.query;
@@ -811,7 +877,6 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
 });
 
 // ── HORÁRIOS DA BARBEARIA ─────────────────────────────────────────────────
-
 app.get("/api/:slug/horarios", async (req, res) => {
   try {
     const result = await db.query(
@@ -848,7 +913,6 @@ app.get("/api/:slug/horarios", async (req, res) => {
 });
 
 // ── SALVAR HORÁRIOS ───────────────────────────────────────────────────────
-
 app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   const { pausa_inicio, pausa_fim, ...diasConfig } = req.body;
   if (!diasConfig || typeof diasConfig !== "object")
@@ -869,7 +933,6 @@ app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
 });
 
 // ── CONCLUIR AGENDAMENTO ──────────────────────────────────────────────────
-
 app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -883,7 +946,6 @@ app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req,
 });
 
 // ── APAGAR CONCLUÍDOS ─────────────────────────────────────────────────────
-
 app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req, res) => {
   try {
     const r = await db.query(
@@ -896,7 +958,6 @@ app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req
 });
 
 // ── CANCELAR AGENDAMENTO ──────────────────────────────────────────────────
-
 app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -910,7 +971,6 @@ app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) 
 });
 
 // ── GASTOS ────────────────────────────────────────────────────────────────
-
 app.post("/api/:slug/gastos", verificarAssinatura, async (req, res) => {
   const { descricao, valor } = req.body;
   if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0)
@@ -946,7 +1006,6 @@ app.delete("/api/:slug/gastos/:id", verificarAssinatura, async (req, res) => {
 });
 
 // ── LUCRO REAL ────────────────────────────────────────────────────────────
-
 app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   try {
     const ganhos = await db.query(
@@ -968,7 +1027,6 @@ app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
 });
 
 // ── SERVIÇOS ──────────────────────────────────────────────────────────────
-
 app.get("/api/:slug/servicos", async (req, res) => {
   try {
     const result = await db.query(
@@ -980,7 +1038,6 @@ app.get("/api/:slug/servicos", async (req, res) => {
 });
 
 // ── PROFISSIONAIS ─────────────────────────────────────────────────────────
-
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
     const result = await db.query(
@@ -1015,7 +1072,6 @@ app.get("/api/:slug/profissionais", async (req, res) => {
 });
 
 // ── DISPONIBILIDADE DO PROFISSIONAL ──────────────────────────────────────
-
 app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1034,7 +1090,6 @@ app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, asy
 });
 
 // ── PAUSAS DO PROFISSIONAL ────────────────────────────────────────────────
-
 app.get("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.id);
   if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1092,7 +1147,6 @@ app.delete("/api/:slug/profissionais/:profId/pausas/:pausaId", verificarAssinatu
 });
 
 // ── PLANOS ────────────────────────────────────────────────────────────────
-
 app.get("/api/:slug/planos", async (req, res) => {
   try {
     const result = await db.query(
@@ -1105,7 +1159,6 @@ app.get("/api/:slug/planos", async (req, res) => {
 });
 
 // ── ASSINAR ───────────────────────────────────────────────────────────────
-
 app.post("/api/:slug/assinar", async (req, res) => {
   const { nome, telefone, plano_id } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1127,7 +1180,6 @@ app.post("/api/:slug/assinar", async (req, res) => {
 });
 
 // ── LISTAR ASSINANTES ─────────────────────────────────────────────────────
-
 app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1149,7 +1201,6 @@ app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, 
 });
 
 // ── AÇÕES DO ASSINANTE ────────────────────────────────────────────────────
-
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
   const id   = Number(req.params.id);
   const acao = req.params.acao;
@@ -1194,7 +1245,6 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
 });
 
 // ── SERVIÇOS DESTAQUE ─────────────────────────────────────────────────────
-
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
     const result = await db.query(
@@ -1245,7 +1295,6 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
 });
 
 // ── COMISSÕES ─────────────────────────────────────────────────────────────
-
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1392,7 +1441,6 @@ app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, r
 });
 
 // ── ONBOARDING PÚBLICO ────────────────────────────────────────────────────
-
 app.get("/cadastro/check-username", async (req, res) => {
   const { u } = req.query;
   if (!u || u.length < 3) return res.json({ disponivel: false });
@@ -1514,7 +1562,6 @@ app.post("/cadastro", async (req, res) => {
 });
 
 // ── DEBUG ─────────────────────────────────────────────────────────────────
-
 app.get("/debug-path", (req, res) => {
   const dir    = path.join(__dirname, '..', 'projeto');
   const existe = fs.existsSync(dir);
@@ -1522,7 +1569,6 @@ app.get("/debug-path", (req, res) => {
 });
 
 // ── CONFIG (salvar) ───────────────────────────────────────────────────────
-
 app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
   const { nome, cidade, whatsapp, pix_chave, cor_primaria, sobre } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1543,7 +1589,6 @@ app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
 });
 
 // ── PROFISSIONAIS CRUD ────────────────────────────────────────────────────
-
 app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
   const { nome, especialidade, whatsapp, ordem, foto_url, disponivel } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1603,7 +1648,6 @@ app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res)
 });
 
 // ── SERVIÇOS ADMIN CRUD ───────────────────────────────────────────────────
-
 app.get("/api/:slug/servicos/admin", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1657,7 +1701,6 @@ app.delete("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
 });
 
 // ── PLANOS CRUD ───────────────────────────────────────────────────────────
-
 app.post("/api/:slug/planos", verificarAssinatura, async (req, res) => {
   const { nome, valor, cortes_mes, descricao, ordem, ativo } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length === 0)
@@ -1709,7 +1752,6 @@ app.delete("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
 });
 
 // ── HORÁRIOS POR PROFISSIONAL ─────────────────────────────────────────────
-
 app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
   const profId = Number(req.params.id);
   if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1782,8 +1824,6 @@ app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (re
 });
 
 // ── ROTAS WHATSAPP POR SLUG ───────────────────────────────────────────────
-
-// Status da sessão desta barbearia
 app.get("/api/:slug/whatsapp-status", (req, res) => {
   const sessao = waSessoes[req.params.slug];
   res.json({
@@ -1793,7 +1833,6 @@ app.get("/api/:slug/whatsapp-status", (req, res) => {
   });
 });
 
-// Iniciar conexão e devolver QR
 app.post("/api/:slug/whatsapp/conectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
   const sessao = waSessoes[slug];
@@ -1808,7 +1847,6 @@ app.post("/api/:slug/whatsapp/conectar", verificarAssinatura, async (req, res) =
 
   iniciarWhatsAppSlug(slug);
 
-  // Aguarda até 8s pelo QR
   let tentativas = 0;
   await new Promise(resolve => {
     const check = setInterval(() => {
@@ -1827,7 +1865,6 @@ app.post("/api/:slug/whatsapp/conectar", verificarAssinatura, async (req, res) =
   res.json({ status: "aguardando_qr", qr: null, msg: "QR ainda sendo gerado. Tente novamente em 2s." });
 });
 
-// Polling do QR
 app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   const sessao = waSessoes[req.params.slug];
   if (!sessao)                       return res.json({ status: "desconectado" });
@@ -1836,7 +1873,6 @@ app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   res.json({ status: sessao.status || "desconectado" });
 });
 
-// Desconectar e limpar sessão
 app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
   const sessao = waSessoes[slug];
@@ -1850,11 +1886,9 @@ app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res
 });
 
 // ── ARQUIVOS ESTÁTICOS ────────────────────────────────────────────────────
-
 app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
 // ── BANCO + START ─────────────────────────────────────────────────────────
-
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
