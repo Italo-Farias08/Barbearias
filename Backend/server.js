@@ -1873,6 +1873,18 @@ app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   res.json({ status: sessao.status || "desconectado" });
 });
 
+// ROTA TEMPORÁRIA — apagar depois de usar
+app.get("/limpar-auth-wa/:slug", async (req, res) => {
+  const slug = req.params.slug;
+  const AUTH_DIR = `./auth_wa/${slug}`;
+  if (fs.existsSync(AUTH_DIR)) {
+    fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+    res.json({ ok: true, msg: `auth_wa/${slug} apagado` });
+  } else {
+    res.json({ ok: false, msg: "Pasta não encontrada" });
+  }
+});
+
 app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
   const sessao = waSessoes[slug];
