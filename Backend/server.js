@@ -1872,16 +1872,17 @@ app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   if (sessao.qrBase64)               return res.json({ status: "aguardando_qr", qr: sessao.qrBase64 });
   res.json({ status: sessao.status || "desconectado" });
 });
-// ROTA TEMPORÁRIA DE DIAGNÓSTICO
-app.get("/debug-wa/:slug", async (req, res) => {
+// ROTA TEMPORÁRIA DE TESTE
+app.get("/testar-wa/:slug", async (req, res) => {
   const slug = req.params.slug;
-  const sessao = waSessoes[slug];
-  res.json({
-    temSessao: !!sessao,
-    status: sessao?.status || "nenhuma",
-    temQr: !!sessao?.qrBase64,
-    temSocket: !!sessao?.socket,
-  });
+  try {
+    const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+    const qrcode = require("qrcode");
+    const pino = require("pino");
+    res.json({ ok: true, msg: "Baileys carregou com sucesso" });
+  } catch (err) {
+    res.json({ ok: false, erro: err.message, code: err.code });
+  }
 });
 app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
   const slug   = req.params.slug;
