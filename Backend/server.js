@@ -430,8 +430,9 @@ let rows = servs.rows;
       [slug]
     );
 
-    const dataObj   = new Date(estado.data + "T00:00:00");
-    const diaSemana = dataObj.getDay();
+    const [_ano, _mes, _dia] = estado.data.split("-").map(Number);
+const dataObj   = new Date(_ano, _mes - 1, _dia);
+const diaSemana = dataObj.getDay();
     let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
     let pausaIni = null, pausaFim = null;
 
