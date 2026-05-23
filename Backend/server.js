@@ -368,14 +368,13 @@ let rows = servs.rows;
     );
 
     const DIAS_NOMES = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
-    const hoje2 = new Date();
-    hoje2.setHours(0,0,0,0);
+    const agora2ref = new Date();
+const hoje2 = new Date(agora2ref.getFullYear(), agora2ref.getMonth(), agora2ref.getDate());
     const diasDisponiveis = [];
 
     for (let i = 0; i <= 13; i++) {
-      const d = new Date(hoje2);
-      d.setDate(hoje2.getDate() + i);
-      const diaSemana = d.getDay();
+     const d = new Date(hoje2.getFullYear(), hoje2.getMonth(), hoje2.getDate() + i);
+const diaSemana = d.getDay();
       if (hrConfig2.rows.length > 0) {
         const dias = typeof hrConfig2.rows[0].dias_semana === "string"
           ? JSON.parse(hrConfig2.rows[0].dias_semana)
