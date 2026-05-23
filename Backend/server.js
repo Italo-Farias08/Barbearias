@@ -423,29 +423,48 @@ let rows = servs.rows;
     estado.dataFormatada = diaEscolhido.dataFormatada;
     estado.etapa         = "aguardando_horario";
 
-    const hrConfig = await db.query(
+    // tenta horário individual do profissional primeiro
+const hrProfissional = await db.query(
+  `SELECT dias_semana, NULL::text AS hora_inicio, NULL::text AS hora_fim,
+          NULL::int AS intervalo_minutos, pausa_inicio, pausa_fim
+   FROM profissional_horarios
+   WHERE profissional_id = $1
+     AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)`,
+  [estado.profissional_id, slug]
+);
+
+// se não tiver individual, usa o global
+const hrConfig = hrProfissional.rows.length > 0
+  ? hrProfissional
+  : await db.query(
       `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
        FROM horarios_barbearia
        WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
       [slug]
     );
 
-    const [_ano, _mes, _dia] = estado.data.split("-").map(Number);
-const dataObj   = new Date(_ano, _mes - 1, _dia);
+const [_a, _m, _d] = estado.data.split("-").map(Number);
+const dataObj   = new Date(_a, _m - 1, _d);
 const diaSemana = dataObj.getDay();
-    let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
-    let pausaIni = null, pausaFim = null;
+let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
+let pausaIni = null, pausaFim = null;
 
-    if (hrConfig.rows.length > 0) {
-      const row  = hrConfig.rows[0];
-      const dias = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : row.dias_semana;
-      const cfg  = dias[String(diaSemana)];
-      horaInicio = cfg?.hora_inicio || row.hora_inicio || "08:00";
-      horaFim    = cfg?.hora_fim    || row.hora_fim    || "21:00";
-      intervalo  = row.intervalo_minutos || 30;
-      pausaIni   = row.pausa_inicio || null;
-      pausaFim   = row.pausa_fim    || null;
-    }
+if (hrConfig.rows.length > 0) {
+  const row  = hrConfig.rows[0];
+  const dias = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : row.dias_semana;
+  const cfg  = dias[String(diaSemana)];
+
+  // JSONB tem prioridade absoluta — colunas só como último fallback
+  horaInicio = (cfg?.hora_inicio || "").substring(0, 5)
+            || (row.hora_inicio  ? String(row.hora_inicio).substring(0, 5) : "")
+            || "08:00";
+  horaFim    = (cfg?.hora_fim    || "").substring(0, 5)
+            || (row.hora_fim     ? String(row.hora_fim).substring(0, 5) : "")
+            || "21:00";
+  intervalo  = row.intervalo_minutos || 30;
+  pausaIni   = row.pausa_inicio || null;
+  pausaFim   = row.pausa_fim    || null;
+}
 
     const ocupados = await db.query(
       `SELECT TRIM(horario) AS horario FROM agendamentos
