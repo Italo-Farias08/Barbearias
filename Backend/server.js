@@ -321,22 +321,13 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.etapa             = "aguardando_servico";
 
     const servs = await db.query(
-      `SELECT id, nome, preco FROM servicos_destaque
-       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
-       ORDER BY ordem, id`,
-      [slug]
-    );
+  `SELECT id, nome, preco FROM servicos
+   WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+   ORDER BY id`,
+  [slug]
+);
 
-    let rows = servs.rows;
-    if (rows.length === 0) {
-      const servs2 = await db.query(
-        `SELECT id, nome, preco FROM servicos
-         WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
-         ORDER BY id`,
-        [slug]
-      );
-      rows = servs2.rows;
-    }
+let rows = servs.rows;
 
     if (rows.length === 0) {
       await enviar(`Nenhum serviço cadastrado no momento. Entre em contato com a barbearia.`);
