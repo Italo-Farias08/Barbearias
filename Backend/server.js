@@ -59,6 +59,34 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+// ── UTILITÁRIOS DE FUSO HORÁRIO (Brasília = UTC-3) ────────────────────────
+// Retorna um objeto Date representando "agora" no horário de Brasília,
+// usando os métodos getUTC* para extrair hora/minuto/dia corretos.
+function agoraBrasilia() {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000);
+}
+
+// Retorna ano, mês (0-based) e dia de hoje em Brasília
+function hojePartesBrasilia() {
+  const d = agoraBrasilia();
+  return {
+    ano: d.getUTCFullYear(),
+    mes: d.getUTCMonth(),      // 0-based
+    dia: d.getUTCDate(),
+    diaSemana: d.getUTCDay()
+  };
+}
+
+// Compara se uma data (construída com new Date(ano, mes, dia)) é hoje em Brasília
+function ehHojeBrasilia(dataObj) {
+  const h = hojePartesBrasilia();
+  return (
+    dataObj.getFullYear() === h.ano &&
+    dataObj.getMonth()    === h.mes &&
+    dataObj.getDate()     === h.dia
+  );
+}
+
 // ── WHATSAPP MULTI-TENANT ─────────────────────────────────────────────────
 const waSessoes = {};
 
@@ -188,13 +216,13 @@ function resetarEstado(slug, jid) {
     if (k !== "etapa" && k !== "ultimo") delete e[k];
   });
 }
+
 // Limpa estados inativos a cada 30 minutos
 setInterval(() => {
   const agora = Date.now();
   for (const slug in botEstados) {
     for (const jid in botEstados[slug]) {
       const estado = botEstados[slug][jid];
-      // Reseta se inativo por mais de 30 minutos
       if (agora - estado.ultimo > 30 * 60 * 1000) {
         resetarEstado(slug, jid);
       }
@@ -321,13 +349,13 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.etapa             = "aguardando_servico";
 
     const servs = await db.query(
-  `SELECT id, nome, preco FROM servicos
-   WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
-   ORDER BY id`,
-  [slug]
-);
+      `SELECT id, nome, preco FROM servicos
+       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)
+       ORDER BY id`,
+      [slug]
+    );
 
-let rows = servs.rows;
+    const rows = servs.rows;
 
     if (rows.length === 0) {
       await enviar(`Nenhum serviço cadastrado no momento. Entre em contato com a barbearia.`);
@@ -361,6 +389,7 @@ let rows = servs.rows;
     estado.servico_preco = lista[idx].preco;
     estado.etapa         = "aguardando_dia";
 
+    // ── Busca config de horários para montar os dias disponíveis ──────
     const hrConfig2 = await db.query(
       `SELECT dias_semana FROM horarios_barbearia
        WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
@@ -368,13 +397,17 @@ let rows = servs.rows;
     );
 
     const DIAS_NOMES = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
-    const agora2ref = new Date();
-const hoje2 = new Date(agora2ref.getFullYear(), agora2ref.getMonth(), agora2ref.getDate());
+
+    // USA BRASÍLIA: obtém partes da data de hoje no fuso correto
+    const { ano: anoHoje, mes: mesHoje, dia: diaHoje } = hojePartesBrasilia();
+
     const diasDisponiveis = [];
 
     for (let i = 0; i <= 13; i++) {
-     const d = new Date(hoje2.getFullYear(), hoje2.getMonth(), hoje2.getDate() + i);
-const diaSemana = d.getDay();
+      // Constrói a data do dia (i dias a partir de hoje) usando partes de Brasília
+      const d = new Date(anoHoje, mesHoje, diaHoje + i);
+      const diaSemana = d.getDay();
+
       if (hrConfig2.rows.length > 0) {
         const dias = typeof hrConfig2.rows[0].dias_semana === "string"
           ? JSON.parse(hrConfig2.rows[0].dias_semana)
@@ -382,15 +415,22 @@ const diaSemana = d.getDay();
         const cfg = dias[String(diaSemana)];
         if (!cfg || !cfg.aberto) continue;
       }
+
       const dd   = String(d.getDate()).padStart(2, "0");
       const mm   = String(d.getMonth() + 1).padStart(2, "0");
       const aaaa = d.getFullYear();
+
       const label = i === 0
         ? `Hoje (${DIAS_NOMES[diaSemana]})`
         : i === 1
           ? `Amanhã (${DIAS_NOMES[diaSemana]})`
           : `${DIAS_NOMES[diaSemana]} ${dd}/${mm}`;
-      diasDisponiveis.push({ label, dataISO: `${aaaa}-${mm}-${dd}`, dataFormatada: `${dd}/${mm}/${aaaa}` });
+
+      diasDisponiveis.push({
+        label,
+        dataISO:      `${aaaa}-${mm}-${dd}`,
+        dataFormatada: `${dd}/${mm}/${aaaa}`
+      });
     }
 
     if (diasDisponiveis.length === 0) {
@@ -422,48 +462,50 @@ const diaSemana = d.getDay();
     estado.dataFormatada = diaEscolhido.dataFormatada;
     estado.etapa         = "aguardando_horario";
 
-    // tenta horário individual do profissional primeiro
-const hrProfissional = await db.query(
-  `SELECT dias_semana, NULL::text AS hora_inicio, NULL::text AS hora_fim,
-          NULL::int AS intervalo_minutos, pausa_inicio, pausa_fim
-   FROM profissional_horarios
-   WHERE profissional_id = $1
-     AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)`,
-  [estado.profissional_id, slug]
-);
-
-// se não tiver individual, usa o global
-const hrConfig = hrProfissional.rows.length > 0
-  ? hrProfissional
-  : await db.query(
-      `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
-       FROM horarios_barbearia
-       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
-      [slug]
+    // Tenta horário individual do profissional primeiro
+    const hrProfissional = await db.query(
+      `SELECT dias_semana, NULL::text AS hora_inicio, NULL::text AS hora_fim,
+              NULL::int AS intervalo_minutos, pausa_inicio, pausa_fim
+       FROM profissional_horarios
+       WHERE profissional_id = $1
+         AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)`,
+      [estado.profissional_id, slug]
     );
 
-const [_a, _m, _d] = estado.data.split("-").map(Number);
-const dataObj   = new Date(_a, _m - 1, _d);
-const diaSemana = dataObj.getDay();
-let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
-let pausaIni = null, pausaFim = null;
+    // Se não tiver individual, usa o global
+    const hrConfig = hrProfissional.rows.length > 0
+      ? hrProfissional
+      : await db.query(
+          `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
+           FROM horarios_barbearia
+           WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
+          [slug]
+        );
 
-if (hrConfig.rows.length > 0) {
-  const row  = hrConfig.rows[0];
-  const dias = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : row.dias_semana;
-  const cfg  = dias[String(diaSemana)];
+    // Constrói dataObj a partir do ISO salvo — sem fuso (meia-noite local)
+    const [_a, _m, _d] = estado.data.split("-").map(Number);
+    const dataObj   = new Date(_a, _m - 1, _d);
+    const diaSemana = dataObj.getDay();
 
-  // JSONB tem prioridade absoluta — colunas só como último fallback
-  horaInicio = (cfg?.hora_inicio || "").substring(0, 5)
-            || (row.hora_inicio  ? String(row.hora_inicio).substring(0, 5) : "")
-            || "08:00";
-  horaFim    = (cfg?.hora_fim    || "").substring(0, 5)
-            || (row.hora_fim     ? String(row.hora_fim).substring(0, 5) : "")
-            || "21:00";
-  intervalo  = row.intervalo_minutos || 30;
-  pausaIni   = row.pausa_inicio || null;
-  pausaFim   = row.pausa_fim    || null;
-}
+    let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
+    let pausaIni = null, pausaFim = null;
+
+    if (hrConfig.rows.length > 0) {
+      const row  = hrConfig.rows[0];
+      const dias = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : row.dias_semana;
+      const cfg  = dias[String(diaSemana)];
+
+      // JSONB tem prioridade absoluta — colunas só como último fallback
+      horaInicio = (cfg?.hora_inicio || "").substring(0, 5)
+                || (row.hora_inicio  ? String(row.hora_inicio).substring(0, 5) : "")
+                || "08:00";
+      horaFim    = (cfg?.hora_fim    || "").substring(0, 5)
+                || (row.hora_fim     ? String(row.hora_fim).substring(0, 5) : "")
+                || "21:00";
+      intervalo  = row.intervalo_minutos || 30;
+      pausaIni   = row.pausa_inicio || null;
+      pausaFim   = row.pausa_fim    || null;
+    }
 
     const ocupados = await db.query(
       `SELECT TRIM(horario) AS horario FROM agendamentos
@@ -478,9 +520,11 @@ if (hrConfig.rows.length > 0) {
     const inicioMin    = hIni * 60 + mIni;
     const fimMin       = hFim * 60 + mFim;
 
-    const agora2   = new Date();
-    const ehHoje   = dataObj.toDateString() === agora2.toDateString();
-    const agoraMin = ehHoje ? agora2.getHours() * 60 + agora2.getMinutes() + 30 : 0;
+    // USA BRASÍLIA: verifica se o dia escolhido é hoje e pega minutos atuais
+    const agoraBr  = agoraBrasilia();
+    const ehHoje   = ehHojeBrasilia(dataObj);
+    // getUTCHours/getUTCMinutes no objeto agoraBr equivalem ao horário de Brasília
+    const agoraMin = ehHoje ? agoraBr.getUTCHours() * 60 + agoraBr.getUTCMinutes() + 30 : 0;
 
     const pausaIniMin = pausaIni ? (() => { const [h,m] = pausaIni.split(":").map(Number); return h*60+m; })() : null;
     const pausaFimMin = pausaFim ? (() => { const [h,m] = pausaFim.split(":").map(Number); return h*60+m; })() : null;
@@ -641,7 +685,8 @@ async function enviarLembrete(ag) {
 // ── JOB DE LEMBRETES ──────────────────────────────────────────────────────
 async function verificarLembretes() {
   try {
-    const agora  = new Date();
+    // USA BRASÍLIA: hora atual em Brasília para comparar com o agendamento
+    const agora  = agoraBrasilia();
     const result = await db.query(`
       SELECT a.id, a.nome, a.telefone, a.data, a.horario,
              b.nome AS nome_barbearia, b.slug
@@ -660,8 +705,12 @@ async function verificarLembretes() {
 
       const [ano, mes, dia] = dataStr.split("-");
       const [hora, min]     = ag.horario.substring(0, 5).split(":");
+      // Constrói como horário local (sem UTC) — igual ao site
       const dataHorario     = new Date(+ano, +mes - 1, +dia, +hora, +min, 0);
-      const diffMin         = (dataHorario - agora) / 60000;
+
+      // Converte agora (Brasília) para timestamp comparável
+      const agoraMs = agora.getTime() + 3 * 60 * 60 * 1000; // reconverte para local
+      const diffMin = (dataHorario.getTime() - agoraMs) / 60000;
 
       if (diffMin >= 55 && diffMin <= 65) {
         await enviarLembrete(ag);
@@ -801,10 +850,14 @@ function validarAgendamento({ nome, data, horario, valor }) {
 
   const [ano, mes, dia] = data.split("-").map(Number);
   const [h, m]          = horario.split(":").map(Number);
-  const agendamentoUTC  = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
-  const agoraUTC        = Date.now() - 2 * 60 * 1000;
 
-  if (agendamentoUTC <= agoraUTC) return "Não é possível agendar em horário passado";
+  // USA BRASÍLIA: constrói o horário do agendamento como local e compara com agora em Brasília
+  const agendamentoMs = new Date(ano, mes - 1, dia, h, m, 0).getTime();
+  const agoraBr       = agoraBrasilia();
+  // agoraBr está deslocado -3h, reconvertemos para timestamp local somando 3h de volta
+  const agoraLocalMs  = agoraBr.getTime() + 3 * 60 * 60 * 1000 - 2 * 60 * 1000;
+
+  if (agendamentoMs <= agoraLocalMs) return "Não é possível agendar em horário passado";
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
   return null;
 }
@@ -1358,10 +1411,11 @@ app.get("/api/:slug/comissoes/relatorio", verificarAssinatura, async (req, res) 
   const { mes, data, data_fim, profissional_id } = req.query;
   let dataInicio, dataFim, referenciaAjustes;
 
-  if (data_fim && /^\d{4}-\d{2}-\d{2}$/.test(data_fim) && data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+  if (data_fim && /^\d{4}-\d{2}-\d{2}$/.test(data_fim) && data && /^\d{4}-\d{4}-\d{2}-\d{2}$/.test(data)) {
     dataInicio = data; dataFim = data_fim; referenciaAjustes = data.substring(0, 7);
   } else if (data && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    dataInicio = data; dataFim = data; referenciaAjustes = data.substring(0, 7);
+    dataInicio = data; dataFim = data_fim && /^\d{4}-\d{2}-\d{2}$/.test(data_fim) ? data_fim : data;
+    referenciaAjustes = data.substring(0, 7);
   } else {
     const periodo = (mes && /^\d{4}-\d{2}$/.test(mes)) ? mes : new Date().toISOString().substring(0, 7);
     referenciaAjustes = periodo;
@@ -1897,9 +1951,9 @@ app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   if (sessao.qrBase64)               return res.json({ status: "aguardando_qr", qr: sessao.qrBase64 });
   res.json({ status: sessao.status || "desconectado" });
 });
-// ROTA TEMPORÁRIA DE TESTE
+
+// ── ROTAS DE DIAGNÓSTICO (manter para debug) ──────────────────────────────
 app.get("/testar-wa/:slug", async (req, res) => {
-  const slug = req.params.slug;
   try {
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
     const qrcode = require("qrcode");
@@ -1909,7 +1963,7 @@ app.get("/testar-wa/:slug", async (req, res) => {
     res.json({ ok: false, erro: err.message, code: err.code });
   }
 });
-// ROTA TEMPORÁRIA
+
 app.get("/forcar-wa/:slug", async (req, res) => {
   const slug = req.params.slug;
   await iniciarWhatsAppSlug(slug);
@@ -1921,7 +1975,7 @@ app.get("/forcar-wa/:slug", async (req, res) => {
     qr: s?.qrBase64 || null
   });
 });
-// ROTA TEMPORÁRIA DE DIAGNÓSTICO DETALHADO
+
 app.get("/debug-wa-erro/:slug", async (req, res) => {
   const slug = req.params.slug;
   const logs = [];
@@ -1931,23 +1985,19 @@ app.get("/debug-wa-erro/:slug", async (req, res) => {
     const qrcode = require("qrcode");
     const pino = require("pino");
     logs.push("2. baileys importado");
-
     const AUTH_DIR = `./auth_wa/${slug}`;
     if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
     logs.push("3. pasta criada");
-
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     logs.push("4. auth state ok");
-
     const { version } = await fetchLatestBaileysVersion();
     logs.push("5. versao obtida: " + JSON.stringify(version));
-
     res.json({ ok: true, logs });
   } catch (err) {
     res.json({ ok: false, logs, erro: err.message, stack: err.stack?.substring(0, 500) });
   }
 });
-// ROTA TEMPORÁRIA
+
 app.get("/debug-wa-socket/:slug", async (req, res) => {
   const slug = req.params.slug;
   const logs = [];
@@ -1955,21 +2005,17 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
     const pino = require("pino");
     const qrcode = require("qrcode");
-
     const AUTH_DIR = `./auth_wa/${slug}`;
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     const { version } = await fetchLatestBaileysVersion();
     logs.push("criando socket...");
-
     const sock = makeWASocket({
       version,
       auth: state,
       printQRInTerminal: false,
       logger: pino({ level: "silent" }),
     });
-
     logs.push("socket criado, aguardando QR por 15s...");
-
     await new Promise((resolve) => {
       sock.ev.on("connection.update", async ({ connection, qr, lastDisconnect }) => {
         if (qr) {
@@ -1996,7 +2042,6 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
         resolve();
       }, 15000);
     });
-
   } catch (err) {
     res.json({ ok: false, logs, erro: err.message });
   }
