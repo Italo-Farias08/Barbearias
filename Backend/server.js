@@ -60,24 +60,20 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 // ── UTILITÁRIOS DE FUSO HORÁRIO (Brasília = UTC-3) ────────────────────────
-// Retorna um objeto Date representando "agora" no horário de Brasília,
-// usando os métodos getUTC* para extrair hora/minuto/dia corretos.
 function agoraBrasilia() {
   return new Date(Date.now() - 3 * 60 * 60 * 1000);
 }
 
-// Retorna ano, mês (0-based) e dia de hoje em Brasília
 function hojePartesBrasilia() {
   const d = agoraBrasilia();
   return {
     ano: d.getUTCFullYear(),
-    mes: d.getUTCMonth(),      // 0-based
+    mes: d.getUTCMonth(),
     dia: d.getUTCDate(),
     diaSemana: d.getUTCDay()
   };
 }
 
-// Compara se uma data (construída com new Date(ano, mes, dia)) é hoje em Brasília
 function ehHojeBrasilia(dataObj) {
   const h = hojePartesBrasilia();
   return (
@@ -217,7 +213,6 @@ function resetarEstado(slug, jid) {
   });
 }
 
-// Limpa estados inativos a cada 30 minutos
 setInterval(() => {
   const agora = Date.now();
   for (const slug in botEstados) {
@@ -238,6 +233,32 @@ async function getDadosBarbearia(slug) {
     [slug]
   );
   return r.rows[0] || {};
+}
+
+// ── HELPER: busca config de horários para um profissional (individual ou global) ──
+async function getHorariosConfig(slug, profissional_id) {
+  // Tenta horário individual do profissional
+  const hrProf = await db.query(
+    `SELECT dias_semana, pausa_inicio, pausa_fim
+     FROM profissional_horarios
+     WHERE profissional_id = $1
+       AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)`,
+    [profissional_id, slug]
+  );
+
+  if (hrProf.rows.length > 0) {
+    return hrProf.rows[0];
+  }
+
+  // Fallback: horário global da barbearia
+  const hrGlobal = await db.query(
+    `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
+     FROM horarios_barbearia
+     WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
+    [slug]
+  );
+
+  return hrGlobal.rows[0] || null;
 }
 
 // ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
@@ -389,32 +410,37 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.servico_preco = lista[idx].preco;
     estado.etapa         = "aguardando_dia";
 
-    // ── Busca config de horários para montar os dias disponíveis ──────
-    const hrConfig2 = await db.query(
-      `SELECT dias_semana FROM horarios_barbearia
-       WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
-      [slug]
-    );
+    // ── Busca config correta: individual do profissional ou global ────
+    const hrConfig = await getHorariosConfig(slug, estado.profissional_id);
 
     const DIAS_NOMES = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
-
-    // USA BRASÍLIA: obtém partes da data de hoje no fuso correto
     const { ano: anoHoje, mes: mesHoje, dia: diaHoje } = hojePartesBrasilia();
 
     const diasDisponiveis = [];
 
     for (let i = 0; i <= 13; i++) {
-      // Constrói a data do dia (i dias a partir de hoje) usando partes de Brasília
       const d = new Date(anoHoje, mesHoje, diaHoje + i);
       const diaSemana = d.getDay();
 
-      if (hrConfig2.rows.length > 0) {
-        const dias = typeof hrConfig2.rows[0].dias_semana === "string"
-          ? JSON.parse(hrConfig2.rows[0].dias_semana)
-          : hrConfig2.rows[0].dias_semana;
-        const cfg = dias[String(diaSemana)];
+      // Verifica se o dia está aberto conforme a config (individual ou global)
+      if (hrConfig) {
+        const diasJSON = typeof hrConfig.dias_semana === "string"
+          ? JSON.parse(hrConfig.dias_semana)
+          : (hrConfig.dias_semana || {});
+        const cfg = diasJSON[String(diaSemana)];
         if (!cfg || !cfg.aberto) continue;
       }
+
+      // Verifica pausa do profissional (folga por data)
+      const dataISO = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      const pausaCheck = await db.query(
+        `SELECT id FROM profissional_pausas
+         WHERE profissional_id = $1
+           AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)
+           AND $3 BETWEEN data_inicio AND data_fim`,
+        [estado.profissional_id, slug, dataISO]
+      );
+      if (pausaCheck.rows.length > 0) continue;
 
       const dd   = String(d.getDate()).padStart(2, "0");
       const mm   = String(d.getMonth() + 1).padStart(2, "0");
@@ -428,7 +454,7 @@ async function processarMensagemBot(sock, jid, body, slug) {
 
       diasDisponiveis.push({
         label,
-        dataISO:      `${aaaa}-${mm}-${dd}`,
+        dataISO:       `${aaaa}-${mm}-${dd}`,
         dataFormatada: `${dd}/${mm}/${aaaa}`
       });
     }
@@ -462,27 +488,10 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.dataFormatada = diaEscolhido.dataFormatada;
     estado.etapa         = "aguardando_horario";
 
-    // Tenta horário individual do profissional primeiro
-    const hrProfissional = await db.query(
-      `SELECT dias_semana, NULL::text AS hora_inicio, NULL::text AS hora_fim,
-              NULL::int AS intervalo_minutos, pausa_inicio, pausa_fim
-       FROM profissional_horarios
-       WHERE profissional_id = $1
-         AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)`,
-      [estado.profissional_id, slug]
-    );
+    // ── Busca config correta: individual do profissional ou global ────
+    const hrConfig = await getHorariosConfig(slug, estado.profissional_id);
 
-    // Se não tiver individual, usa o global
-    const hrConfig = hrProfissional.rows.length > 0
-      ? hrProfissional
-      : await db.query(
-          `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
-           FROM horarios_barbearia
-           WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
-          [slug]
-        );
-
-    // Constrói dataObj a partir do ISO salvo — sem fuso (meia-noite local)
+    // Constrói dataObj a partir do ISO salvo
     const [_a, _m, _d] = estado.data.split("-").map(Number);
     const dataObj   = new Date(_a, _m - 1, _d);
     const diaSemana = dataObj.getDay();
@@ -490,21 +499,22 @@ async function processarMensagemBot(sock, jid, body, slug) {
     let horaInicio = "08:00", horaFim = "21:00", intervalo = 30;
     let pausaIni = null, pausaFim = null;
 
-    if (hrConfig.rows.length > 0) {
-      const row  = hrConfig.rows[0];
-      const dias = typeof row.dias_semana === "string" ? JSON.parse(row.dias_semana) : row.dias_semana;
-      const cfg  = dias[String(diaSemana)];
+    if (hrConfig) {
+      const diasJSON = typeof hrConfig.dias_semana === "string"
+        ? JSON.parse(hrConfig.dias_semana)
+        : (hrConfig.dias_semana || {});
+      const cfg = diasJSON[String(diaSemana)];
 
-      // JSONB tem prioridade absoluta — colunas só como último fallback
+      // JSONB tem prioridade; colunas só como último fallback
       horaInicio = (cfg?.hora_inicio || "").substring(0, 5)
-                || (row.hora_inicio  ? String(row.hora_inicio).substring(0, 5) : "")
+                || (hrConfig.hora_inicio ? String(hrConfig.hora_inicio).substring(0, 5) : "")
                 || "08:00";
       horaFim    = (cfg?.hora_fim    || "").substring(0, 5)
-                || (row.hora_fim     ? String(row.hora_fim).substring(0, 5) : "")
+                || (hrConfig.hora_fim   ? String(hrConfig.hora_fim).substring(0, 5) : "")
                 || "21:00";
-      intervalo  = row.intervalo_minutos || 30;
-      pausaIni   = row.pausa_inicio || null;
-      pausaFim   = row.pausa_fim    || null;
+      intervalo  = hrConfig.intervalo_minutos || 30;
+      pausaIni   = hrConfig.pausa_inicio || null;
+      pausaFim   = hrConfig.pausa_fim    || null;
     }
 
     const ocupados = await db.query(
@@ -520,10 +530,9 @@ async function processarMensagemBot(sock, jid, body, slug) {
     const inicioMin    = hIni * 60 + mIni;
     const fimMin       = hFim * 60 + mFim;
 
-    // USA BRASÍLIA: verifica se o dia escolhido é hoje e pega minutos atuais
+    // USA BRASÍLIA: verifica se o dia escolhido é hoje
     const agoraBr  = agoraBrasilia();
     const ehHoje   = ehHojeBrasilia(dataObj);
-    // getUTCHours/getUTCMinutes no objeto agoraBr equivalem ao horário de Brasília
     const agoraMin = ehHoje ? agoraBr.getUTCHours() * 60 + agoraBr.getUTCMinutes() + 30 : 0;
 
     const pausaIniMin = pausaIni ? (() => { const [h,m] = pausaIni.split(":").map(Number); return h*60+m; })() : null;
@@ -532,10 +541,10 @@ async function processarMensagemBot(sock, jid, body, slug) {
     const horariosLivres = [];
     for (let t = inicioMin; t < fimMin; t += intervalo) {
       if (t < agoraMin) continue;
-      if (pausaIniMin && pausaFimMin && t >= pausaIniMin && t < pausaFimMin) continue;
+      if (pausaIniMin !== null && pausaFimMin !== null && t >= pausaIniMin && t < pausaFimMin) continue;
       const hh  = String(Math.floor(t / 60)).padStart(2, "0");
-      const mm  = String(t % 60).padStart(2, "0");
-      if (!ocupadosSet.has(`${hh}:${mm}`)) horariosLivres.push(`${hh}:${mm}`);
+      const mm2 = String(t % 60).padStart(2, "0");
+      if (!ocupadosSet.has(`${hh}:${mm2}`)) horariosLivres.push(`${hh}:${mm2}`);
     }
 
     if (horariosLivres.length === 0) {
@@ -685,7 +694,6 @@ async function enviarLembrete(ag) {
 // ── JOB DE LEMBRETES ──────────────────────────────────────────────────────
 async function verificarLembretes() {
   try {
-    // USA BRASÍLIA: hora atual em Brasília para comparar com o agendamento
     const agora  = agoraBrasilia();
     const result = await db.query(`
       SELECT a.id, a.nome, a.telefone, a.data, a.horario,
@@ -705,11 +713,9 @@ async function verificarLembretes() {
 
       const [ano, mes, dia] = dataStr.split("-");
       const [hora, min]     = ag.horario.substring(0, 5).split(":");
-      // Constrói como horário local (sem UTC) — igual ao site
       const dataHorario     = new Date(+ano, +mes - 1, +dia, +hora, +min, 0);
 
-      // Converte agora (Brasília) para timestamp comparável
-      const agoraMs = agora.getTime() + 3 * 60 * 60 * 1000; // reconverte para local
+      const agoraMs = agora.getTime() + 3 * 60 * 60 * 1000;
       const diffMin = (dataHorario.getTime() - agoraMs) / 60000;
 
       if (diffMin >= 55 && diffMin <= 65) {
@@ -851,10 +857,8 @@ function validarAgendamento({ nome, data, horario, valor }) {
   const [ano, mes, dia] = data.split("-").map(Number);
   const [h, m]          = horario.split(":").map(Number);
 
-  // USA BRASÍLIA: constrói o horário do agendamento como local e compara com agora em Brasília
   const agendamentoMs = new Date(ano, mes - 1, dia, h, m, 0).getTime();
   const agoraBr       = agoraBrasilia();
-  // agoraBr está deslocado -3h, reconvertemos para timestamp local somando 3h de volta
   const agoraLocalMs  = agoraBr.getTime() + 3 * 60 * 60 * 1000 - 2 * 60 * 1000;
 
   if (agendamentoMs <= agoraLocalMs) return "Não é possível agendar em horário passado";
@@ -1952,7 +1956,7 @@ app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   res.json({ status: sessao.status || "desconectado" });
 });
 
-// ── ROTAS DE DIAGNÓSTICO (manter para debug) ──────────────────────────────
+// ── ROTAS DE DIAGNÓSTICO ──────────────────────────────────────────────────
 app.get("/testar-wa/:slug", async (req, res) => {
   try {
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
