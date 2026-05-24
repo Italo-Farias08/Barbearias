@@ -237,12 +237,13 @@ async function getDadosBarbearia(slug) {
 
 // ── HELPER: busca config de horários para um profissional (individual ou global) ──
 async function getHorariosConfig(slug, profissional_id) {
-  // Tenta horário individual do profissional
   const hrProf = await db.query(
-    `SELECT dias_semana, pausa_inicio, pausa_fim
-     FROM profissional_horarios
-     WHERE profissional_id = $1
-       AND barbearia_id = (SELECT id FROM barbearias WHERE slug = $2)`,
+    `SELECT ph.dias_semana, ph.pausa_inicio, ph.pausa_fim,
+            hb.intervalo_minutos
+     FROM profissional_horarios ph
+     JOIN barbearias b ON b.id = ph.barbearia_id
+     LEFT JOIN horarios_barbearia hb ON hb.barbearia_id = ph.barbearia_id
+     WHERE ph.profissional_id = $1 AND b.slug = $2`,
     [profissional_id, slug]
   );
 
@@ -250,7 +251,6 @@ async function getHorariosConfig(slug, profissional_id) {
     return hrProf.rows[0];
   }
 
-  // Fallback: horário global da barbearia
   const hrGlobal = await db.query(
     `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
      FROM horarios_barbearia
