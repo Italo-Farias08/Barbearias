@@ -10,11 +10,10 @@
 </head>
 <body>
 <canvas id="particles"></canvas>
+
 <header>
-   <a href="#" class="logo">
-    <!-- ✅ data-barber="logo" → Saas.js coloca a imagem ou o nome aqui -->
+  <a href="#" class="logo">
     <span data-barber="logo">
-      <!-- fallback visível antes do JS carregar -->
       <span class="logo-main" data-barber="nome"></span>
       <span class="logo-sub"  data-barber="cidade"></span>
     </span>
@@ -37,6 +36,7 @@
 
 <div class="cortes-wrap">
   <div class="cortes-grid" id="listaServicos">
+    <div class="grid-loading">Carregando serviços</div>
   </div>
 </div>
 
@@ -44,67 +44,78 @@
   <span>&copy; 2026 Italo Farias</span>
   <a href="index.html">← Voltar ao início</a>
 </footer>
-<a href="planos.html" class="btn-assinaturas">
-  💈 Assinaturas
-</a>
+
+<a href="planos.html" class="btn-assinaturas">💈 Assinaturas</a>
 
 <script src="Saas.js"></script>
 <script>
-// ✅ CORRIGIDO: salva com slug na chave para não misturar entre barbearias
 function selecionarServico(valor, nome) {
-  const slug = BARBER_SLUG; // vem do Saas.js
+  const slug = BARBER_SLUG;
   localStorage.setItem(`valorServico_${slug}`, valor);
   localStorage.setItem(`nomeServico_${slug}`, nome);
 }
 
-(function(){
-  const canvas=document.getElementById('particles'),
-        ctx=canvas.getContext('2d');
-  ctx.filter='blur(1.5px)';
-  let W,H,pts=[];
-  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+(function () {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  ctx.filter = 'blur(1.5px)';
+  let W, H, pts = [];
+
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
   resize();
-  window.addEventListener('resize',resize);
-  function rand(a,b){return a+Math.random()*(b-a);}
-  for(let i=0;i<50;i++)
-    pts.push({x:rand(0,1),y:rand(0,1),size:rand(.6,2),speed:rand(.00008,.00018),alpha:rand(.05,.18),drift:rand(-.0001,.0001)});
-  (function draw(){
-    ctx.clearRect(0,0,W,H);
-    pts.forEach(p=>{
-      p.y-=p.speed;p.x+=p.drift;
-      if(p.y<0){p.y=1;p.x=rand(0,1);}
-      if(p.x<0||p.x>1)p.x=rand(0,1);
-      ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
-      ctx.fillStyle=`rgba(240,240,240,${p.alpha})`;ctx.fill();
+  window.addEventListener('resize', resize);
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  for (let i = 0; i < 50; i++)
+    pts.push({ x: rand(0,1), y: rand(0,1), size: rand(.6,2), speed: rand(.00008,.00018), alpha: rand(.05,.18), drift: rand(-.0001,.0001) });
+
+  (function draw() {
+    ctx.clearRect(0, 0, W, H);
+    pts.forEach(p => {
+      p.y -= p.speed; p.x += p.drift;
+      if (p.y < 0) { p.y = 1; p.x = rand(0, 1); }
+      if (p.x < 0 || p.x > 1) p.x = rand(0, 1);
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(240,240,240,${p.alpha})`;
+      ctx.fill();
     });
     requestAnimationFrame(draw);
   })();
 })();
 
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
 async function carregarServicos() {
   try {
     const res = await fetch(`${API}/servicos`);
     const servicos = await res.json();
-
     const grid = document.getElementById('listaServicos');
     grid.innerHTML = '';
 
-    servicos.forEach(s => {
+    servicos.forEach((s, i) => {
       const el = document.createElement('a');
+      el.className = 'corte-link';
+      el.style.animationDelay = `${i * 0.07}s`;
       el.onclick = (e) => {
         e.preventDefault();
         selecionarServico(s.preco, s.nome);
-
         const params = new URLSearchParams(window.location.search);
         const slug = params.get('b');
-        let url = "index2.html";
+        let url = 'index2.html';
         if (slug) url += `?b=${slug}`;
         window.location.href = url;
       };
-      el.className = "corte-link";
       el.innerHTML = `
         <div class="corte-img-wrap">
-          <img src="${s.imagem}" alt="${s.nome}">
+          <img src="${s.imagem}" alt="${s.nome}" loading="lazy">
           <div class="select-label"><span>Selecionar</span></div>
         </div>
         <div class="corte-info">
@@ -116,10 +127,11 @@ async function carregarServicos() {
         </div>
       `;
       grid.appendChild(el);
+      observer.observe(el);
     });
-
   } catch (err) {
-    console.error("Erro ao carregar serviços");
+    document.getElementById('listaServicos').innerHTML =
+      '<div class="grid-loading" style="color:var(--muted)">Erro ao carregar serviços</div>';
   }
 }
 
