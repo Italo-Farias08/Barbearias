@@ -1,6 +1,6 @@
 :root {
   --gold: transparent;
-  --gold2: #ffc926;
+  --gold2: #ffc92600;
   --dark: #080807;
   --dark2: #101010;
   --dark3: #161614;
@@ -80,7 +80,7 @@ header {
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 1px solid rgba(255,201,38,.3);
+  border: 1px solid rgba(228, 228, 227, 0.34);
   animation: ripple 2s ease-out infinite;
 }
 @keyframes ripple {
@@ -214,12 +214,12 @@ header {
   width: 0; height: 0;
   border-style: solid;
   border-width: 0 32px 32px 0;
-  border-color: transparent rgba(255,201,38,.12) transparent transparent;
+  border-color: transparent rgba(216, 216, 216, 0.12) transparent transparent;
   transition: border-width .35s;
 }
 .corte-link:hover::before {
   border-width: 0 52px 52px 0;
-  border-color: transparent rgba(255,201,38,.28) transparent transparent;
+  border-color: transparent rgba(253, 252, 250, 0.28) transparent transparent;
 }
 
 .corte-link::after {
@@ -352,7 +352,7 @@ footer a:hover { color: var(--cream); }
   position: fixed;
   bottom: 24px;
   right: 24px;
-  border: 1px solid rgba(255,201,38,.35) !important;
+  border: 1px solid rgba(249, 248, 247, 0.35) !important;
   border-radius: 6px !important;
   background: rgba(22,22,20,.9);
   backdrop-filter: blur(12px);
@@ -368,7 +368,7 @@ footer a:hover { color: var(--cream); }
   transition: border-color .3s, transform .3s, background .3s;
 }
 .btn-assinaturas:hover {
-  border-color: rgba(255,201,38,.7) !important;
+  border-color: rgba(244, 243, 240, 0.7) !important;
   background: rgba(30,30,28,.95);
   transform: translateY(-2px);
 }
