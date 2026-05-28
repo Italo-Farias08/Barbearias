@@ -857,11 +857,10 @@ function validarAgendamento({ nome, data, horario, valor }) {
   const [ano, mes, dia] = data.split("-").map(Number);
   const [h, m]          = horario.split(":").map(Number);
 
-  const agendamentoMs = new Date(ano, mes - 1, dia, h, m, 0).getTime();
-  const agoraBr       = agoraBrasilia();
-  const agoraLocalMs  = agoraBr.getTime() + 3 * 60 * 60 * 1000 - 2 * 60 * 1000;
+  const agendamentoMs = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
+  const agoraBrMs     = Date.now() - 2 * 60 * 1000;
 
-  if (agendamentoMs <= agoraLocalMs) return "Não é possível agendar em horário passado";
+  if (agendamentoMs <= agoraBrMs) return "Não é possível agendar em horário passado";
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
   return null;
 }
