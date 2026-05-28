@@ -3,19 +3,308 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barbearia</title>
+<title data-barber="nome">Barbearia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@200;300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ── RESET & BASE ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Cor accent vem do banco — fallback neutro enquanto JS não carrega */
+  --accent: #1a1a1a;
+  --accent-subtle: color-mix(in srgb, var(--accent) 8%, transparent);
+  --accent-mid:    color-mix(in srgb, var(--accent) 18%, transparent);
+
+  --bg:   #faf9f7;
+  --surface: #ffffff;
+  --ink:  #111110;
+  --muted: #8a8880;
+  --border: rgba(0,0,0,.08);
+
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans:  'DM Sans', system-ui, sans-serif;
+
+  --r: 4px;
+  --gap: clamp(40px, 7vw, 96px);
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; }
+img { display: block; max-width: 100%; }
+
+/* ── HEADER ─────────────────────────────────────────────── */
+#header {
+  position: fixed; inset: 0 0 auto;
+  z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(24px, 5vw, 64px);
+  height: 64px;
+  transition: background .3s, border-color .3s;
+  border-bottom: 1px solid transparent;
+}
+#header.scrolled {
+  background: rgba(250,249,247,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: var(--border);
+}
+
+.logo-wrap { display: flex; flex-direction: column; line-height: 1.15; }
+.logo-wrap img { height: 28px; width: auto; object-fit: contain; }
+.logo-name { font-family: var(--serif); font-size: 17px; letter-spacing: .01em; }
+.logo-city { font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+
+nav { display: flex; align-items: center; gap: 32px; }
+nav a { font-size: 13px; color: var(--muted); letter-spacing: .04em; transition: color .2s; }
+nav a:hover { color: var(--ink); }
+.nav-cta {
+  font-size: 13px; font-weight: 500;
+  color: var(--surface) !important;
+  background: var(--accent);
+  padding: 9px 20px;
+  border-radius: var(--r);
+  transition: opacity .2s;
+}
+.nav-cta:hover { opacity: .85; }
+
+/* ── HERO / SLIDER ──────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 100svh; min-height: 560px;
+  overflow: hidden;
+  background: #111;
+}
+.slides-track { display: flex; height: 100%; transition: transform .8s cubic-bezier(.77,0,.175,1); }
+.slide { flex: 0 0 100%; position: relative; }
+.slide-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transition: transform 8s linear;
+  transform: scale(1.04);
+}
+.slide.active .slide-bg { transform: scale(1); }
+
+.slide-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.22) 100%);
+}
+
+.slide-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  height: 100%;
+  padding: clamp(40px, 8vw, 96px) clamp(24px, 7vw, 80px);
+  padding-bottom: clamp(60px, 10vw, 110px);
+}
+
+.slide-eyebrow {
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(255,255,255,.55); margin-bottom: 20px;
+}
+.slide-title {
+  font-family: var(--serif);
+  font-size: clamp(48px, 7.5vw, 96px);
+  color: #fff; line-height: 1.0;
+  margin-bottom: 24px;
+}
+.slide-title em { font-style: italic; color: var(--accent); filter: brightness(1.6); }
+.slide-desc { font-size: clamp(14px, 1.5vw, 17px); color: rgba(255,255,255,.7); max-width: 440px; margin-bottom: 36px; }
+
+.slide-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 500; letter-spacing: .06em;
+  color: var(--surface);
+  border: 1px solid rgba(255,255,255,.35);
+  padding: 13px 26px; border-radius: var(--r);
+  width: fit-content;
+  transition: background .2s, border-color .2s;
+}
+.slide-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); }
+
+/* dots */
+.hero-dots { position: absolute; bottom: 32px; left: clamp(24px,7vw,80px); display: flex; gap: 8px; z-index: 5; }
+.hdot {
+  width: 24px; height: 2px; border-radius: 2px;
+  background: rgba(255,255,255,.3); cursor: pointer; transition: background .3s, width .3s;
+}
+.hdot.active { background: var(--accent); width: 48px; filter: brightness(1.7); }
+
+/* arrows */
+.hero-arrows { position: absolute; bottom: 24px; right: clamp(24px,5vw,64px); display: flex; gap: 8px; z-index: 5; }
+.hero-arrow {
+  width: 40px; height: 40px; border-radius: var(--r);
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.hero-arrow:hover { background: rgba(255,255,255,.22); }
+
+/* progress bar */
+.slide-progress {
+  position: absolute; bottom: 0; left: 0;
+  height: 2px; width: 0%;
+  background: var(--accent);
+  z-index: 10;
+  filter: brightness(1.4);
+}
+
+/* ── TICKER ─────────────────────────────────────────────── */
+.ticker {
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 14px 0;
+}
+.ticker-track {
+  display: flex; gap: 0;
+  animation: tickerRoll 28s linear infinite;
+  width: max-content;
+}
+@keyframes tickerRoll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker-item {
+  font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap;
+  padding: 0 32px;
+  display: flex; align-items: center; gap: 32px;
+}
+.ticker-item::before { content: '—'; color: var(--accent); }
+
+/* ── SECTIONS ───────────────────────────────────────────── */
+.section { padding: var(--gap) clamp(24px, 7vw, 80px); }
+
+.eyebrow {
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+}
+.sec-title {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4.5vw, 56px);
+  line-height: 1.05;
+  margin-bottom: clamp(32px, 5vw, 64px);
+}
+.sec-title em { font-style: italic; color: var(--muted); }
+
+/* ── SERVICES ───────────────────────────────────────────── */
+#servicos { background: var(--bg); }
+
+.srv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.srv-card {
+  background: var(--surface);
+  padding: 36px 32px;
+  position: relative; overflow: hidden;
+  transition: background .25s;
+  cursor: default;
+}
+.srv-card:hover { background: var(--accent-subtle); }
+
+.srv-card-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity .4s;
+}
+.srv-card:hover .srv-card-bg { opacity: .12; }
+
+.srv-num { font-family: var(--serif); font-size: 11px; color: var(--accent); margin-bottom: 20px; letter-spacing: .06em; }
+.srv-name { font-family: var(--serif); font-size: 22px; margin-bottom: 10px; }
+.srv-desc { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 24px; }
+.srv-price { display: flex; align-items: baseline; gap: 6px; }
+.srv-from { font-size: 11px; color: var(--muted); }
+.srv-val { font-size: 20px; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+/* ── ABOUT ──────────────────────────────────────────────── */
+#sobre {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--surface);
+  padding: 0;
+}
+.about-img { position: relative; min-height: 520px; overflow: hidden; }
+.about-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.about-txt {
+  padding: clamp(48px, 8vw, 96px) clamp(32px, 6vw, 80px);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.about-txt .sec-title { margin-bottom: 20px; }
+.about-body { font-size: 15px; color: var(--muted); line-height: 1.8; margin-bottom: 40px; }
+
+.stats { display: flex; gap: 36px; }
+.stat-num { font-family: var(--serif); font-size: 36px; color: var(--ink); line-height: 1; }
+.stat-lbl { font-size: 12px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+
+/* ── BOOKING CTA ────────────────────────────────────────── */
+.booking {
+  background: var(--accent);
+  padding: clamp(64px, 10vw, 120px) clamp(24px, 7vw, 80px);
+  text-align: center;
+}
+.booking .eyebrow { color: rgba(255,255,255,.55); }
+.booking-title {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5.5vw, 68px);
+  color: #fff; line-height: 1.05;
+  margin-bottom: 16px;
+}
+.booking-title em { font-style: italic; opacity: .65; }
+.booking-sub { font-size: 15px; color: rgba(255,255,255,.6); margin-bottom: 40px; }
+.btn-white {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 500; letter-spacing: .06em;
+  color: var(--accent);
+  background: #fff;
+  padding: 14px 30px; border-radius: var(--r);
+  transition: opacity .2s;
+}
+.btn-white:hover { opacity: .9; }
+
+/* ── FOOTER ─────────────────────────────────────────────── */
+footer {
+  background: var(--ink); color: rgba(255,255,255,.5);
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 7vw, 80px) 32px;
+}
+.footer-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; gap: 32px; flex-wrap: wrap; }
+.footer-logo .logo-name { color: rgba(255,255,255,.85); }
+.footer-logo .logo-city { color: rgba(255,255,255,.35); }
+.footer-info { font-size: 13px; line-height: 1.9; margin-top: 14px; }
+.footer-links { display: flex; flex-direction: column; gap: 10px; text-align: right; }
+.footer-links a { font-size: 13px; transition: color .2s; }
+.footer-links a:hover { color: rgba(255,255,255,.85); }
+.footer-copy { border-top: 1px solid rgba(255,255,255,.08); padding-top: 24px; font-size: 12px; }
+
+/* ── REVEAL ─────────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s, transform .7s; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  nav a:not(.nav-cta) { display: none; }
+  #sobre { grid-template-columns: 1fr; }
+  .about-img { min-height: 300px; }
+  .stats { gap: 24px; }
+  .footer-links { text-align: left; }
+}
+</style>
 </head>
 <body>
+
+<!-- HEADER -->
 <header id="header">
-  <a href="#" class="logo">
-    <!-- ✅ data-barber="logo" → Saas.js coloca a imagem ou o nome aqui -->
-    <span data-barber="logo">
-      <!-- fallback visível antes do JS carregar -->
-      <span class="logo-main" data-barber="nome"></span>
-      <span class="logo-sub"  data-barber="cidade"></span>
+  <a href="#" class="logo-wrap">
+    <!-- se vier logo-img do banco, o JS troca aqui -->
+    <span data-barber="logo-container">
+      <span class="logo-name" data-barber="nome">Barbearia</span>
+      <span class="logo-city" data-barber="cidade"></span>
     </span>
   </a>
   <nav>
@@ -26,80 +315,116 @@
   </nav>
 </header>
 
+<!-- HERO SLIDER -->
 <div class="hero" id="hero">
   <div class="slides-track" id="slidesTrack">
+
     <div class="slide active">
       <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1621607512022-6aecc4fed814?auto=format&fit=crop&w=1400&q=80')"></div>
+      <div class="slide-overlay"></div>
       <div class="slide-content">
+        <div class="slide-eyebrow">Profissionalismo & Estilo</div>
         <h1 class="slide-title">Corte<br><em>de respeito</em></h1>
-        <p class="slide-desc">Profissionalismo e estilo em cada detalhe. Sua imagem nas mãos certas.</p>
-        <a href="corte.html" class="slide-btn">Agendar agora<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <p class="slide-desc">Sua imagem nas mãos certas. Cada detalhe pensado para você.</p>
+        <a href="corte.html" class="slide-btn">Agendar agora <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </div>
+
     <div class="slide">
       <div class="slide-bg" style="background-image:url('https://images.pexels.com/photos/3998424/pexels-photo-3998424.jpeg')"></div>
+      <div class="slide-overlay"></div>
       <div class="slide-content">
+        <div class="slide-eyebrow">Acabamento premium</div>
         <h1 class="slide-title">Barba<br><em>perfeita</em></h1>
-        <p class="slide-desc">Acabamento premium com técnicas modernas e produtos de qualidade.</p>
-        <a href="corte.html" class="slide-btn">Agendamentos<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <p class="slide-desc">Técnicas modernas e produtos de qualidade para um resultado impecável.</p>
+        <a href="corte.html" class="slide-btn">Ver agendamentos <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </div>
+
     <div class="slide">
       <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&w=1400&q=80')"></div>
+      <div class="slide-overlay"></div>
       <div class="slide-content">
+        <div class="slide-eyebrow">Arte em cada corte</div>
         <h1 class="slide-title">Seu estilo<br><em>começa aqui</em></h1>
-        <p class="slide-desc">Escolha seu visual com quem entende de verdade. Arte em cada corte.</p>
-        <a href="corte.html" class="slide-btn">Começar<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <p class="slide-desc">Escolha seu visual com quem entende de verdade.</p>
+        <a href="corte.html" class="slide-btn">Começar agora <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </div>
+
   </div>
 
   <div class="hero-dots" id="heroDots"></div>
-  <div class="hero-controls">
-    <button class="hero-arrow" id="prevBtn" aria-label="Anterior"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    <button class="hero-arrow" id="nextBtn" aria-label="Próximo"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div class="hero-arrows">
+    <button class="hero-arrow" id="prevBtn" aria-label="Anterior">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="hero-arrow" id="nextBtn" aria-label="Próximo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
   <div class="slide-progress" id="slideProgress"></div>
 </div>
 
-<div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
 
-<section class="services reveal" id="servicos">
-  <div class="sec-eyebrow">O que oferecemos</div>
+<!-- SERVIÇOS -->
+<section class="section reveal" id="servicos">
+  <div class="eyebrow">O que oferecemos</div>
   <h2 class="sec-title">Nossos <em>serviços</em></h2>
   <div class="srv-grid" id="srvGrid">
-    <!-- carregado do banco -->
+    <!-- carregado via JS / API -->
   </div>
 </section>
 
-<section class="about reveal" id="sobre">
+<!-- SOBRE -->
+<section id="sobre" class="reveal">
   <div class="about-img">
-    <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=900&q=80" alt="Barbearia">
+    <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=900&q=80" alt="Interior da barbearia" loading="lazy">
   </div>
   <div class="about-txt">
-    <div class="sec-eyebrow">Nossa história</div>
-    <h2 class="sec-title" style="font-size:clamp(30px,3.5vw,48px);margin-bottom:0;">Mais que um corte,<br><em>uma experiência</em></h2>
-    <p data-barber="sobre">A Gold Line nasceu da paixão pelo ofício e pelo cuidado com o cliente. Aqui cada detalhe importa — da música ambiente ao produto no cabelo. Você sai não só bem cortado, mas bem tratado.</p>
-    <div class="about-stats">
-      <div><div class="astat-num">200+</div><div class="astat-lbl">Clientes</div></div>
-      <div><div class="astat-num">4+</div><div class="astat-lbl">Anos</div></div>
-      <div><div class="astat-num">4.8★</div><div class="astat-lbl">Avaliação</div></div>
+    <div class="eyebrow">Nossa história</div>
+    <h2 class="sec-title">Mais que um corte,<br><em>uma experiência</em></h2>
+    <p class="about-body" data-barber="sobre">Nascida da paixão pelo ofício e pelo cuidado com o cliente. Aqui cada detalhe importa — da música ao produto no cabelo. Você sai não só bem cortado, mas bem tratado.</p>
+    <div class="stats">
+      <div>
+        <div class="stat-num">200+</div>
+        <div class="stat-lbl">Clientes</div>
+      </div>
+      <div>
+        <div class="stat-num">4+</div>
+        <div class="stat-lbl">Anos</div>
+      </div>
+      <div>
+        <div class="stat-num">4.8★</div>
+        <div class="stat-lbl">Avaliação</div>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- BOOKING CTA -->
 <section class="booking reveal">
-  <div class="sec-eyebrow" style="justify-content:center;display:flex;">Pronto?</div>
-  <h2>Agende <em>hoje</em></h2>
-  <p>Sem fila, sem espera. Escolha seu horário em segundos.</p>
-  <a href="corte.html" class="btn-gold">Garantir meu horário<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  <div class="eyebrow">Pronto?</div>
+  <h2 class="booking-title">Agende <em>hoje mesmo</em></h2>
+  <p class="booking-sub">Sem fila, sem espera. Escolha seu horário em segundos.</p>
+  <a href="corte.html" class="btn-white">
+    Garantir meu horário
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
 </section>
 
+<!-- FOOTER -->
 <footer>
   <div class="footer-top">
-    <div>
-      <!-- Logo no footer: imagem ou nome -->
-      <div data-barber="logo" style="margin-bottom:8px;"></div>
+    <div class="footer-logo">
+      <div data-barber="logo-container">
+        <div class="logo-name" data-barber="nome">Barbearia</div>
+        <div class="logo-city" data-barber="cidade"></div>
+      </div>
       <div class="footer-info">
         <span data-barber="cidade">Vitória de Santo Antão — PE</span><br>
         <span data-barber="horario">Seg a Sáb · 9h às 20h</span><br>
@@ -114,20 +439,23 @@
     </div>
   </div>
   <div class="footer-copy">
-    <span>&copy; 2026 Italo Farias — Todos os direitos reservados</span>
+    &copy; 2026 — Todos os direitos reservados
   </div>
 </footer>
 
+<!-- Saas.js carrega os dados do banco e seta --accent, data-barber etc. -->
 <script src="Saas.js" defer></script>
 
 <script>
-/* HEADER SCROLL */
+/* ── HEADER SCROLL ────────────────────────────── */
 const header = document.getElementById('header');
-window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 60));
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 48);
+}, { passive: true });
 
-/* SLIDER */
+/* ── SLIDER ───────────────────────────────────── */
 const track    = document.getElementById('slidesTrack');
-const slides   = document.querySelectorAll('.slide');
+const slides   = Array.from(document.querySelectorAll('.slide'));
 const dotsWrap = document.getElementById('heroDots');
 const progress = document.getElementById('slideProgress');
 const DURATION = 5000;
@@ -136,7 +464,7 @@ let idx = 0, autoTimer;
 slides.forEach((_, i) => {
   const d = document.createElement('div');
   d.className = 'hdot' + (i === 0 ? ' active' : '');
-  d.addEventListener('click', () => goTo(i));
+  d.addEventListener('click', () => { goTo(i); startAuto(); });
   dotsWrap.appendChild(d);
 });
 
@@ -164,85 +492,65 @@ document.getElementById('prevBtn').addEventListener('click', () => { goTo(idx - 
 let sx = 0;
 track.addEventListener('touchstart', e => sx = e.touches[0].clientX, { passive: true });
 track.addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - sx;
-  if (Math.abs(dx) > 50) { goTo(dx < 0 ? idx + 1 : idx - 1); startAuto(); }
+  if (Math.abs(e.changedTouches[0].clientX - sx) > 50) {
+    goTo(e.changedTouches[0].clientX - sx < 0 ? idx + 1 : idx - 1);
+    startAuto();
+  }
 });
 resetProgress(); startAuto();
 
-/* TICKER */
+/* ── TICKER ───────────────────────────────────── */
 const words = ['Corte Masculino', 'Barba', 'Degradê', 'Nevou', 'Infantil', 'Agendamento Online'];
 const tt = document.getElementById('tickerTrack');
 [...words, ...words, ...words, ...words].forEach(w => {
   const s = document.createElement('span');
-  s.className = 'ticker-item'; s.textContent = w;
+  s.className = 'ticker-item';
+  s.textContent = w;
   tt.appendChild(s);
 });
-async function carregarServicosDestaque() {
+
+/* ── SERVIÇOS ─────────────────────────────────── */
+async function carregarServicos() {
   const grid = document.getElementById('srvGrid');
-
   try {
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('b');
-
-    const res = await fetch(`${API}/servicos-destaque?slug=${slug}`);
+    const slug = new URLSearchParams(window.location.search).get('b');
+    const res  = await fetch(`${API}/servicos-destaque?slug=${slug}`);
     const list = await res.json();
 
     if (!Array.isArray(list) || list.length === 0) {
-      grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:20px 0;">Nenhum serviço cadastrado.</p>';
+      grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:32px 0;">Nenhum serviço cadastrado.</p>';
       return;
     }
 
     grid.innerHTML = list.map((s, i) => {
-
-      const imagemValida =
-        s.imagem &&
-        s.imagem !== 'null' &&
-        s.imagem.trim() !== '' &&
-        s.imagem.startsWith('http');
-
-      const bg = imagemValida
-        ? `background-image:url('${s.imagem}');
-        background-size:cover;background-position:center;`
-        : '';
-
+      const hasImg = s.imagem && s.imagem !== 'null' && s.imagem.trim() !== '' && s.imagem.startsWith('http');
       return `
-        <div class="srv-card" style="
-          ${bg}
-          position:relative;overflow:hidden;
-        ">
-          
-          <div style="position:relative;z-index:1;">
-            <div class="srv-num">${String(i + 1).padStart(2, '0')}</div>
-            <h3 class="srv-name">${s.nome}</h3>
-            <p class="srv-desc">${s.descricao || ''}</p>
-            <div class="srv-price">
-              <span class="srv-from">a partir de</span>
-              <span class="srv-val">R$${Number(s.preco).toFixed(2).replace('.', ',')}</span>
-            </div>
+        <div class="srv-card">
+          ${hasImg ? `<div class="srv-card-bg" style="background-image:url('${s.imagem}')"></div>` : ''}
+          <div class="srv-num">${String(i + 1).padStart(2, '0')}</div>
+          <h3 class="srv-name">${s.nome}</h3>
+          <p class="srv-desc">${s.descricao || ''}</p>
+          <div class="srv-price">
+            <span class="srv-from">a partir de</span>
+            <span class="srv-val">R$${Number(s.preco).toFixed(2).replace('.', ',')}</span>
           </div>
-        </div>
-      `;
+        </div>`;
     }).join('');
-
   } catch(e) {
     console.error(e);
-    grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:20px 0;">Erro ao carregar serviços.</p>';
+    grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:32px 0;">Erro ao carregar serviços.</p>';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (typeof API === 'undefined') {
-    console.error('API não carregou');
-    return;
-  }
-
-  carregarServicosDestaque();
+  if (typeof API === 'undefined') { console.warn('Saas.js não carregou'); return; }
+  carregarServicos();
 });
 
-/* SCROLL REVEAL */
+/* ── REVEAL ───────────────────────────────────── */
 const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: .1 });
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: .08 });
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 </script>
 </body>
