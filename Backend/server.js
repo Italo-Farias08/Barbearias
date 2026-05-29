@@ -195,6 +195,11 @@ async function iniciarWhatsAppSlug(slug) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// BOT DE WHATSAPP — substitua este bloco no seu server.js
+// Do comentário "── ESTADO DO BOT POR USUÁRIO" até o fim de processarMensagemBot
+// ═══════════════════════════════════════════════════════════════════════════
+
 // ── ESTADO DO BOT POR USUÁRIO ─────────────────────────────────────────────
 const botEstados = {};
 
@@ -235,7 +240,7 @@ async function getDadosBarbearia(slug) {
   return r.rows[0] || {};
 }
 
-// ── HELPER: busca config de horários para um profissional (individual ou global) ──
+// ── HELPER: busca config de horários para um profissional ─────────────────
 async function getHorariosConfig(slug, profissional_id) {
   const hrProf = await db.query(
     `SELECT ph.dias_semana, ph.pausa_inicio, ph.pausa_fim,
@@ -246,10 +251,7 @@ async function getHorariosConfig(slug, profissional_id) {
      WHERE ph.profissional_id = $1 AND b.slug = $2`,
     [profissional_id, slug]
   );
-
-  if (hrProf.rows.length > 0) {
-    return hrProf.rows[0];
-  }
+  if (hrProf.rows.length > 0) return hrProf.rows[0];
 
   const hrGlobal = await db.query(
     `SELECT dias_semana, hora_inicio, hora_fim, intervalo_minutos, pausa_inicio, pausa_fim
@@ -257,15 +259,169 @@ async function getHorariosConfig(slug, profissional_id) {
      WHERE barbearia_id = (SELECT id FROM barbearias WHERE slug = $1)`,
     [slug]
   );
-
   return hrGlobal.rows[0] || null;
+}
+
+// ── HELPERS DE LINGUAGEM NATURAL ──────────────────────────────────────────
+
+// Remove acentos, pontuação e deixa tudo minúsculo
+function normalizar(str) {
+  return str
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .trim();
+}
+
+// Tenta casar um item da lista pelo número OU pelo nome (parcial ou completo)
+function matchItem(body, lista, campoNome) {
+  const n = normalizar(body);
+
+  // Tenta número
+  const idx = parseInt(body) - 1;
+  if (!isNaN(idx) && idx >= 0 && idx < lista.length) return lista[idx];
+
+  // Nome exato
+  const exato = lista.find(i => normalizar(i[campoNome]) === n);
+  if (exato) return exato;
+
+  // Nome parcial — ex: "joao" bate em "João Silva"
+  const parcial = lista.find(i => {
+    const nome = normalizar(i[campoNome]);
+    return nome.includes(n) || n.includes(nome.split(" ")[0]);
+  });
+  return parcial || null;
+}
+
+// Tenta casar um horário: número da lista, "10h", "10:30", "1030", "10", "20hrs", "20h"
+function matchHorario(body, lista) {
+  const n = normalizar(body); // ex: "20 hrs" → "20 hrs", "10h30" → "10h30"
+
+  // 1) Tenta formato hh:mm explícito no texto original (ex: "14:30")
+  const comDoisPontos = body.match(/(\d{1,2}):(\d{2})/);
+  if (comDoisPontos) {
+    const hh = comDoisPontos[1].padStart(2,"0");
+    const mm = comDoisPontos[2];
+    const candidato = `${hh}:${mm}`;
+    const encontrado = lista.find(h => h === candidato);
+    if (encontrado) return encontrado;
+  }
+
+  // 2) Tenta "NNhMM" ou "NNhNN" — ex: "10h30", "9h00"
+  const comH = n.match(/^(\d{1,2})h(\d{2})$/);
+  if (comH) {
+    const hh = comH[1].padStart(2,"0");
+    const mm = comH[2];
+    const candidato = `${hh}:${mm}`;
+    const encontrado = lista.find(h => h === candidato);
+    if (encontrado) return encontrado;
+  }
+
+  // 3) Extrai só dígitos do texto normalizado — ex: "20 hrs" → "20", "1030" → "1030"
+  const digits = n.replace(/\D/g, "");
+  if (!digits) return null;
+
+  // Evita tratar "20" como índice 19 — só usa como índice se a lista tiver pelo menos
+  // esse número de itens E o valor for pequeno o suficiente pra ser um índice plausível (≤ 30)
+  const comoIdx = parseInt(digits) - 1;
+  if (!isNaN(comoIdx) && comoIdx >= 0 && comoIdx < lista.length && parseInt(digits) <= 30) {
+    // Só usa como índice se o número NÃO parece horário (horários são 0-23)
+    // Números > 23 nunca são hora válida, então aí sim são índices
+    if (parseInt(digits) > 23) return lista[comoIdx];
+  }
+
+  // 4) Interpreta como hora — "20" → 20:00, "1030" → 10:30
+  let hh, mm;
+  if      (digits.length <= 2) { hh = digits;            mm = "00"; }
+  else if (digits.length === 3) { hh = digits[0];         mm = digits.slice(1); }
+  else                          { hh = digits.slice(0,2);  mm = digits.slice(2,4); }
+
+  const horaNum = parseInt(hh);
+  if (horaNum < 0 || horaNum > 23) return null; // hora impossível
+
+  const candidato = `${String(horaNum).padStart(2,"0")}:${mm.padStart(2,"0")}`;
+  const encontrado = lista.find(h => h === candidato);
+  if (encontrado) return encontrado;
+
+  // 5) Se o horário exato não existe, tenta o mais próximo disponível na mesma hora
+  //    Ex: usuário digita "10h" mas só tem "10:30" → sugere null (não adivinha, avisa)
+  return null;
+}
+
+// Tenta casar um dia: número, "hoje", "amanha", "quarta dia 10", "quarta 10", "15", "15/06"
+function matchDia(body, lista) {
+  const n = normalizar(body); // ex: "quarta dia 10" → "quarta dia 10"
+
+  // 1) Índice numérico puro (ex: "3") — só se for número isolado sem letras
+  if (/^\d+$/.test(n)) {
+    const idx = parseInt(n) - 1;
+    if (!isNaN(idx) && idx >= 0 && idx < lista.length) return lista[idx];
+  }
+
+  // 2) "dd/mm" ou "dd-mm" explícito — maior prioridade pois é exato
+  const comBarra = n.match(/(\d{1,2})[\/\-](\d{1,2})/);
+  if (comBarra) {
+    const dd = comBarra[1].padStart(2,"0");
+    const mm = comBarra[2].padStart(2,"0");
+    const encontrado = lista.find(d => d.dataISO.slice(5,7) === mm && d.dataISO.slice(8,10) === dd);
+    if (encontrado) return encontrado;
+  }
+
+  // 3) Dia da semana + número do dia — ex: "quarta 10", "quarta dia 10", "sexta 15"
+  //    Extrai o número que aparece junto com o nome do dia
+  const numNoTexto = n.match(/\b(\d{1,2})\b/);
+  const ddTexto    = numNoTexto ? numNoTexto[1].padStart(2,"0") : null;
+
+  const semanas = [
+    { syns: ["segunda", "seg"],         norm: "segunda" },
+    { syns: ["terca", "terca feira"],   norm: "terca"   },
+    { syns: ["quarta", "qua"],          norm: "quarta"  },
+    { syns: ["quinta", "qui"],          norm: "quinta"  },
+    { syns: ["sexta", "sex"],           norm: "sexta"   },
+    { syns: ["sabado", "sab"],          norm: "sabado"  },
+    { syns: ["domingo", "dom"],         norm: "domingo" },
+  ];
+
+  for (const { syns, norm } of semanas) {
+    const temDiaSemana = syns.some(s => n.includes(s));
+    if (!temDiaSemana) continue;
+
+    // Tem número junto? Filtra pelo dia do mês
+    if (ddTexto) {
+      const comDia = lista.find(d =>
+        syns.some(s => normalizar(d.label).includes(s)) &&
+        d.dataISO.slice(8,10) === ddTexto
+      );
+      if (comDia) return comDia;
+      // Número veio mas não bateu — pode ser que o usuário errou o dia; ignora o número e pega o mais próximo
+    }
+
+    // Sem número: pega o mais próximo (primeiro da lista com esse dia da semana)
+    const maisProximo = lista.find(d => syns.some(s => normalizar(d.label).includes(s)));
+    if (maisProximo) return maisProximo;
+  }
+
+  // 4) Palavras especiais
+  if (["hoje"].includes(n))            return lista.find(d => normalizar(d.label).startsWith("hoje")) || null;
+  if (["amanha", "amanhã"].includes(n)) return lista.find(d => normalizar(d.label).startsWith("amanha")) || null;
+
+  // 5) Só o número do dia do mês — ex: "10" (sem dia da semana)
+  if (ddTexto && !n.replace(/\d/g,"").trim()) {
+    const porDia = lista.find(d => d.dataISO.slice(8,10) === ddTexto);
+    if (porDia) return porDia;
+  }
+
+  // 6) Match direto no label normalizado como fallback
+  return lista.find(d => normalizar(d.label).includes(n)) || null;
 }
 
 // ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
 async function processarMensagemBot(sock, jid, body, slug) {
   const estado = getEstado(slug, jid);
   const agora  = Date.now();
+
   console.log(`[BOT] body="${body}" etapa="${estado.etapa}" diff=${agora - estado.ultimo}ms`);
+
   if (agora - estado.ultimo < 500) {
     console.log(`[DEBOUNCE] bloqueado`);
     return;
@@ -282,11 +438,14 @@ async function processarMensagemBot(sock, jid, body, slug) {
   };
 
   const saudacoes = ["oi", "olá", "ola", "hello", "bom dia", "boa tarde", "boa noite", "menu", "inicio", "início", "ajuda", "help"];
-  const ehSaudacao = saudacoes.some(s => body === s || body.startsWith(s + " "));
+  const bodyNorm  = normalizar(body);
+  const ehSaudacao = saudacoes.some(s => bodyNorm === normalizar(s) || bodyNorm.startsWith(normalizar(s) + " "));
 
-  if (body === "cancelar" || body === "sair" || body === "0") {
+  // Palavras que cancelam em qualquer etapa
+  const ehCancelar = ["cancelar", "sair", "0", "voltar"].includes(bodyNorm);
+  if (ehCancelar) {
     resetarEstado(slug, jid);
-    await enviar(`Tudo bem! Se precisar de algo, é só mandar um "oi" 😊`);
+    await enviar(`Tudo certo! Quando quiser agendar é só mandar um "oi" 😊`);
     return;
   }
 
@@ -321,11 +480,12 @@ async function processarMensagemBot(sock, jid, body, slug) {
 
   // ── ETAPA: NOME ──────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_nome") {
-    if (body.length < 2) {
-      await enviar(`Por favor, me diga seu nome 😊`);
+    if (body.trim().length < 2) {
+      await enviar(`Me diz seu nome pra eu te chamar direitinho 😊`);
       return;
     }
-    estado.nome  = body.split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+
+    estado.nome  = body.trim().split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(" ");
     estado.etapa = "aguardando_profissional";
 
     const profs = await db.query(
@@ -337,36 +497,37 @@ async function processarMensagemBot(sock, jid, body, slug) {
     );
 
     if (profs.rows.length === 0) {
-      await enviar(`Olá, *${estado.nome}*! 😊\n\nNenhum profissional disponível no momento. Tente mais tarde.`);
+      await enviar(`Olá, *${estado.nome}*! 😊\n\nNenhum profissional disponível agora. Tenta de novo mais tarde!`);
       resetarEstado(slug, jid);
       return;
     }
 
     estado._profissionais = profs.rows;
 
-    let txt = `Prazer, *${estado.nome}*! 😊\n\nCom qual profissional você quer ser atendido?\n\n`;
+    let txt = `Prazer, *${estado.nome}*! 😊\n\nCom qual barbeiro você quer ser atendido?\n\n`;
     profs.rows.forEach((p, i) => {
-      txt += `*${i + 1}* — ${p.nome}`;
+      txt += `${i + 1}. ${p.nome}`;
       if (p.especialidade) txt += ` _(${p.especialidade})_`;
       txt += `\n`;
     });
-    txt += `\n_Digite o número da opção._`;
+    txt += `\nPode digitar o nome ou o número 😊`;
     await enviar(txt);
     return;
   }
 
   // ── ETAPA: PROFISSIONAL ──────────────────────────────────────────────
   if (estado.etapa === "aguardando_profissional") {
-    const idx   = parseInt(body) - 1;
-    const lista = estado._profissionais || [];
+    const lista    = estado._profissionais || [];
+    const escolhido = matchItem(body, lista, "nome");
 
-    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
-      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+    if (!escolhido) {
+      const opcoes = lista.map((p, i) => `${i + 1}. ${p.nome}${p.especialidade ? ` (${p.especialidade})` : ""}`).join("\n");
+      await enviar(`Não encontrei esse barbeiro 😅 Pode escolher da lista:\n\n${opcoes}\n\nDigita o nome ou o número.`);
       return;
     }
 
-    estado.profissional_id   = lista[idx].id;
-    estado.profissional_nome = lista[idx].nome;
+    estado.profissional_id   = escolhido.id;
+    estado.profissional_nome = escolhido.nome;
     estado.etapa             = "aguardando_servico";
 
     const servs = await db.query(
@@ -376,41 +537,42 @@ async function processarMensagemBot(sock, jid, body, slug) {
       [slug]
     );
 
-    const rows = servs.rows;
-
-    if (rows.length === 0) {
+    if (servs.rows.length === 0) {
       await enviar(`Nenhum serviço cadastrado no momento. Entre em contato com a barbearia.`);
       resetarEstado(slug, jid);
       return;
     }
 
-    estado._servicos = rows;
+    estado._servicos = servs.rows;
 
-    let txt = `Ótimo! Você escolheu *${estado.profissional_nome}* ✅\n\nQual serviço você deseja?\n\n`;
-    rows.forEach((s, i) => {
+    let txt = `Ótimo! Você escolheu *${estado.profissional_nome}* ✅\n\nQue serviço você quer?\n\n`;
+    servs.rows.forEach((s, i) => {
       const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-      txt += `*${i + 1}* — ${s.nome} — ${preco}\n`;
+      txt += `${i + 1}. ${s.nome} — ${preco}\n`;
     });
-    txt += `\n_Digite o número da opção._`;
+    txt += `\nPode digitar o nome do serviço ou o número 😊`;
     await enviar(txt);
     return;
   }
 
   // ── ETAPA: SERVIÇO ───────────────────────────────────────────────────
   if (estado.etapa === "aguardando_servico") {
-    const idx   = parseInt(body) - 1;
-    const lista = estado._servicos || [];
+    const lista     = estado._servicos || [];
+    const escolhido = matchItem(body, lista, "nome");
 
-    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
-      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+    if (!escolhido) {
+      const opcoes = lista.map((s, i) => {
+        const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        return `${i + 1}. ${s.nome} — ${preco}`;
+      }).join("\n");
+      await enviar(`Não reconheci esse serviço 😅 Pode escolher:\n\n${opcoes}`);
       return;
     }
 
-    estado.servico       = lista[idx].nome;
-    estado.servico_preco = lista[idx].preco;
+    estado.servico       = escolhido.nome;
+    estado.servico_preco = escolhido.preco;
     estado.etapa         = "aguardando_dia";
 
-    // ── Busca config correta: individual do profissional ou global ────
     const hrConfig = await getHorariosConfig(slug, estado.profissional_id);
 
     const DIAS_NOMES = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
@@ -419,10 +581,9 @@ async function processarMensagemBot(sock, jid, body, slug) {
     const diasDisponiveis = [];
 
     for (let i = 0; i <= 13; i++) {
-      const d = new Date(anoHoje, mesHoje, diaHoje + i);
+      const d        = new Date(anoHoje, mesHoje, diaHoje + i);
       const diaSemana = d.getDay();
 
-      // Verifica se o dia está aberto conforme a config (individual ou global)
       if (hrConfig) {
         const diasJSON = typeof hrConfig.dias_semana === "string"
           ? JSON.parse(hrConfig.dias_semana)
@@ -431,7 +592,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
         if (!cfg || !cfg.aberto) continue;
       }
 
-      // Verifica pausa do profissional (folga por data)
       const dataISO = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
       const pausaCheck = await db.query(
         `SELECT id FROM profissional_pausas
@@ -442,8 +602,8 @@ async function processarMensagemBot(sock, jid, body, slug) {
       );
       if (pausaCheck.rows.length > 0) continue;
 
-      const dd   = String(d.getDate()).padStart(2, "0");
-      const mm   = String(d.getMonth() + 1).padStart(2, "0");
+      const dd   = String(d.getDate()).padStart(2,"0");
+      const mm   = String(d.getMonth()+1).padStart(2,"0");
       const aaaa = d.getFullYear();
 
       const label = i === 0
@@ -460,38 +620,37 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     if (diasDisponiveis.length === 0) {
-      await enviar(`Não há dias disponíveis nos próximos 14 dias. Entre em contato com a barbearia.`);
+      await enviar(`Não há dias disponíveis nos próximos 14 dias 😕 Entre em contato com a barbearia.`);
       resetarEstado(slug, jid);
       return;
     }
 
     estado._dias = diasDisponiveis;
+
     let txt2 = `Serviço: *${estado.servico}* ✅\n\nQual dia você prefere?\n\n`;
-    diasDisponiveis.forEach((d, i) => { txt2 += `*${i + 1}* — ${d.label}\n`; });
-    txt2 += `\n_Digite o número do dia._`;
+    diasDisponiveis.forEach((d, i) => { txt2 += `${i + 1}. ${d.label}\n`; });
+    txt2 += `\nPode digitar o dia, como "amanhã", "sexta" ou "15/06" 😊`;
     await enviar(txt2);
     return;
   }
 
   // ── ETAPA: DIA ───────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_dia") {
-    const idx   = parseInt(body) - 1;
-    const lista = estado._dias || [];
+    const lista        = estado._dias || [];
+    const diaEscolhido = matchDia(body, lista);
 
-    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
-      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+    if (!diaEscolhido) {
+      const opcoes = lista.map((d, i) => `${i + 1}. ${d.label}`).join("\n");
+      await enviar(`Não entendi o dia 😅 Pode escolher:\n\n${opcoes}\n\nEx: "amanhã", "sexta", "15/06" ou só o número.`);
       return;
     }
 
-    const diaEscolhido   = lista[idx];
     estado.data          = diaEscolhido.dataISO;
     estado.dataFormatada = diaEscolhido.dataFormatada;
     estado.etapa         = "aguardando_horario";
 
-    // ── Busca config correta: individual do profissional ou global ────
     const hrConfig = await getHorariosConfig(slug, estado.profissional_id);
 
-    // Constrói dataObj a partir do ISO salvo
     const [_a, _m, _d] = estado.data.split("-").map(Number);
     const dataObj   = new Date(_a, _m - 1, _d);
     const diaSemana = dataObj.getDay();
@@ -505,12 +664,11 @@ async function processarMensagemBot(sock, jid, body, slug) {
         : (hrConfig.dias_semana || {});
       const cfg = diasJSON[String(diaSemana)];
 
-      // JSONB tem prioridade; colunas só como último fallback
-      horaInicio = (cfg?.hora_inicio || "").substring(0, 5)
-                || (hrConfig.hora_inicio ? String(hrConfig.hora_inicio).substring(0, 5) : "")
+      horaInicio = (cfg?.hora_inicio || "").substring(0,5)
+                || (hrConfig.hora_inicio ? String(hrConfig.hora_inicio).substring(0,5) : "")
                 || "08:00";
-      horaFim    = (cfg?.hora_fim    || "").substring(0, 5)
-                || (hrConfig.hora_fim   ? String(hrConfig.hora_fim).substring(0, 5) : "")
+      horaFim    = (cfg?.hora_fim    || "").substring(0,5)
+                || (hrConfig.hora_fim   ? String(hrConfig.hora_fim).substring(0,5) : "")
                 || "21:00";
       intervalo  = hrConfig.intervalo_minutos || 30;
       pausaIni   = hrConfig.pausa_inicio || null;
@@ -523,14 +681,13 @@ async function processarMensagemBot(sock, jid, body, slug) {
          AND data = $2 AND profissional_id = $3 AND status = 'pendente'`,
       [slug, estado.data, estado.profissional_id]
     );
-    const ocupadosSet = new Set(ocupados.rows.map(r => r.horario.substring(0, 5)));
+    const ocupadosSet = new Set(ocupados.rows.map(r => r.horario.substring(0,5)));
 
-    const [hIni, mIni] = horaInicio.substring(0, 5).split(":").map(Number);
-    const [hFim, mFim] = horaFim.substring(0, 5).split(":").map(Number);
+    const [hIni, mIni] = horaInicio.substring(0,5).split(":").map(Number);
+    const [hFim, mFim] = horaFim.substring(0,5).split(":").map(Number);
     const inicioMin    = hIni * 60 + mIni;
     const fimMin       = hFim * 60 + mFim;
 
-    // USA BRASÍLIA: verifica se o dia escolhido é hoje
     const agoraBr  = agoraBrasilia();
     const ehHoje   = ehHojeBrasilia(dataObj);
     const agoraMin = ehHoje ? agoraBr.getUTCHours() * 60 + agoraBr.getUTCMinutes() + 30 : 0;
@@ -542,62 +699,67 @@ async function processarMensagemBot(sock, jid, body, slug) {
     for (let t = inicioMin; t < fimMin; t += intervalo) {
       if (t < agoraMin) continue;
       if (pausaIniMin !== null && pausaFimMin !== null && t >= pausaIniMin && t < pausaFimMin) continue;
-      const hh  = String(Math.floor(t / 60)).padStart(2, "0");
-      const mm2 = String(t % 60).padStart(2, "0");
+      const hh  = String(Math.floor(t / 60)).padStart(2,"0");
+      const mm2 = String(t % 60).padStart(2,"0");
       if (!ocupadosSet.has(`${hh}:${mm2}`)) horariosLivres.push(`${hh}:${mm2}`);
     }
 
     if (horariosLivres.length === 0) {
-      await enviar(`Não há horários disponíveis para *${diaEscolhido.label}*. Escolha outro dia.`);
+      await enviar(`Não há horários disponíveis para *${diaEscolhido.label}* 😕 Quer escolher outro dia?`);
       estado.etapa = "aguardando_dia";
       return;
     }
 
     estado._horarios = horariosLivres;
+
     let txt = `Dia: *${diaEscolhido.label}* ✅\n\nHorários disponíveis:\n\n`;
-    horariosLivres.forEach((h, i) => { txt += `*${i + 1}* — ${h}\n`; });
-    txt += `\n_Digite o número do horário desejado._`;
+    horariosLivres.forEach((h, i) => { txt += `${i + 1}. ${h}\n`; });
+    txt += `\nPode digitar o horário (ex: "10h", "14:30") ou o número 😊`;
     await enviar(txt);
     return;
   }
 
   // ── ETAPA: HORÁRIO ───────────────────────────────────────────────────
   if (estado.etapa === "aguardando_horario") {
-    const idx   = parseInt(body) - 1;
-    const lista = estado._horarios || [];
+    const lista           = estado._horarios || [];
+    const horarioEscolhido = matchHorario(body, lista);
 
-    if (isNaN(idx) || idx < 0 || idx >= lista.length) {
-      await enviar(`Digite um número entre 1 e ${lista.length}.`);
+    if (!horarioEscolhido) {
+      const opcoes = lista.map((h, i) => `${i + 1}. ${h}`).join("\n");
+      await enviar(`Esse horário não está disponível 😅\n\n${opcoes}\n\nDigita o horário (ex: "10h", "14:30") ou o número.`);
       return;
     }
 
-    estado.horario = lista[idx];
+    estado.horario = horarioEscolhido;
     estado.etapa   = "aguardando_confirmacao";
 
     const preco = Number(estado.servico_preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
     await enviar(
-      `Confira seu agendamento:\n\n` +
+      `Confere aí o seu agendamento:\n\n` +
       `👤 *Nome:* ${estado.nome}\n` +
-      `✂️ *Profissional:* ${estado.profissional_nome}\n` +
+      `✂️ *Barbeiro:* ${estado.profissional_nome}\n` +
       `💈 *Serviço:* ${estado.servico} — ${preco}\n` +
       `📅 *Data:* ${estado.dataFormatada}\n` +
       `🕐 *Horário:* ${estado.horario}\n\n` +
-      `Digite *1* para *confirmar* ou *2* para *cancelar*.`
+      `Confirma? Manda *sim* pra confirmar ou *não* pra cancelar 😊`
     );
     return;
   }
 
   // ── ETAPA: CONFIRMAÇÃO ───────────────────────────────────────────────
   if (estado.etapa === "aguardando_confirmacao") {
-    if (body === "2" || body === "cancelar" || body === "nao" || body === "não") {
+    const confirmar = ["1","sim","s","confirmar","ok","pode","fechou","beleza","isso","claro","certo"].includes(bodyNorm);
+    const recusar   = ["2","nao","n","cancelar","nope","negativo","nã"].includes(bodyNorm);
+
+    if (recusar) {
       resetarEstado(slug, jid);
-      await enviar(`Agendamento cancelado. Mande "oi" para tentar novamente 😊`);
+      await enviar(`Tudo bem! Se quiser reagendar é só mandar um "oi" 😊`);
       return;
     }
 
-    if (body !== "1" && body !== "sim" && body !== "confirmar" && body !== "ok") {
-      await enviar(`Digite *1* para confirmar ou *2* para cancelar.`);
+    if (!confirmar) {
+      await enviar(`Manda *sim* pra confirmar ou *não* pra cancelar 😊`);
       return;
     }
 
@@ -614,7 +776,7 @@ async function processarMensagemBot(sock, jid, body, slug) {
       );
 
       if (conflito.rows.length > 0) {
-        await enviar(`Esse horário acabou de ser reservado! Mande "oi" para escolher outro horário.`);
+        await enviar(`Esse horário acabou de ser reservado por outra pessoa 😅 Manda "oi" pra escolher outro horário.`);
         resetarEstado(slug, jid);
         return;
       }
@@ -633,19 +795,19 @@ async function processarMensagemBot(sock, jid, body, slug) {
         `✂️ ${estado.profissional_nome}\n` +
         `💈 ${estado.servico}\n` +
         `📅 ${estado.dataFormatada} às ${estado.horario}\n\n` +
-        `Te esperamos! 😊`
+        `Te esperamos! Qualquer dúvida é só chamar 😊`
       );
 
       resetarEstado(slug, jid);
     } catch (err) {
       console.error(`Erro ao salvar agendamento bot (${slug}):`, err.message);
-      await enviar(`Erro ao confirmar agendamento. Tente novamente ou entre em contato conosco.`);
+      await enviar(`Deu um erro aqui 😕 Tenta de novo ou entra em contato com a gente.`);
       resetarEstado(slug, jid);
     }
     return;
   }
 
-  await enviar(`Não entendi 😅 Mande *"oi"* para começar o agendamento ou *"cancelar"* para sair.`);
+  await enviar(`Não entendi 😅 Manda *"oi"* pra começar o agendamento ou *"cancelar"* pra sair.`);
 }
 
 // ── RECONECTAR SESSÕES SALVAS ─────────────────────────────────────────────
