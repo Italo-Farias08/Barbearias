@@ -814,63 +814,60 @@ async function carregarAgendamentos() {
 
 // Substitua o bloco que cria btnC, btnX e btnLembrete por este:
 
-      const btnC = document.createElement('button');
-      btnC.className = 'btn-concluir';
-      btnC.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Concluir';
-      btnC.addEventListener('click', async () => {
-        btnC.disabled = true; btnX.disabled = true; btnFalta.disabled = true;
-        try {
-          const r = await fetch(`${API}/agendamentos/concluir/${item.id}`, {method:'PUT'});
-          if (!r.ok) throw new Error();
-          toast('✓ Agendamento concluído!');
-          carregarAgendamentos();
-        } catch {
-          toast('Erro ao concluir','#e05050');
-          btnC.disabled = false; btnX.disabled = false; btnFalta.disabled = false;
-        }
-      });
+        const btnC = document.createElement('button');
+btnC.className = 'btn-concluir';
+btnC.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Concluir';
+btnC.addEventListener('click', async () => {
+  btnC.disabled = true; btnX.disabled = true;
+  try {
+    const r = await fetch(`${API}/agendamentos/concluir/${item.id}`, {method:'PUT'});
+    if (!r.ok) throw new Error();
+    toast('✓ Agendamento concluído!');
+    carregarAgendamentos();
+  } catch (e) {
+    toast('Erro ao concluir','#e05050');
+    btnC.disabled = false; btnX.disabled = false;
+  }
+});                  // ← só UM fechamento aqui
 
-      const btnX = document.createElement('button');
-      btnX.className = 'btn-cancelar';
-      btnX.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Cancelar';
-      btnX.addEventListener('click', async () => {
-        btnC.disabled = true; btnX.disabled = true; btnFalta.disabled = true;
-        try {
-          const r = await fetch(`${API}/agendamentos/${item.id}`, {method:'DELETE'});
-          if (!r.ok) throw new Error();
-          toast('Agendamento cancelado','#e05050');
-          carregarAgendamentos();
-        } catch {
-          toast('Erro ao cancelar','#e05050');
-          btnC.disabled = false; btnX.disabled = false; btnFalta.disabled = false;
-        }
-      });
+const btnX = document.createElement('button');
+btnX.className = 'btn-cancelar';
+btnX.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Cancelar';
+btnX.addEventListener('click', async () => {
+  btnC.disabled = true; btnX.disabled = true;
+  try {
+    const r = await fetch(`${API}/agendamentos/${item.id}`, {method:'DELETE'});
+    if (!r.ok) throw new Error();
+    toast('Agendamento cancelado', '#e05050');
+    carregarAgendamentos();
+  } catch (e) {
+    toast('Erro ao cancelar','#e05050');
+    btnC.disabled = false; btnX.disabled = false;
+  }
+});
 
+const btnLembrete = document.createElement('button');
+btnLembrete.className = 'btn-lembrete';
+btnLembrete.innerHTML = '📲 Lembrar';
+btnLembrete.addEventListener('click', () => {
+  let telefone = (item.telefone||'').replace(/\D/g,'');
+  if (!telefone) { toast('Cliente sem telefone','#e05050'); return; }
+  if (!telefone.startsWith('55')) telefone = '55' + telefone;
+  const mensagem = `CONFIRMAÇÃO DE HORÁRIO\n\nOlá, ${item.nome}.\n\nSeu atendimento na barbearia está agendado para:\n\nData: ${dataFmt}\nHorário: ${horario}\nProfissional: ${nomeProfissional}\n\nTrabalhamos com horários organizados, então pedimos pontualidade.\n\nEm caso de imprevisto, entre em contato.\n\nSerá um prazer atendê-lo.`;
+  window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+});
 
-      // ─────────────────────────────────────────────────────────────────
+actions.appendChild(btnLembrete);
+    actions.appendChild(btnC);
+    actions.appendChild(btnX);
+    card.appendChild(info);
+    card.appendChild(valor);
+    card.appendChild(actions);
+    lista.appendChild(card);
 
-      const btnLembrete = document.createElement('button');
-      btnLembrete.className = 'btn-lembrete';
-      btnLembrete.innerHTML = '📲 Lembrar';
-      btnLembrete.addEventListener('click', () => {
-        let telefone = (item.telefone||'').replace(/\D/g,'');
-        if (!telefone) { toast('Cliente sem telefone','#e05050'); return; }
-        if (!telefone.startsWith('55')) telefone = '55' + telefone;
-        const mensagem = `CONFIRMAÇÃO DE HORÁRIO\n\nOlá, ${item.nome}.\n\nSeu atendimento na barbearia está agendado para:\n\nData: ${dataFmt}\nHorário: ${horario}\nProfissional: ${nomeProfissional}\n\nTrabalhamos com horários organizados, então pedimos pontualidade.\n\nEm caso de imprevisto, entre em contato.\n\nSerá um prazer atendê-lo.`;
-        window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
-      });
+  });               // ← fecha o forEach (ou o loop dos agendamentos)
 
-
-      actions.appendChild(btnLembrete);
-      actions.appendChild(btnC);
-      actions.appendChild(btnX);
-      card.appendChild(info);
-      card.appendChild(valor);
-      card.appendChild(actions);
-      lista.appendChild(card);
-    });
-
-  } catch(err) {
+  } catch(err) {    // ← agora o catch tem o } que fecha o try lá do início
     console.error('Erro geral:', err);
     lista.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar agendamentos</div></div>`;
   }
