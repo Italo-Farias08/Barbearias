@@ -845,6 +845,29 @@ async function carregarAgendamentos() {
           btnC.disabled = false; btnX.disabled = false; btnFalta.disabled = false;
         }
       });
+
+      // ── NOVO: botão Falta ──────────────────────────────────────────────
+      const btnFalta = document.createElement('button');
+      btnFalta.className = 'btn-cancelar';
+      btnFalta.style.cssText = 'background:transparent;color:#c9a84c;border-color:rgba(201,168,76,.35);';
+      btnFalta.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M6 2v5M6 9v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg> Falta`;
+      btnFalta.addEventListener('click', async () => {
+        if (!confirm(`Confirmar falta de ${item.nome}?`)) return;
+        btnC.disabled = true; btnX.disabled = true; btnFalta.disabled = true;
+        try {
+          const r = await fetch(`${API}/agendamentos/falta/${item.id}`, {method:'PUT'});
+          const json = await r.json();
+          if (!r.ok || json.erro) throw new Error(json.erro || 'Erro');
+          toast('⚠️ Falta registrada', '#c9a84c');
+          carregarAgendamentos();
+        } catch(e) {
+          toast(e.message || 'Erro ao registrar falta','#e05050');
+          btnC.disabled = false; btnX.disabled = false; btnFalta.disabled = false;
+        }
+      });
       // ─────────────────────────────────────────────────────────────────
 
       const btnLembrete = document.createElement('button');
