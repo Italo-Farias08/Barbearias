@@ -857,7 +857,7 @@ async function verificarAutoConcluir() {
       const [ano, mes, dia] = dataStr.split("-").map(Number);
       const [hora, min]     = ag.horario.substring(0, 5).split(":").map(Number);
 
-      const agendamentoMs = new Date(ano, mes - 1, dia, hora, min, 0).getTime();
+      const agendamentoMs = Date.UTC(ano, mes - 1, dia, hora + 3, min, 0);
       const agoraMs       = agora.getTime() + 3 * 60 * 60 * 1000;
       const diffMin       = (agoraMs - agendamentoMs) / 60000;
 
