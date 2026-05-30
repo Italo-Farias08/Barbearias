@@ -365,9 +365,9 @@ async function carregarProfissionais(){
     });
 
     if(disponiveis.length === 1){
-      const unico = wrap.querySelector('.prof-card:not(.indisponivel)');
-      if(unico) selecionarProfissional(unico, disponiveis[0]);
-    }
+  const unico = wrap.querySelector('.prof-card:not(.indisponivel)');
+  if(unico) await selecionarProfissional(unico, disponiveis[0]);
+}
 
     if(disponiveis.length === 0){
       const aviso = document.createElement('div');
@@ -739,9 +739,11 @@ inputTel.addEventListener('keydown',  e =>{ if(e.key==='Enter') confirmarBtn.cli
    2. Carrega profissionais (se só 1, já seleciona e busca horários individuais)
    3. Gera o calendário
 ── */
-carregarHorarios()
-  .then(()=> carregarProfissionais())
-  .then(()=> gerarProximosDias(14));
+(async () => {
+  await carregarHorarios();
+  await carregarProfissionais();
+  gerarProximosDias(14);
+})();
 </script>
 </body>
 </html>
