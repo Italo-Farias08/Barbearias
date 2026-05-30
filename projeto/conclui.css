@@ -270,6 +270,65 @@ header{
 .progress-bar{height:2px;background:var(--border-dim);}
 .progress-fill{height:100%;background:var(--red);width:0%;transition:width .2s linear;}
 .progress-txt{font-size:10px;letter-spacing:.2em;color:var(--muted);margin-top:8px;text-align:center;}
+/* BOTÕES DE AÇÃO DO CARD */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  grid-column: 1 / -1;
+}
+
+.btn-cancelar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(224,80,80,.35);
+  color: #e05050;
+  font-family: 'Barlow', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .3s;
+}
+.btn-cancelar:hover {
+  background: #e05050;
+  color: #fff;
+  border-color: #e05050;
+}
+.btn-cancelar:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.btn-concluir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(0,212,11,.3);
+  color: var(--green);
+  font-family: 'Barlow', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .3s;
+}
+.btn-concluir:hover {
+  background: var(--green);
+  color: #000;
+  border-color: var(--green);
+}
+.btn-concluir:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
 
 /* TOAST */
 .toast{
