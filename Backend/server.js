@@ -16,9 +16,7 @@ app.use(express.json({ limit: "10kb" }));
 const rateLimit = require("express-rate-limit");
 const helmet    = require("helmet");
 
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 
 app.use(rateLimit({
   windowMs: 60 * 1000,
@@ -67,9 +65,9 @@ function agoraBrasilia() {
 function hojePartesBrasilia() {
   const d = agoraBrasilia();
   return {
-    ano: d.getUTCFullYear(),
-    mes: d.getUTCMonth(),
-    dia: d.getUTCDate(),
+    ano:      d.getUTCFullYear(),
+    mes:      d.getUTCMonth(),
+    dia:      d.getUTCDate(),
     diaSemana: d.getUTCDay()
   };
 }
@@ -130,14 +128,12 @@ async function iniciarWhatsAppSlug(slug) {
         sessao.status   = "aguardando_qr";
         console.log(`📱 QR gerado para: ${slug}`);
       }
-
       if (connection === "open") {
         sessao.conectado = true;
         sessao.status    = "conectado";
         sessao.qrBase64  = null;
         console.log(`✅ WhatsApp conectado: ${slug}`);
       }
-
       if (connection === "close") {
         sessao.conectado = false;
         const codigo         = lastDisconnect?.error?.output?.statusCode;
@@ -158,10 +154,8 @@ async function iniciarWhatsAppSlug(slug) {
 
     sock.ev.on("creds.update", saveCreds);
 
-    // ── BOT DE ATENDIMENTO ──────────────────────────────────────────────
     sock.ev.on("messages.upsert", async ({ messages, type }) => {
       if (type !== "notify") return;
-
       for (const msg of messages) {
         if (msg.key.fromMe)                           continue;
         if (msg.key.remoteJid?.endsWith("@g.us"))    continue;
@@ -195,11 +189,6 @@ async function iniciarWhatsAppSlug(slug) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BOT DE WHATSAPP — substitua este bloco no seu server.js
-// Do comentário "── ESTADO DO BOT POR USUÁRIO" até o fim de processarMensagemBot
-// ═══════════════════════════════════════════════════════════════════════════
-
 // ── ESTADO DO BOT POR USUÁRIO ─────────────────────────────────────────────
 const botEstados = {};
 
@@ -211,7 +200,7 @@ function getEstado(slug, jid) {
 
 function resetarEstado(slug, jid) {
   const e = botEstados[slug][jid];
-  e.etapa = "inicio";
+  e.etapa  = "inicio";
   e.ultimo = 0;
   Object.keys(e).forEach(k => {
     if (k !== "etapa" && k !== "ultimo") delete e[k];
@@ -223,9 +212,7 @@ setInterval(() => {
   for (const slug in botEstados) {
     for (const jid in botEstados[slug]) {
       const estado = botEstados[slug][jid];
-      if (agora - estado.ultimo > 30 * 60 * 1000) {
-        resetarEstado(slug, jid);
-      }
+      if (agora - estado.ultimo > 30 * 60 * 1000) resetarEstado(slug, jid);
     }
   }
 }, 10 * 60 * 1000);
@@ -240,7 +227,7 @@ async function getDadosBarbearia(slug) {
   return r.rows[0] || {};
 }
 
-// ── HELPER: busca config de horários para um profissional ─────────────────
+// ── HELPER: config de horários (individual ou global) ─────────────────────
 async function getHorariosConfig(slug, profissional_id) {
   const hrProf = await db.query(
     `SELECT ph.dias_semana, ph.pausa_inicio, ph.pausa_fim,
@@ -263,8 +250,6 @@ async function getHorariosConfig(slug, profissional_id) {
 }
 
 // ── HELPERS DE LINGUAGEM NATURAL ──────────────────────────────────────────
-
-// Remove acentos, pontuação e deixa tudo minúsculo
 function normalizar(str) {
   return str
     .toLowerCase()
@@ -273,19 +258,14 @@ function normalizar(str) {
     .trim();
 }
 
-// Tenta casar um item da lista pelo número OU pelo nome (parcial ou completo)
 function matchItem(body, lista, campoNome) {
-  const n = normalizar(body);
-
-  // Tenta número
+  const n   = normalizar(body);
   const idx = parseInt(body) - 1;
   if (!isNaN(idx) && idx >= 0 && idx < lista.length) return lista[idx];
 
-  // Nome exato
   const exato = lista.find(i => normalizar(i[campoNome]) === n);
   if (exato) return exato;
 
-  // Nome parcial — ex: "joao" bate em "João Silva"
   const parcial = lista.find(i => {
     const nome = normalizar(i[campoNome]);
     return nome.includes(n) || n.includes(nome.split(" ")[0]);
@@ -293,125 +273,96 @@ function matchItem(body, lista, campoNome) {
   return parcial || null;
 }
 
-// Tenta casar um horário: número da lista, "10h", "10:30", "1030", "10", "20hrs", "20h"
 function matchHorario(body, lista) {
-  const n = normalizar(body); // ex: "20 hrs" → "20 hrs", "10h30" → "10h30"
+  const n = normalizar(body);
 
-  // 1) Tenta formato hh:mm explícito no texto original (ex: "14:30")
   const comDoisPontos = body.match(/(\d{1,2}):(\d{2})/);
   if (comDoisPontos) {
-    const hh = comDoisPontos[1].padStart(2,"0");
-    const mm = comDoisPontos[2];
-    const candidato = `${hh}:${mm}`;
-    const encontrado = lista.find(h => h === candidato);
-    if (encontrado) return encontrado;
+    const candidato = `${comDoisPontos[1].padStart(2,"0")}:${comDoisPontos[2]}`;
+    const found = lista.find(h => h === candidato);
+    if (found) return found;
   }
 
-  // 2) Tenta "NNhMM" ou "NNhNN" — ex: "10h30", "9h00"
   const comH = n.match(/^(\d{1,2})h(\d{2})$/);
   if (comH) {
-    const hh = comH[1].padStart(2,"0");
-    const mm = comH[2];
-    const candidato = `${hh}:${mm}`;
-    const encontrado = lista.find(h => h === candidato);
-    if (encontrado) return encontrado;
+    const candidato = `${comH[1].padStart(2,"0")}:${comH[2]}`;
+    const found = lista.find(h => h === candidato);
+    if (found) return found;
   }
 
-  // 3) Extrai só dígitos do texto normalizado — ex: "20 hrs" → "20", "1030" → "1030"
   const digits = n.replace(/\D/g, "");
   if (!digits) return null;
 
-  // Evita tratar "20" como índice 19 — só usa como índice se a lista tiver pelo menos
-  // esse número de itens E o valor for pequeno o suficiente pra ser um índice plausível (≤ 30)
   const comoIdx = parseInt(digits) - 1;
   if (!isNaN(comoIdx) && comoIdx >= 0 && comoIdx < lista.length && parseInt(digits) <= 30) {
-    // Só usa como índice se o número NÃO parece horário (horários são 0-23)
-    // Números > 23 nunca são hora válida, então aí sim são índices
     if (parseInt(digits) > 23) return lista[comoIdx];
   }
 
-  // 4) Interpreta como hora — "20" → 20:00, "1030" → 10:30
   let hh, mm;
-  if      (digits.length <= 2) { hh = digits;            mm = "00"; }
-  else if (digits.length === 3) { hh = digits[0];         mm = digits.slice(1); }
-  else                          { hh = digits.slice(0,2);  mm = digits.slice(2,4); }
+  if      (digits.length <= 2) { hh = digits;             mm = "00"; }
+  else if (digits.length === 3) { hh = digits[0];          mm = digits.slice(1); }
+  else                          { hh = digits.slice(0, 2); mm = digits.slice(2, 4); }
 
   const horaNum = parseInt(hh);
-  if (horaNum < 0 || horaNum > 23) return null; // hora impossível
+  if (horaNum < 0 || horaNum > 23) return null;
 
   const candidato = `${String(horaNum).padStart(2,"0")}:${mm.padStart(2,"0")}`;
-  const encontrado = lista.find(h => h === candidato);
-  if (encontrado) return encontrado;
-
-  // 5) Se o horário exato não existe, tenta o mais próximo disponível na mesma hora
-  //    Ex: usuário digita "10h" mas só tem "10:30" → sugere null (não adivinha, avisa)
-  return null;
+  return lista.find(h => h === candidato) || null;
 }
 
-// Tenta casar um dia: número, "hoje", "amanha", "quarta dia 10", "quarta 10", "15", "15/06"
 function matchDia(body, lista) {
-  const n = normalizar(body); // ex: "quarta dia 10" → "quarta dia 10"
+  const n = normalizar(body);
 
-  // 1) Índice numérico puro (ex: "3") — só se for número isolado sem letras
   if (/^\d+$/.test(n)) {
     const idx = parseInt(n) - 1;
     if (!isNaN(idx) && idx >= 0 && idx < lista.length) return lista[idx];
   }
 
-  // 2) "dd/mm" ou "dd-mm" explícito — maior prioridade pois é exato
   const comBarra = n.match(/(\d{1,2})[\/\-](\d{1,2})/);
   if (comBarra) {
     const dd = comBarra[1].padStart(2,"0");
     const mm = comBarra[2].padStart(2,"0");
-    const encontrado = lista.find(d => d.dataISO.slice(5,7) === mm && d.dataISO.slice(8,10) === dd);
-    if (encontrado) return encontrado;
+    const found = lista.find(d => d.dataISO.slice(5,7) === mm && d.dataISO.slice(8,10) === dd);
+    if (found) return found;
   }
 
-  // 3) Dia da semana + número do dia — ex: "quarta 10", "quarta dia 10", "sexta 15"
-  //    Extrai o número que aparece junto com o nome do dia
   const numNoTexto = n.match(/\b(\d{1,2})\b/);
   const ddTexto    = numNoTexto ? numNoTexto[1].padStart(2,"0") : null;
 
   const semanas = [
-    { syns: ["segunda", "seg"],         norm: "segunda" },
-    { syns: ["terca", "terca feira"],   norm: "terca"   },
-    { syns: ["quarta", "qua"],          norm: "quarta"  },
-    { syns: ["quinta", "qui"],          norm: "quinta"  },
-    { syns: ["sexta", "sex"],           norm: "sexta"   },
-    { syns: ["sabado", "sab"],          norm: "sabado"  },
-    { syns: ["domingo", "dom"],         norm: "domingo" },
+    { syns: ["segunda", "seg"]       },
+    { syns: ["terca", "terca feira"] },
+    { syns: ["quarta", "qua"]        },
+    { syns: ["quinta", "qui"]        },
+    { syns: ["sexta", "sex"]         },
+    { syns: ["sabado", "sab"]        },
+    { syns: ["domingo", "dom"]       },
   ];
 
-  for (const { syns, norm } of semanas) {
+  for (const { syns } of semanas) {
     const temDiaSemana = syns.some(s => n.includes(s));
     if (!temDiaSemana) continue;
 
-    // Tem número junto? Filtra pelo dia do mês
     if (ddTexto) {
       const comDia = lista.find(d =>
         syns.some(s => normalizar(d.label).includes(s)) &&
         d.dataISO.slice(8,10) === ddTexto
       );
       if (comDia) return comDia;
-      // Número veio mas não bateu — pode ser que o usuário errou o dia; ignora o número e pega o mais próximo
     }
 
-    // Sem número: pega o mais próximo (primeiro da lista com esse dia da semana)
     const maisProximo = lista.find(d => syns.some(s => normalizar(d.label).includes(s)));
     if (maisProximo) return maisProximo;
   }
 
-  // 4) Palavras especiais
-  if (["hoje"].includes(n))            return lista.find(d => normalizar(d.label).startsWith("hoje")) || null;
-  if (["amanha", "amanhã"].includes(n)) return lista.find(d => normalizar(d.label).startsWith("amanha")) || null;
+  if (["hoje"].includes(n))             return lista.find(d => normalizar(d.label).startsWith("hoje")) || null;
+  if (["amanha","amanhã"].includes(n))  return lista.find(d => normalizar(d.label).startsWith("amanha")) || null;
 
-  // 5) Só o número do dia do mês — ex: "10" (sem dia da semana)
   if (ddTexto && !n.replace(/\d/g,"").trim()) {
     const porDia = lista.find(d => d.dataISO.slice(8,10) === ddTexto);
     if (porDia) return porDia;
   }
 
-  // 6) Match direto no label normalizado como fallback
   return lista.find(d => normalizar(d.label).includes(n)) || null;
 }
 
@@ -437,19 +388,18 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
   };
 
-  const saudacoes = ["oi", "olá", "ola", "hello", "bom dia", "boa tarde", "boa noite", "menu", "inicio", "início", "ajuda", "help"];
-  const bodyNorm  = normalizar(body);
+  const saudacoes  = ["oi","olá","ola","hello","bom dia","boa tarde","boa noite","menu","inicio","início","ajuda","help"];
+  const bodyNorm   = normalizar(body);
   const ehSaudacao = saudacoes.some(s => bodyNorm === normalizar(s) || bodyNorm.startsWith(normalizar(s) + " "));
+  const ehCancelar = ["cancelar","sair","0","voltar"].includes(bodyNorm);
 
-  // Palavras que cancelam em qualquer etapa
-  const ehCancelar = ["cancelar", "sair", "0", "voltar"].includes(bodyNorm);
   if (ehCancelar) {
     resetarEstado(slug, jid);
     await enviar(`Tudo certo! Quando quiser agendar é só mandar um "oi" 😊`);
     return;
   }
 
-  // ── ETAPA: INICIO ────────────────────────────────────────────────────
+  // ── INICIO ────────────────────────────────────────────────────────────
   if (estado.etapa === "inicio") {
     estado.etapa = "aguardando_nome";
     const barb = await getDadosBarbearia(slug);
@@ -463,7 +413,7 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── MENU/SAUDAÇÃO EM QUALQUER ETAPA ─────────────────────────────────
+  // ── SAUDAÇÃO EM QUALQUER ETAPA ────────────────────────────────────────
   if (ehSaudacao && estado.etapa !== "aguardando_nome") {
     resetarEstado(slug, jid);
     estado.etapa = "aguardando_nome";
@@ -478,13 +428,12 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── ETAPA: NOME ──────────────────────────────────────────────────────
+  // ── NOME ──────────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_nome") {
     if (body.trim().length < 2) {
       await enviar(`Me diz seu nome pra eu te chamar direitinho 😊`);
       return;
     }
-
     estado.nome  = body.trim().split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(" ");
     estado.etapa = "aguardando_profissional";
 
@@ -503,7 +452,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._profissionais = profs.rows;
-
     let txt = `Prazer, *${estado.nome}*! 😊\n\nCom qual barbeiro você quer ser atendido?\n\n`;
     profs.rows.forEach((p, i) => {
       txt += `${i + 1}. ${p.nome}`;
@@ -515,9 +463,9 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── ETAPA: PROFISSIONAL ──────────────────────────────────────────────
+  // ── PROFISSIONAL ──────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_profissional") {
-    const lista    = estado._profissionais || [];
+    const lista     = estado._profissionais || [];
     const escolhido = matchItem(body, lista, "nome");
 
     if (!escolhido) {
@@ -544,7 +492,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._servicos = servs.rows;
-
     let txt = `Ótimo! Você escolheu *${estado.profissional_nome}* ✅\n\nQue serviço você quer?\n\n`;
     servs.rows.forEach((s, i) => {
       const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -555,7 +502,7 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── ETAPA: SERVIÇO ───────────────────────────────────────────────────
+  // ── SERVIÇO ───────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_servico") {
     const lista     = estado._servicos || [];
     const escolhido = matchItem(body, lista, "nome");
@@ -574,14 +521,12 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.etapa         = "aguardando_dia";
 
     const hrConfig = await getHorariosConfig(slug, estado.profissional_id);
-
     const DIAS_NOMES = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
     const { ano: anoHoje, mes: mesHoje, dia: diaHoje } = hojePartesBrasilia();
-
     const diasDisponiveis = [];
 
     for (let i = 0; i <= 13; i++) {
-      const d        = new Date(anoHoje, mesHoje, diaHoje + i);
+      const d         = new Date(anoHoje, mesHoje, diaHoje + i);
       const diaSemana = d.getDay();
 
       if (hrConfig) {
@@ -626,7 +571,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._dias = diasDisponiveis;
-
     let txt2 = `Serviço: *${estado.servico}* ✅\n\nQual dia você prefere?\n\n`;
     diasDisponiveis.forEach((d, i) => { txt2 += `${i + 1}. ${d.label}\n`; });
     txt2 += `\nPode digitar o dia, como "amanhã", "sexta" ou "15/06" 😊`;
@@ -634,7 +578,7 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── ETAPA: DIA ───────────────────────────────────────────────────────
+  // ── DIA ───────────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_dia") {
     const lista        = estado._dias || [];
     const diaEscolhido = matchDia(body, lista);
@@ -650,7 +594,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.etapa         = "aguardando_horario";
 
     const hrConfig = await getHorariosConfig(slug, estado.profissional_id);
-
     const [_a, _m, _d] = estado.data.split("-").map(Number);
     const dataObj   = new Date(_a, _m - 1, _d);
     const diaSemana = dataObj.getDay();
@@ -711,7 +654,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._horarios = horariosLivres;
-
     let txt = `Dia: *${diaEscolhido.label}* ✅\n\nHorários disponíveis:\n\n`;
     horariosLivres.forEach((h, i) => { txt += `${i + 1}. ${h}\n`; });
     txt += `\nPode digitar o horário (ex: "10h", "14:30") ou o número 😊`;
@@ -719,9 +661,9 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── ETAPA: HORÁRIO ───────────────────────────────────────────────────
+  // ── HORÁRIO ───────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_horario") {
-    const lista           = estado._horarios || [];
+    const lista            = estado._horarios || [];
     const horarioEscolhido = matchHorario(body, lista);
 
     if (!horarioEscolhido) {
@@ -734,7 +676,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.etapa   = "aguardando_confirmacao";
 
     const preco = Number(estado.servico_preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
     await enviar(
       `Confere aí o seu agendamento:\n\n` +
       `👤 *Nome:* ${estado.nome}\n` +
@@ -747,7 +688,7 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── ETAPA: CONFIRMAÇÃO ───────────────────────────────────────────────
+  // ── CONFIRMAÇÃO ───────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_confirmacao") {
     const confirmar = ["1","sim","s","confirmar","ok","pode","fechou","beleza","isso","claro","certo"].includes(bodyNorm);
     const recusar   = ["2","nao","n","cancelar","nope","negativo","nã"].includes(bodyNorm);
@@ -797,7 +738,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
         `📅 ${estado.dataFormatada} às ${estado.horario}\n\n` +
         `Te esperamos! Qualquer dúvida é só chamar 😊`
       );
-
       resetarEstado(slug, jid);
     } catch (err) {
       console.error(`Erro ao salvar agendamento bot (${slug}):`, err.message);
@@ -896,6 +836,50 @@ async function verificarLembretes() {
 setInterval(verificarLembretes, 60 * 1000);
 verificarLembretes();
 
+// ── JOB DE CONCLUSÃO AUTOMÁTICA (20 min após o horário) ──────────────────
+async function verificarAutoConcluir() {
+  try {
+    const agora  = agoraBrasilia();
+    const result = await db.query(`
+      SELECT a.id, a.data, a.horario, b.slug
+      FROM agendamentos a
+      JOIN barbearias b ON b.id = a.barbearia_id
+      WHERE a.status = 'pendente'
+        AND a.data IS NOT NULL
+        AND a.horario IS NOT NULL
+    `);
+
+    for (const ag of result.rows) {
+      const dataStr = ag.data instanceof Date
+        ? ag.data.toISOString().split("T")[0]
+        : String(ag.data).split("T")[0];
+
+      const [ano, mes, dia] = dataStr.split("-").map(Number);
+      const [hora, min]     = ag.horario.substring(0, 5).split(":").map(Number);
+
+      const agendamentoMs = new Date(ano, mes - 1, dia, hora, min, 0).getTime();
+      const agoraMs       = agora.getTime() + 3 * 60 * 60 * 1000;
+      const diffMin       = (agoraMs - agendamentoMs) / 60000;
+
+      // Conclui entre 20 e 80 min após o horário marcado
+      if (diffMin >= 20 && diffMin <= 80) {
+        await db.query(
+          `UPDATE agendamentos
+           SET status = 'concluido', auto_concluido = true
+           WHERE id = $1 AND status = 'pendente'`,
+          [ag.id]
+        );
+        console.log(`✅ Auto-concluído: #${ag.id} (${ag.slug}) — ${dataStr} ${ag.horario}`);
+      }
+    }
+  } catch (err) {
+    console.error("Erro no job de auto-conclusão:", err.message);
+  }
+}
+
+setInterval(verificarAutoConcluir, 60 * 1000);
+verificarAutoConcluir();
+
 // ── ROTAS WHATSAPP GLOBAIS ────────────────────────────────────────────────
 app.get("/whatsapp-status", (req, res) => {
   const algumConectado = Object.values(waSessoes).some(s => s.conectado);
@@ -929,8 +913,7 @@ async function gerarSlug(nome) {
     .replace(/^-+|-+$/g, "")
     .substring(0, 40);
 
-  let slug = base;
-  let tentativa = 0;
+  let slug = base, tentativa = 0;
   while (true) {
     const exists = await db.query("SELECT id FROM barbearias WHERE slug = $1", [slug]);
     if (exists.rows.length === 0) return slug;
@@ -976,10 +959,7 @@ app.get("/api/:slug/config", async (req, res) => {
       [req.params.slug]
     );
     res.json(result.rows[0] || {});
-  } catch (err) {
-    console.error(err);
-    res.json({});
-  }
+  } catch (err) { console.error(err); res.json({}); }
 });
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
@@ -1004,10 +984,7 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
       return res.status(401).json({ erro: "Usuário ou senha inválidos" });
 
     res.json({ token: `token_${user.slug}_${Date.now()}`, slug: user.slug });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro no login" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro no login" }); }
 });
 
 // ── AGENDAR ───────────────────────────────────────────────────────────────
@@ -1018,9 +995,8 @@ function validarAgendamento({ nome, data, horario, valor }) {
 
   const [ano, mes, dia] = data.split("-").map(Number);
   const [h, m]          = horario.split(":").map(Number);
-
-  const agendamentoMs = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
-  const agoraBrMs     = Date.now() - 2 * 60 * 1000;
+  const agendamentoMs   = Date.UTC(ano, mes - 1, dia, h + 3, m, 0);
+  const agoraBrMs       = Date.now() - 2 * 60 * 1000;
 
   if (agendamentoMs <= agoraBrMs) return "Não é possível agendar em horário passado";
   if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) return "Valor inválido";
@@ -1079,10 +1055,7 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
       [barbearia_id, nome.trim(), telefone || null, data, horarioLimpo, Number(valor) || 0, profId]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ erro: "Erro ao agendar" });
-  }
+  } catch (err) { console.error(err); res.json({ erro: "Erro ao agendar" }); }
 });
 
 // ── LISTAR AGENDAMENTOS ───────────────────────────────────────────────────
@@ -1107,8 +1080,8 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return res.status(400).json({ erro: "Data inválida" });
 
   try {
-    let query = `SELECT TRIM(horario) AS horario FROM agendamentos
-                 WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'`;
+    let query  = `SELECT TRIM(horario) AS horario FROM agendamentos
+                  WHERE barbearia_id = $1 AND data = $2 AND status = 'pendente'`;
     const params = [req.barbearia.id, data];
     if (profissional_id && !isNaN(Number(profissional_id))) {
       query += ` AND profissional_id = $3`;
@@ -1149,10 +1122,7 @@ app.get("/api/:slug/horarios", async (req, res) => {
     fallback.pausa_inicio = (row && row.pausa_inicio) || null;
     fallback.pausa_fim    = (row && row.pausa_fim)    || null;
     res.json(fallback);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar horários" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao buscar horários" }); }
 });
 
 // ── SALVAR HORÁRIOS ───────────────────────────────────────────────────────
@@ -1169,23 +1139,38 @@ app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
       [req.barbearia.id, JSON.stringify(diasConfig), pausa_inicio || null, pausa_fim || null]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao salvar horários" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar horários" }); }
 });
 
-// ── CONCLUIR AGENDAMENTO ──────────────────────────────────────────────────
+// ── CONCLUIR AGENDAMENTO (manual) ─────────────────────────────────────────
 app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
     await db.query(
-      `UPDATE agendamentos SET status = 'concluido' WHERE id = $1 AND barbearia_id = $2`,
+      `UPDATE agendamentos SET status = 'concluido', auto_concluido = false
+       WHERE id = $1 AND barbearia_id = $2`,
       [id, req.barbearia.id]
     );
     res.json({ sucesso: true });
   } catch (err) { console.error(err); res.json({ erro: "Erro ao concluir" }); }
+});
+
+// ── MARCAR FALTA ──────────────────────────────────────────────────────────
+app.put("/api/:slug/agendamentos/falta/:id", verificarAssinatura, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
+  try {
+    const result = await db.query(
+      `UPDATE agendamentos
+       SET status = 'falta', auto_concluido = false
+       WHERE id = $1 AND barbearia_id = $2
+       RETURNING id`,
+      [id, req.barbearia.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ erro: "Agendamento não encontrado" });
+    res.json({ sucesso: true });
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao registrar falta" }); }
 });
 
 // ── APAGAR CONCLUÍDOS ─────────────────────────────────────────────────────
@@ -1263,10 +1248,7 @@ app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
     const tg  = Number(ganhos.rows[0].total);
     const tga = Number(gastos.rows[0].total);
     res.json({ ganhos: tg, gastos: tga, lucro: tg - tga });
-  } catch (err) {
-    console.error(err);
-    res.json({ ganhos: 0, gastos: 0, lucro: 0 });
-  }
+  } catch (err) { console.error(err); res.json({ ganhos: 0, gastos: 0, lucro: 0 }); }
 });
 
 // ── SERVIÇOS ──────────────────────────────────────────────────────────────
@@ -1357,14 +1339,19 @@ app.post("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req,
   if (!data_fim    || !/^\d{4}-\d{2}-\d{2}$/.test(data_fim))    return res.status(400).json({ erro: "data_fim inválida" });
   if (data_fim < data_inicio) return res.status(400).json({ erro: "data_fim deve ser igual ou posterior a data_inicio" });
   try {
-    const profCheck = await db.query(`SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`, [profId, req.barbearia.id]);
+    const profCheck = await db.query(
+      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
+      [profId, req.barbearia.id]
+    );
     if (profCheck.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
+
     const sobreposicao = await db.query(
       `SELECT id FROM profissional_pausas
        WHERE profissional_id = $1 AND barbearia_id = $2 AND data_inicio <= $4 AND data_fim >= $3`,
       [profId, req.barbearia.id, data_inicio, data_fim]
     );
     if (sobreposicao.rows.length > 0) return res.status(409).json({ erro: "Já existe uma pausa cadastrada neste período." });
+
     const insert = await db.query(
       `INSERT INTO profissional_pausas (profissional_id, barbearia_id, data_inicio, data_fim)
        VALUES ($1, $2, $3, $4) RETURNING id, profissional_id, data_inicio, data_fim, criado_em`,
@@ -1438,7 +1425,10 @@ app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
 
 app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, res) => {
   try {
-    const r = await db.query(`DELETE FROM assinantes WHERE barbearia_id = $1 AND status = 'cancelado'`, [req.barbearia.id]);
+    const r = await db.query(
+      `DELETE FROM assinantes WHERE barbearia_id = $1 AND status = 'cancelado'`,
+      [req.barbearia.id]
+    );
     res.json({ sucesso: true, apagados: r.rowCount });
   } catch (err) { console.error(err); res.json({ erro: "Erro ao apagar cancelados" }); }
 });
@@ -1448,8 +1438,9 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
   const id   = Number(req.params.id);
   const acao = req.params.acao;
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
-  const acoesValidas = ["confirmar", "usar-corte", "renovar", "cancelar"];
+  const acoesValidas = ["confirmar","usar-corte","renovar","cancelar"];
   if (!acoesValidas.includes(acao)) return res.status(400).json({ erro: "Ação inválida" });
+
   try {
     const check = await db.query(
       `SELECT a.id, a.status, a.cortes_usados, p.cortes_mes
@@ -1462,7 +1453,9 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
 
     if (acao === "confirmar") {
       await db.query(
-        `UPDATE assinantes SET status = 'ativo', cortes_usados = 0, data_inicio = NOW(), data_vencimento = NOW() + INTERVAL '30 days' WHERE id = $1`,
+        `UPDATE assinantes SET status = 'ativo', cortes_usados = 0,
+         data_inicio = NOW(), data_vencimento = NOW() + INTERVAL '30 days'
+         WHERE id = $1`,
         [id]
       );
       return res.json({ sucesso: true });
@@ -1475,7 +1468,8 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
     }
     if (acao === "renovar") {
       await db.query(
-        `UPDATE assinantes SET status = 'aguardando', cortes_usados = 0, data_inicio = NULL, data_vencimento = NULL WHERE id = $1`,
+        `UPDATE assinantes SET status = 'aguardando', cortes_usados = 0,
+         data_inicio = NULL, data_vencimento = NULL WHERE id = $1`,
         [id]
       );
       return res.json({ sucesso: true });
@@ -1505,7 +1499,7 @@ app.post("/api/:slug/servicos-destaque", verificarAssinatura, async (req, res) =
   if (isNaN(Number(preco)) || Number(preco) < 0) return res.status(400).json({ erro: "Preço inválido" });
   try {
     await db.query(
-      `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem) VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO servicos_destaque (barbearia_id, nome, descricao, preco, ordem, imagem) VALUES ($1,$2,$3,$4,$5,$6)`,
       [req.barbearia.id, nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null]
     );
     res.json({ sucesso: true });
@@ -1529,8 +1523,8 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
   if (isNaN(Number(preco)) || Number(preco) < 0) return res.status(400).json({ erro: "Preço inválido" });
   try {
     await db.query(
-      `UPDATE servicos_destaque SET nome = $1, descricao = $2, preco = $3, ordem = $4, imagem = $5
-       WHERE id = $6 AND barbearia_id = $7`,
+      `UPDATE servicos_destaque SET nome=$1, descricao=$2, preco=$3, ordem=$4, imagem=$5
+       WHERE id=$6 AND barbearia_id=$7`,
       [nome.trim(), descricao || "", Number(preco), Number(ordem) || 0, imagem || null, id, req.barbearia.id]
     );
     res.json({ sucesso: true });
@@ -1555,9 +1549,8 @@ app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => 
 app.put("/api/:slug/comissoes/config/:profissional_id", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.profissional_id);
   if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
-  const { percentual, valor_fixo } = req.body;
-  const pct = Number(percentual);
-  const vfx = Number(valor_fixo);
+  const pct = Number(req.body.percentual);
+  const vfx = Number(req.body.valor_fixo);
   if (isNaN(pct) || pct < 0 || pct > 100) return res.status(400).json({ erro: "Percentual inválido (0–100)" });
   if (isNaN(vfx) || vfx < 0) return res.status(400).json({ erro: "Valor fixo inválido" });
   try {
@@ -1665,10 +1658,14 @@ app.post("/api/:slug/comissoes/ajuste", verificarAssinatura, async (req, res) =>
   if (isNaN(Number(valor))) return res.status(400).json({ erro: "Valor inválido" });
   if (!referencia_mes || !/^\d{4}-\d{2}$/.test(referencia_mes)) return res.status(400).json({ erro: "Mês de referência inválido (YYYY-MM)" });
   try {
-    const check = await db.query(`SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`, [profId, req.barbearia.id]);
+    const check = await db.query(
+      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
+      [profId, req.barbearia.id]
+    );
     if (check.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     await db.query(
-      `INSERT INTO comissao_ajustes (barbearia_id, profissional_id, descricao, valor, referencia_mes) VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO comissao_ajustes (barbearia_id, profissional_id, descricao, valor, referencia_mes)
+       VALUES ($1, $2, $3, $4, $5)`,
       [req.barbearia.id, profId, descricao.trim(), Number(valor), referencia_mes]
     );
     res.json({ sucesso: true });
@@ -1679,7 +1676,10 @@ app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, r
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    await db.query(`DELETE FROM comissao_ajustes WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
+    await db.query(
+      `DELETE FROM comissao_ajustes WHERE id = $1 AND barbearia_id = $2`,
+      [id, req.barbearia.id]
+    );
     res.json({ sucesso: true });
   } catch (err) { console.error(err); res.json({ erro: "Erro ao deletar ajuste" }); }
 });
@@ -1793,10 +1793,10 @@ app.post("/cadastro", async (req, res) => {
 
     console.log(`✅ Nova barbearia: ${barbSlug} (id ${barbId})`);
     res.status(201).json({
-      sucesso: true,
-      slug: barbSlug,
-      painel: `/${barbSlug}/admin`,
-      agendamento: `/${barbSlug}`
+      sucesso:      true,
+      slug:         barbSlug,
+      painel:       `/${barbSlug}/admin`,
+      agendamento:  `/${barbSlug}`
     });
 
   } catch (err) {
@@ -1820,16 +1820,12 @@ app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
   try {
     await db.query(
       `UPDATE barbearias
-       SET nome = $1, cidade = $2, whatsapp = $3,
-           pix_chave = $4, cor_primaria = $5, sobre = $6
-       WHERE slug = $7`,
+       SET nome=$1, cidade=$2, whatsapp=$3, pix_chave=$4, cor_primaria=$5, sobre=$6
+       WHERE slug=$7`,
       [nome.trim(), cidade || "", whatsapp || "", pix_chave || "", cor_primaria || "#c8a96e", sobre || "", req.params.slug]
     );
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao salvar configurações" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar configurações" }); }
 });
 
 // ── PROFISSIONAIS CRUD ────────────────────────────────────────────────────
@@ -1841,15 +1837,11 @@ app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
     const result = await db.query(
       `INSERT INTO profissionais
          (barbearia_id, nome, especialidade, whatsapp, ordem, foto_url, disponivel, ativo)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
-       RETURNING id`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,true) RETURNING id`,
       [req.barbearia.id, nome.trim(), especialidade || "", whatsapp || "", Number(ordem) || 0, foto_url || null, disponivel !== false]
     );
     res.json({ sucesso: true, id: result.rows[0].id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao adicionar profissional" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao adicionar profissional" }); }
 });
 
 app.put("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) => {
@@ -1861,18 +1853,13 @@ app.put("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) =>
   try {
     const result = await db.query(
       `UPDATE profissionais
-       SET nome = $1, especialidade = $2, whatsapp = $3,
-           ordem = $4, foto_url = $5, disponivel = $6
-       WHERE id = $7 AND barbearia_id = $8
-       RETURNING id`,
+       SET nome=$1, especialidade=$2, whatsapp=$3, ordem=$4, foto_url=$5, disponivel=$6
+       WHERE id=$7 AND barbearia_id=$8 RETURNING id`,
       [nome.trim(), especialidade || "", whatsapp || "", Number(ordem) || 0, foto_url || null, disponivel !== false, id, req.barbearia.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao editar profissional" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao editar profissional" }); }
 });
 
 app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res) => {
@@ -1880,22 +1867,19 @@ app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res)
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
     const result = await db.query(
-      `UPDATE profissionais SET ativo = false WHERE id = $1 AND barbearia_id = $2 RETURNING id`,
+      `UPDATE profissionais SET ativo = false WHERE id=$1 AND barbearia_id=$2 RETURNING id`,
       [id, req.barbearia.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
     res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao remover profissional" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao remover profissional" }); }
 });
 
 // ── SERVIÇOS ADMIN CRUD ───────────────────────────────────────────────────
 app.get("/api/:slug/servicos/admin", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, nome, preco, imagem FROM servicos WHERE barbearia_id = $1 ORDER BY id`,
+      `SELECT id, nome, preco, imagem FROM servicos WHERE barbearia_id=$1 ORDER BY id`,
       [req.barbearia.id]
     );
     res.json(result.rows);
@@ -1910,7 +1894,7 @@ app.post("/api/:slug/servicos", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Preço inválido" });
   try {
     const result = await db.query(
-      `INSERT INTO servicos (barbearia_id, nome, preco, imagem) VALUES ($1, $2, $3, $4) RETURNING id`,
+      `INSERT INTO servicos (barbearia_id, nome, preco, imagem) VALUES ($1,$2,$3,$4) RETURNING id`,
       [req.barbearia.id, nome.trim(), Number(preco), imagem || null]
     );
     res.json({ sucesso: true, id: result.rows[0].id });
@@ -1927,7 +1911,7 @@ app.put("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Preço inválido" });
   try {
     const result = await db.query(
-      `UPDATE servicos SET nome = $1, preco = $2, imagem = $3 WHERE id = $4 AND barbearia_id = $5 RETURNING id`,
+      `UPDATE servicos SET nome=$1, preco=$2, imagem=$3 WHERE id=$4 AND barbearia_id=$5 RETURNING id`,
       [nome.trim(), Number(preco), imagem || null, id, req.barbearia.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ erro: "Serviço não encontrado" });
@@ -1939,7 +1923,7 @@ app.delete("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
-    await db.query(`DELETE FROM servicos WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
+    await db.query(`DELETE FROM servicos WHERE id=$1 AND barbearia_id=$2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao deletar serviço" }); }
 });
@@ -1954,7 +1938,7 @@ app.post("/api/:slug/planos", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
       `INSERT INTO planos (barbearia_id, nome, descricao, cortes_mes, valor, ativo, ordem)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
       [req.barbearia.id, nome.trim(), descricao || "", Number(cortes_mes) || 0, Number(valor), ativo !== false, Number(ordem) || 0]
     );
     res.json({ sucesso: true, id: result.rows[0].id });
@@ -1971,8 +1955,8 @@ app.put("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
     return res.status(400).json({ erro: "Valor inválido" });
   try {
     const result = await db.query(
-      `UPDATE planos SET nome = $1, descricao = $2, cortes_mes = $3, valor = $4, ativo = $5, ordem = $6
-       WHERE id = $7 AND barbearia_id = $8 RETURNING id`,
+      `UPDATE planos SET nome=$1, descricao=$2, cortes_mes=$3, valor=$4, ativo=$5, ordem=$6
+       WHERE id=$7 AND barbearia_id=$8 RETURNING id`,
       [nome.trim(), descricao || "", Number(cortes_mes) || 0, Number(valor), ativo !== false, Number(ordem) || 0, id, req.barbearia.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ erro: "Plano não encontrado" });
@@ -1985,12 +1969,13 @@ app.delete("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
   try {
     const check = await db.query(
-      `SELECT COUNT(*) AS total FROM assinantes WHERE plano_id = $1 AND barbearia_id = $2 AND status IN ('ativo','aguardando')`,
+      `SELECT COUNT(*) AS total FROM assinantes
+       WHERE plano_id=$1 AND barbearia_id=$2 AND status IN ('ativo','aguardando')`,
       [id, req.barbearia.id]
     );
     if (Number(check.rows[0].total) > 0)
       return res.status(409).json({ erro: "Existem assinantes ativos neste plano. Cancele-os antes de excluir." });
-    await db.query(`DELETE FROM planos WHERE id = $1 AND barbearia_id = $2`, [id, req.barbearia.id]);
+    await db.query(`DELETE FROM planos WHERE id=$1 AND barbearia_id=$2`, [id, req.barbearia.id]);
     res.json({ sucesso: true });
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao deletar plano" }); }
 });
@@ -2002,13 +1987,13 @@ app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT dias_semana, pausa_inicio, pausa_fim
-       FROM profissional_horarios WHERE profissional_id = $1 AND barbearia_id = $2`,
+       FROM profissional_horarios WHERE profissional_id=$1 AND barbearia_id=$2`,
       [profId, req.barbearia.id]
     );
 
     if (result.rows.length === 0) {
       const global = await db.query(
-        `SELECT dias_semana, pausa_inicio, pausa_fim FROM horarios_barbearia WHERE barbearia_id = $1`,
+        `SELECT dias_semana, pausa_inicio, pausa_fim FROM horarios_barbearia WHERE barbearia_id=$1`,
         [req.barbearia.id]
       );
       if (global.rows.length > 0) {
@@ -2028,10 +2013,7 @@ app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
     cfg.pausa_fim    = row.pausa_fim    || null;
     cfg._usa_global  = false;
     res.json(cfg);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar horários do profissional" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao buscar horários do profissional" }); }
 });
 
 app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (req, res) => {
@@ -2040,14 +2022,14 @@ app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (re
   const { pausa_inicio, pausa_fim, usa_global, ...diasConfig } = req.body;
   try {
     const check = await db.query(
-      `SELECT id FROM profissionais WHERE id = $1 AND barbearia_id = $2`,
+      `SELECT id FROM profissionais WHERE id=$1 AND barbearia_id=$2`,
       [profId, req.barbearia.id]
     );
     if (check.rows.length === 0) return res.status(404).json({ erro: "Profissional não encontrado" });
 
     if (usa_global) {
       await db.query(
-        `DELETE FROM profissional_horarios WHERE profissional_id = $1 AND barbearia_id = $2`,
+        `DELETE FROM profissional_horarios WHERE profissional_id=$1 AND barbearia_id=$2`,
         [profId, req.barbearia.id]
       );
       return res.json({ sucesso: true, modo: "global" });
@@ -2055,16 +2037,13 @@ app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (re
 
     await db.query(
       `INSERT INTO profissional_horarios (profissional_id, barbearia_id, dias_semana, pausa_inicio, pausa_fim)
-       VALUES ($1, $2, $3, $4, $5)
+       VALUES ($1,$2,$3,$4,$5)
        ON CONFLICT (profissional_id, barbearia_id)
-       DO UPDATE SET dias_semana = $3, pausa_inicio = $4, pausa_fim = $5`,
+       DO UPDATE SET dias_semana=$3, pausa_inicio=$4, pausa_fim=$5`,
       [profId, req.barbearia.id, JSON.stringify(diasConfig), pausa_inicio || null, pausa_fim || null]
     );
     res.json({ sucesso: true, modo: "individual" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao salvar horários do profissional" });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar horários do profissional" }); }
 });
 
 // ── ROTAS WHATSAPP POR SLUG ───────────────────────────────────────────────
@@ -2081,13 +2060,8 @@ app.post("/api/:slug/whatsapp/conectar", verificarAssinatura, async (req, res) =
   const slug   = req.params.slug;
   const sessao = waSessoes[slug];
 
-  if (sessao?.status === "conectado") {
-    return res.json({ conectado: true, status: "conectado" });
-  }
-
-  if (sessao?.status === "aguardando_qr" && sessao.qrBase64) {
-    return res.json({ status: "aguardando_qr", qr: sessao.qrBase64 });
-  }
+  if (sessao?.status === "conectado") return res.json({ conectado: true, status: "conectado" });
+  if (sessao?.status === "aguardando_qr" && sessao.qrBase64) return res.json({ status: "aguardando_qr", qr: sessao.qrBase64 });
 
   iniciarWhatsAppSlug(slug);
 
@@ -2117,12 +2091,24 @@ app.get("/api/:slug/whatsapp/qr", verificarAssinatura, (req, res) => {
   res.json({ status: sessao.status || "desconectado" });
 });
 
+app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
+  const slug   = req.params.slug;
+  const sessao = waSessoes[slug];
+  try {
+    if (sessao?.socket) await sessao.socket.logout().catch(() => {});
+  } catch {}
+  const AUTH_DIR = `./auth_wa/${slug}`;
+  if (fs.existsSync(AUTH_DIR)) fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+  delete waSessoes[slug];
+  res.json({ sucesso: true });
+});
+
 // ── ROTAS DE DIAGNÓSTICO ──────────────────────────────────────────────────
 app.get("/testar-wa/:slug", async (req, res) => {
   try {
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
     const qrcode = require("qrcode");
-    const pino = require("pino");
+    const pino   = require("pino");
     res.json({ ok: true, msg: "Baileys carregou com sucesso" });
   } catch (err) {
     res.json({ ok: false, erro: err.message, code: err.code });
@@ -2134,11 +2120,7 @@ app.get("/forcar-wa/:slug", async (req, res) => {
   await iniciarWhatsAppSlug(slug);
   await new Promise(r => setTimeout(r, 8000));
   const s = waSessoes[slug];
-  res.json({
-    status: s?.status || "nenhuma",
-    temQr: !!s?.qrBase64,
-    qr: s?.qrBase64 || null
-  });
+  res.json({ status: s?.status || "nenhuma", temQr: !!s?.qrBase64, qr: s?.qrBase64 || null });
 });
 
 app.get("/debug-wa-erro/:slug", async (req, res) => {
@@ -2148,7 +2130,7 @@ app.get("/debug-wa-erro/:slug", async (req, res) => {
     logs.push("1. importando baileys...");
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
     const qrcode = require("qrcode");
-    const pino = require("pino");
+    const pino   = require("pino");
     logs.push("2. baileys importado");
     const AUTH_DIR = `./auth_wa/${slug}`;
     if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
@@ -2168,18 +2150,13 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
   const logs = [];
   try {
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
-    const pino = require("pino");
+    const pino   = require("pino");
     const qrcode = require("qrcode");
     const AUTH_DIR = `./auth_wa/${slug}`;
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     const { version } = await fetchLatestBaileysVersion();
     logs.push("criando socket...");
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-      logger: pino({ level: "silent" }),
-    });
+    const sock = makeWASocket({ version, auth: state, printQRInTerminal: false, logger: pino({ level: "silent" }) });
     logs.push("socket criado, aguardando QR por 15s...");
     await new Promise((resolve) => {
       sock.ev.on("connection.update", async ({ connection, qr, lastDisconnect }) => {
@@ -2195,8 +2172,7 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
           resolve();
         }
         if (connection === "close") {
-          const erro = lastDisconnect?.error?.message || "desconhecido";
-          logs.push("FECHOU: " + erro);
+          logs.push("FECHOU: " + (lastDisconnect?.error?.message || "desconhecido"));
           res.json({ ok: false, logs });
           resolve();
         }
@@ -2210,18 +2186,6 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
   } catch (err) {
     res.json({ ok: false, logs, erro: err.message });
   }
-});
-
-app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res) => {
-  const slug   = req.params.slug;
-  const sessao = waSessoes[slug];
-  try {
-    if (sessao?.socket) await sessao.socket.logout().catch(() => {});
-  } catch {}
-  const AUTH_DIR = `./auth_wa/${slug}`;
-  if (fs.existsSync(AUTH_DIR)) fs.rmSync(AUTH_DIR, { recursive: true, force: true });
-  delete waSessoes[slug];
-  res.json({ sucesso: true });
 });
 
 // ── ARQUIVOS ESTÁTICOS ────────────────────────────────────────────────────
