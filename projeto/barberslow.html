@@ -212,12 +212,12 @@
 
             mostrarLoading(true);
             try {
-                // Como não vi suas rotas Express exatas, deduzi as mais comuns para esse padrão:
+               // Procure por essa parte no seu HTML e ajuste as URLs conforme o seu backend:
                 const [barbeariaRes, profissionaisRes, servicosRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/barbearia/${slug}`),
-                    fetch(`${API_BASE_URL}/api/barbearia/${slug}/profissionais`),
-                    fetch(`${API_BASE_URL}/api/barbearia/${slug}/servicos`)
-                ]);
+    fetch(`${API_BASE_URL}/${slug}/config`), 
+    fetch(`${API_BASE_URL}/${slug}/profissionais`),
+    fetch(`${API_BASE_URL}/${slug}/servicos`)
+]);
 
                 if (!barbeariaRes.ok) throw new Error('Barbearia não encontrada ou inativa');
 
@@ -380,11 +380,13 @@
 
             try {
                 // Rota deduzida para salvar o agendamento no BD
-                const res = await fetch(`${API_BASE_URL}/api/barbearia/${slug}/agendamentos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                const response = await fetch(`${API_BASE_URL}/${slug}/agendar`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(dadosAgendamento)
+});
 
                 if (!res.ok) {
                     const err = await res.json();
