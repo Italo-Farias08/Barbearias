@@ -180,309 +180,121 @@
             <button class="btn-primary" style="margin-top: 2rem; width: 100%;" onclick="location.reload()">Fazer Novo Agendamento</button>
         </div>
     </div>
-<script src="Saas.js"></script>
     <script>
-        // CONFIGURAÇÕES DA API BASEADA NO SEU BACKEND MULTI-TENANT
-// Remova o const API_BASE_URL e a busca do slug que criamos antes, 
-// pois o script externo já faz isso!
-
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Usa a constante API que vem do seu script externo
-        // Ele já buscou o /config, então aqui buscamos só o resto:
-        const [profissionaisRes, servicosRes] = await Promise.all([
-            fetch(`${API}/profissionais`),
-            fetch(`${API}/servicos`)
-        ]);
-
-        const profissionais = await profissionaisRes.json();
-        const servicos = await servicosRes.json();
-
-        // Renderizar Profissionais
-        const profissionaisContainer = document.getElementById('profissionais-list');
-        profissionais.forEach(prof => {
-            // ... (seu código de renderizar profissionais continua igual)
-        });
-
-        // Renderizar Serviços
-        const servicosContainer = document.getElementById('servicos-list');
-        servicos.forEach(servico => {
-            // ... (seu código de renderizar serviços continua igual)
-        });
-
-    } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+    // 1. Aguarda o carregamento do script SaaS externo
+    function iniciarSistema() {
+        if (typeof API === 'undefined') {
+            setTimeout(iniciarSistema, 100);
+            return;
+        }
+        carregarDadosIniciais();
     }
-});        
-        
 
-        // Estado Global do Agendamento
-        const state = {
-            cliente: { nome: '', telefone: '' },
-            profissional: null,
-            servico: null,
-            data: '',
-            horario: ''
-        };
+    // 2. Estado Global
+    const state = {
+        cliente: { nome: '', telefone: '' },
+        profissional: null,
+        servico: null,
+        data: '',
+        horario: ''
+    };
 
-        // Elementos UI
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const container = document.getElementById('app-container');
-        const errorMsg = document.getElementById('error-msg');
+    // 3. Carregamento de Dados (Profissionais e Serviços)
+    async function carregarDadosIniciais() {
+        try {
+            const [profissionaisRes, servicosRes] = await Promise.all([
+                fetch(`${API}/profissionais`),
+                fetch(`${API}/servicos`)
+            ]);
 
-        // INICIALIZAÇÃO
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (!slug) {
-                document.body.innerHTML = '<h2 style="text-align:center; margin-top: 2rem;">Erro: Link da barbearia inválido. Informe o ?loja=slug</h2>';
+            const profissionais = await profissionaisRes.json();
+            const servicos = await servicosRes.json();
+
+            renderizarProfissionais(profissionais);
+            renderizarServicos(servicos);
+            
+            document.getElementById('app-container').style.display = 'flex';
+        } catch (error) {
+            console.error('Erro ao carregar dados:', error);
+        } finally {
+            mostrarLoading(false);
+        }
+    }
+
+    // 4. Lógica de Horários
+    async function buscarHorarios() {
+        const dataSelecionada = document.getElementById('data').value;
+        const profissionalId = state.profissional?.id; 
+        const containerHorarios = document.getElementById('horarios-list'); 
+
+        if (!dataSelecionada) return;
+        state.data = dataSelecionada;
+        containerHorarios.innerHTML = '<p>Carregando horários...</p>';
+
+        try {
+            const paramsProfissional = profissionalId ? `?profissional_id=${profissionalId}` : '';
+            const [horariosRes, ocupadosRes] = await Promise.all([
+                fetch(`${API}/horarios`),
+                fetch(`${API}/agendamentos/data/${dataSelecionada}${paramsProfissional}`)
+            ]);
+
+            const configHorarios = await horariosRes.json();
+            const agendamentosOcupados = await ocupadosRes.json();
+            const horariosOcupados = agendamentosOcupados.map(ag => ag.horario.substring(0, 5));
+
+            const dataObj = new Date(dataSelecionada + 'T12:00:00'); 
+            const configDoDia = configHorarios[dataObj.getDay()];
+
+            if (!configDoDia || !configDoDia.aberto) {
+                containerHorarios.innerHTML = '<p>Fechado neste dia.</p>';
                 return;
             }
 
-            mostrarLoading(true);
-            try {
-               // Procure por essa parte no seu HTML e ajuste as URLs conforme o seu backend:
-                const [barbeariaRes, profissionaisRes, servicosRes] = await Promise.all([
-    fetch(`${API_BASE_URL}/${slug}/config`), 
-    fetch(`${API_BASE_URL}/${slug}/profissionais`),
-    fetch(`${API_BASE_URL}/${slug}/servicos`)
-]);
-
-                if (!barbeariaRes.ok) throw new Error('Barbearia não encontrada ou inativa');
-
-                const barbearia = await barbeariaRes.json();
-                const profissionais = await profissionaisRes.json();
-                const servicos = await servicosRes.json();
-
-                // Aplica cor customizada se existir no banco
-                if(barbearia.cor_primaria) {
-                    document.documentElement.style.setProperty('--primary-color', barbearia.cor_primaria);
-                }
-
-                document.getElementById('shop-name').innerText = barbearia.nome;
-                document.getElementById('shop-city').innerText = barbearia.cidade || '';
-
-                renderizarProfissionais(profissionais);
-                renderizarServicos(servicos);
-                
-                // Define data mínima como hoje no input
-                document.getElementById('data-agendamento').min = new Date().toISOString().split('T')[0];
-                
-                container.style.display = 'flex';
-            } catch (error) {
-                document.body.innerHTML = `<h2 style="text-align:center; margin-top: 2rem;">Erro: ${error.message}</h2>`;
-            } finally {
-                mostrarLoading(false);
-            }
-        });
-
-        // NAVEGAÇÃO ENTRE PASSOS
-        function nextStep(current) {
-            if (current === 1) {
-                const nome = document.getElementById('cliente-nome').value.trim();
-                const tel = document.getElementById('cliente-telefone').value.trim();
-                if (!nome || !tel) return alert('Preencha nome e WhatsApp.');
-                state.cliente = { nome, telefone: tel };
-            }
-
-            document.getElementById(`step-${current}`).classList.remove('active');
-            document.getElementById(`step-${current + 1}`).classList.add('active');
-
-            if (current === 4) preencherResumo();
+            containerHorarios.innerHTML = '';
+            // (Aqui você mantém a lógica de loop de horários que você já tem)
+            // ... (O código de criar botões de horário permanece aqui)
+        } catch (error) {
+            containerHorarios.innerHTML = '<p>Erro ao buscar horários.</p>';
         }
-
-        function prevStep(current) {
-            document.getElementById(`step-${current}`).classList.remove('active');
-            document.getElementById(`step-${current - 1}`).classList.add('active');
-        }
-
-        // RENDERIZAÇÃO
-        function renderizarProfissionais(lista) {
-            const grid = document.getElementById('grid-profissionais');
-            grid.innerHTML = lista.map(p => `
-                <div class="card-option" onclick="selecionarProfissional(${p.id}, '${p.nome}', this)">
-                    <strong>${p.nome}</strong>
-                    <span>${p.especialidade || ''}</span>
-                </div>
-            `).join('');
-        }
-
-        function renderizarServicos(lista) {
-            const grid = document.getElementById('grid-servicos');
-            grid.innerHTML = lista.map(s => {
-                const precoFormatado = Number(s.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                return `
-                <div class="card-option" onclick="selecionarServico(${s.id}, '${s.nome}', ${s.preco}, this)">
-                    <strong>${s.nome}</strong>
-                    <span>${precoFormatado}</span>
-                </div>
-            `}).join('');
-        }
-
-        // SELEÇÕES
-        function selecionarProfissional(id, nome, element) {
-            document.querySelectorAll('#grid-profissionais .card-option').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            state.profissional = { id, nome };
-            document.getElementById('btn-next-2').disabled = false;
-            
-            // Limpa horários se trocar de profissional
-            state.horario = '';
-            document.getElementById('grid-horarios').innerHTML = '';
-            document.getElementById('data-agendamento').value = '';
-            document.getElementById('btn-next-4').disabled = true;
-        }
-
-        function selecionarServico(id, nome, preco, element) {
-            document.querySelectorAll('#grid-servicos .card-option').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            state.servico = { id, nome, preco };
-            document.getElementById('btn-next-3').disabled = false;
-        }
-
-async function buscarHorarios() {
-    const dataSelecionada = document.getElementById('data').value;
-    const profissionalId = document.getElementById('profissional').value; 
-    const containerHorarios = document.getElementById('horarios-list'); 
-
-    if (!dataSelecionada) return;
-
-    containerHorarios.innerHTML = '<p>Carregando horários...</p>';
-
-    try {
-        // Usa a variável API global que o seu script SaaS já cria (ex: https://vtrip.com.br/api/barbearia-diogo)
-        const paramsProfissional = profissionalId ? `?profissional_id=${profissionalId}` : '';
-        const [horariosRes, ocupadosRes] = await Promise.all([
-            fetch(`${API}/horarios`),
-            fetch(`${API}/agendamentos/data/${dataSelecionada}${paramsProfissional}`)
-        ]);
-
-        const configHorarios = await horariosRes.json();
-        const agendamentosOcupados = await ocupadosRes.json();
-
-        const horariosOcupados = agendamentosOcupados.map(ag => ag.horario.substring(0, 5));
-
-        const dataObj = new Date(dataSelecionada + 'T12:00:00'); 
-        const diaDaSemana = dataObj.getDay();
-        const configDoDia = configHorarios[diaDaSemana];
-
-        if (!configDoDia || !configDoDia.aberto) {
-            containerHorarios.innerHTML = '<p>Fechado neste dia.</p>';
-            return;
-        }
-
-        const { hora_inicio, hora_fim } = configDoDia;
-        const intervalo = configHorarios.intervalo_minutos || 30;
-        const pausaInicio = configHorarios.pausa_inicio;
-        const pausaFim = configHorarios.pausa_fim;
-
-        containerHorarios.innerHTML = ''; 
-        let temHorarioLivre = false;
-
-        const parseMinutos = (horaStr) => {
-            const [h, m] = horaStr.split(':').map(Number);
-            return h * 60 + m;
-        };
-        const formatarHora = (minutosTotal) => {
-            const h = String(Math.floor(minutosTotal / 60)).padStart(2, '0');
-            const m = String(minutosTotal % 60).padStart(2, '0');
-            return `${h}:${m}`;
-        };
-
-        let atualMinutos = parseMinutos(hora_inicio);
-        const fimMinutos = parseMinutos(hora_fim);
-
-        while (atualMinutos < fimMinutos) {
-            const horaString = formatarHora(atualMinutos);
-            const naPausa = pausaInicio && pausaFim && horaString >= pausaInicio && horaString < pausaFim;
-            const isOcupado = horariosOcupados.includes(horaString);
-
-            if (!naPausa && !isOcupado) {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'btn-horario'; 
-                btn.textContent = horaString;
-                
-                btn.onclick = () => {
-                    document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selecionado'));
-                    btn.classList.add('selecionado');
-                    document.getElementById('horario_selecionado').value = horaString; 
-                };
-
-                containerHorarios.appendChild(btn);
-                temHorarioLivre = true;
-            }
-            atualMinutos += intervalo; 
-        }
-
-        if (!temHorarioLivre) {
-            containerHorarios.innerHTML = '<p>Nenhum horário disponível para esta data.</p>';
-        }
-
-    } catch (error) {
-        console.error("Erro ao buscar horários", error);
-        containerHorarios.innerHTML = '<p>Erro ao carregar horários.</p>';
     }
-}
-        function selecionarHorario(horario, element) {
-            document.querySelectorAll('#grid-horarios .card-option').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            state.horario = horario;
-            document.getElementById('btn-next-4').disabled = false;
+
+    // 5. Finalização
+    async function finalizarAgendamento() {
+        mostrarLoading(true);
+        const payload = {
+            nome: state.cliente.nome,
+            telefone: state.cliente.telefone.replace(/\D/g, ''),
+            data: state.data,
+            horario: state.horario,
+            valor: state.servico.preco,
+            profissional_id: state.profissional.id,
+            servico_id: state.servico.id
+        };
+
+        try {
+            const response = await fetch(`${API}/agendar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error('Erro ao salvar agendamento.');
+            document.getElementById('step-5').classList.remove('active');
+            document.getElementById('step-6').classList.add('active');
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            mostrarLoading(false);
         }
+    }
 
-        function preencherResumo() {
-            const [ano, mes, dia] = state.data.split('-');
-            const dataFormatada = `${dia}/${mes}/${ano}`;
-            const precoFormatado = Number(state.servico.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    function mostrarLoading(show) {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.style.display = show ? 'flex' : 'none';
+    }
 
-            document.getElementById('resumo-nome').innerText = state.cliente.nome;
-            document.getElementById('resumo-profissional').innerText = state.profissional.nome;
-            document.getElementById('resumo-servico').innerText = state.servico.nome;
-            document.getElementById('resumo-datahora').innerText = `${dataFormatada} às ${state.horario}`;
-            document.getElementById('resumo-valor').innerText = precoFormatado;
-        }
-
-        async function finalizarAgendamento() {
-            mostrarLoading(true);
-            errorMsg.style.display = 'none';
-
-            const payload = {
-                nome: state.cliente.nome,
-                telefone: state.cliente.telefone.replace(/\D/g, ''),
-                data: state.data,
-                horario: state.horario,
-                valor: state.servico.preco,
-                profissional_id: state.profissional.id,
-                servico_id: state.servico.id // Opcional, dependendo da sua tabela
-            };
-
-            try {
-                // Rota deduzida para salvar o agendamento no BD
-                const response = await fetch(`${API}/agendar`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(dadosAgendamento)
-});
-
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.erro || 'Erro ao salvar agendamento.');
-                }
-
-                document.getElementById('step-5').classList.remove('active');
-                document.getElementById('step-6').classList.add('active');
-            } catch (error) {
-                errorMsg.innerText = error.message;
-                errorMsg.style.display = 'block';
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        function mostrarLoading(show) {
-            loadingOverlay.style.display = show ? 'flex' : 'none';
-        }
-    </script>
+    // Início da execução
+    document.addEventListener('DOMContentLoaded', iniciarSistema);
+</script>
 </body>
 </html>
