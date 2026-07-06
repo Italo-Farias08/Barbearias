@@ -183,8 +183,37 @@
 
     <script>
         // CONFIGURAÇÕES DA API BASEADA NO SEU BACKEND MULTI-TENANT
-        const API_BASE_URL = 'https://vtrip.com.br/api'; // Substitua pela sua URL real em prod
-        
+// Remova o const API_BASE_URL e a busca do slug que criamos antes, 
+// pois o script externo já faz isso!
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Usa a constante API que vem do seu script externo
+        // Ele já buscou o /config, então aqui buscamos só o resto:
+        const [profissionaisRes, servicosRes] = await Promise.all([
+            fetch(`${API}/profissionais`),
+            fetch(`${API}/servicos`)
+        ]);
+
+        const profissionais = await profissionaisRes.json();
+        const servicos = await servicosRes.json();
+
+        // Renderizar Profissionais
+        const profissionaisContainer = document.getElementById('profissionais-list');
+        profissionais.forEach(prof => {
+            // ... (seu código de renderizar profissionais continua igual)
+        });
+
+        // Renderizar Serviços
+        const servicosContainer = document.getElementById('servicos-list');
+        servicos.forEach(servico => {
+            // ... (seu código de renderizar serviços continua igual)
+        });
+
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+    }
+});        
         // Extrai o slug da URL (ex: meusaas.com/?loja=barbearia-do-ze)
         const urlParams = new URLSearchParams(window.location.search);
         const slug = urlParams.get('loja'); 
@@ -380,7 +409,7 @@
 
             try {
                 // Rota deduzida para salvar o agendamento no BD
-                const response = await fetch(`${API_BASE_URL}/${slug}/agendar`, {
+                const response = await fetch(`${API}/agendar`, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
