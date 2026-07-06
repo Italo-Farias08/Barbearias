@@ -10,7 +10,7 @@
             --surface-color: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
-            --primary-color: #2563eb; /* Será sobrescrito pela cor_primaria do backend */
+            --primary-color: #2563eb;
             --primary-hover: #1d4ed8;
             --border-color: #e2e8f0;
             --radius: 8px;
@@ -104,8 +104,8 @@
 
     <div class="container" id="app-container" style="display: none;">
         <header>
-            <h1 id="shop-name">Carregando...</h1>
-            <p id="shop-city">SaaS Agendamento</p>
+            <h1 id="shop-name" data-barber="nome">Carregando...</h1>
+            <p id="shop-city" data-barber="cidade">SaaS Agendamento</p>
         </header>
 
         <div class="step active" id="step-1">
@@ -173,24 +173,27 @@
                 <button class="btn-primary" onclick="finalizarAgendamento()">Confirmar</button>
             </div>
         </div>
-        
+
         <div class="step" id="step-6" style="text-align: center;">
             <h2 class="step-title" style="color: #16a34a; font-size: 1.5rem;">Agendamento Confirmado! 🎉</h2>
             <p style="color: var(--text-muted); margin-top: 1rem;">Seu horário foi reservado com sucesso. Você receberá lembretes no seu WhatsApp.</p>
             <button class="btn-primary" style="margin-top: 2rem; width: 100%;" onclick="location.reload()">Fazer Novo Agendamento</button>
         </div>
     </div>
-    <script>
-    // 1. Aguarda o carregamento do script SaaS externo
-    function iniciarSistema() {
-        if (typeof API === 'undefined') {
-            setTimeout(iniciarSistema, 100);
-            return;
-        }
-        carregarDadosIniciais();
-    }
 
-    // 2. Estado Global
+    <!--
+      IMPORTANTE:
+      Troque o caminho abaixo pelo caminho real do seu arquivo que define
+      BASE_URL, getSlug(), BARBER_SLUG e API (o script com aplicarConfig()).
+      Ele precisa carregar ANTES do script desta página, senão a variável
+      API não existe e a tela fica em branco.
+    -->
+    <script src="/js/config.js"></script>
+
+    <script>
+    // ================================
+    // Estado global do fluxo de agendamento
+    // ================================
     const state = {
         cliente: { nome: '', telefone: '' },
         profissional: null,
@@ -199,7 +202,16 @@
         horario: ''
     };
 
-    // 3. Carregamento de Dados (Profissionais e Serviços)
+    // Espera a variável API (definida no config.js) existir antes de iniciar
+    function iniciarSistema() {
+        if (typeof API === 'undefined') {
+            setTimeout(iniciarSistema, 100);
+            return;
+        }
+        carregarDadosIniciais();
+    }
+
+    // Carrega profissionais e serviços
     async function carregarDadosIniciais() {
         try {
             const [profissionaisRes, servicosRes] = await Promise.all([
@@ -212,7 +224,7 @@
 
             renderizarProfissionais(profissionais);
             renderizarServicos(servicos);
-            
+
             document.getElementById('app-container').style.display = 'flex';
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
@@ -221,15 +233,98 @@
         }
     }
 
-    // 4. Lógica de Horários
+    // Renderiza cards de profissionais (step 2)
+    function renderizarProfissionais(lista) {
+        const grid = document.getElementById('grid-profissionais');
+        grid.innerHTML = '';
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum profissional disponível</span>';
+            return;
+        }
+
+        lista.forEach(prof => {
+            const card = document.createElement('div');
+            card.className = 'card-option';
+            card.dataset.id = prof.id;
+            card.innerHTML = `
+                <strong>${prof.nome}</strong>
+                ${prof.especialidade ? `<span>${prof.especialidade}</span>` : ''}
+            `;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('#grid-profissionais .card-option').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                state.profissional = prof;
+                document.getElementById('btn-next-2').disabled = false;
+            });
+            grid.appendChild(card);
+        });
+    }
+
+    // Renderiza cards de serviços (step 3)
+    function renderizarServicos(lista) {
+        const grid = document.getElementById('grid-servicos');
+        grid.innerHTML = '';
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum serviço cadastrado</span>';
+            return;
+        }
+
+        lista.forEach(serv => {
+            const preco = Number(serv.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const card = document.createElement('div');
+            card.className = 'card-option';
+            card.dataset.id = serv.id;
+            card.innerHTML = `
+                <strong>${serv.nome}</strong>
+                <span>${preco}</span>
+            `;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('#grid-servicos .card-option').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                state.servico = serv;
+                document.getElementById('btn-next-3').disabled = false;
+            });
+            grid.appendChild(card);
+        });
+    }
+
+    // Renderiza cards de horários (step 4)
+    function renderizarHorarios(lista) {
+        const grid = document.getElementById('grid-horarios');
+        grid.innerHTML = '';
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum horário disponível neste dia</span>';
+            document.getElementById('btn-next-4').disabled = true;
+            return;
+        }
+
+        lista.forEach(hora => {
+            const card = document.createElement('div');
+            card.className = 'card-option';
+            card.innerHTML = `<strong>${hora}</strong>`;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('#grid-horarios .card-option').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                state.horario = hora;
+                document.getElementById('btn-next-4').disabled = false;
+            });
+            grid.appendChild(card);
+        });
+    }
+
+    // Busca horários disponíveis para a data escolhida (IDs corrigidos)
     async function buscarHorarios() {
-        const dataSelecionada = document.getElementById('data').value;
-        const profissionalId = state.profissional?.id; 
-        const containerHorarios = document.getElementById('horarios-list'); 
+        const dataSelecionada = document.getElementById('data-agendamento').value;
+        const profissionalId = state.profissional?.id;
+        const containerHorarios = document.getElementById('grid-horarios');
 
         if (!dataSelecionada) return;
         state.data = dataSelecionada;
-        containerHorarios.innerHTML = '<p>Carregando horários...</p>';
+        document.getElementById('btn-next-4').disabled = true;
+        containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Carregando horários...</span>';
 
         try {
             const paramsProfissional = profissionalId ? `?profissional_id=${profissionalId}` : '';
@@ -242,25 +337,105 @@
             const agendamentosOcupados = await ocupadosRes.json();
             const horariosOcupados = agendamentosOcupados.map(ag => ag.horario.substring(0, 5));
 
-            const dataObj = new Date(dataSelecionada + 'T12:00:00'); 
-            const configDoDia = configHorarios[dataObj.getDay()];
+            const dataObj = new Date(dataSelecionada + 'T12:00:00');
+            const diaSemana = dataObj.getDay();
+            const configDoDia = configHorarios[String(diaSemana)];
 
             if (!configDoDia || !configDoDia.aberto) {
-                containerHorarios.innerHTML = '<p>Fechado neste dia.</p>';
+                containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Fechado neste dia.</span>';
                 return;
             }
 
-            containerHorarios.innerHTML = '';
-            // (Aqui você mantém a lógica de loop de horários que você já tem)
-            // ... (O código de criar botões de horário permanece aqui)
+            const horaInicio = configDoDia.hora_inicio || '08:00';
+            const horaFim = configDoDia.hora_fim || '21:00';
+            const intervalo = Number(configHorarios.intervalo_minutos) || 30;
+            const pausaInicio = configHorarios.pausa_inicio;
+            const pausaFim = configHorarios.pausa_fim;
+
+            const [hIni, mIni] = horaInicio.substring(0, 5).split(':').map(Number);
+            const [hFim, mFim] = horaFim.substring(0, 5).split(':').map(Number);
+            const inicioMin = hIni * 60 + mIni;
+            const fimMin = hFim * 60 + mFim;
+
+            const pausaIniMin = pausaInicio ? (() => { const [h, m] = pausaInicio.split(':').map(Number); return h * 60 + m; })() : null;
+            const pausaFimMin = pausaFim ? (() => { const [h, m] = pausaFim.split(':').map(Number); return h * 60 + m; })() : null;
+
+            const horariosLivres = [];
+            for (let t = inicioMin; t < fimMin; t += intervalo) {
+                if (pausaIniMin !== null && pausaFimMin !== null && t >= pausaIniMin && t < pausaFimMin) continue;
+                const hh = String(Math.floor(t / 60)).padStart(2, '0');
+                const mm = String(t % 60).padStart(2, '0');
+                const horaStr = `${hh}:${mm}`;
+                if (!horariosOcupados.includes(horaStr)) horariosLivres.push(horaStr);
+            }
+
+            renderizarHorarios(horariosLivres);
         } catch (error) {
-            containerHorarios.innerHTML = '<p>Erro ao buscar horários.</p>';
+            console.error('Erro ao buscar horários:', error);
+            containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Erro ao buscar horários.</span>';
         }
     }
 
-    // 5. Finalização
+    // Navegação entre steps
+    function mostrarStep(numero) {
+        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${numero}`).classList.add('active');
+    }
+
+    function nextStep(atual) {
+        if (atual === 1) {
+            const nome = document.getElementById('cliente-nome').value.trim();
+            const telefone = document.getElementById('cliente-telefone').value.trim();
+            if (nome.length < 2) { alert('Digite seu nome completo.'); return; }
+            if (telefone.replace(/\D/g, '').length < 10) { alert('Digite um WhatsApp válido.'); return; }
+            state.cliente.nome = nome;
+            state.cliente.telefone = telefone;
+            mostrarStep(2);
+            return;
+        }
+
+        if (atual === 2) {
+            if (!state.profissional) { alert('Selecione um profissional.'); return; }
+            mostrarStep(3);
+            return;
+        }
+
+        if (atual === 3) {
+            if (!state.servico) { alert('Selecione um serviço.'); return; }
+            mostrarStep(4);
+            return;
+        }
+
+        if (atual === 4) {
+            if (!state.data || !state.horario) { alert('Selecione data e horário.'); return; }
+            preencherResumo();
+            mostrarStep(5);
+            return;
+        }
+    }
+
+    function prevStep(atual) {
+        mostrarStep(atual - 1);
+    }
+
+    function preencherResumo() {
+        document.getElementById('resumo-nome').textContent = state.cliente.nome;
+        document.getElementById('resumo-profissional').textContent = state.profissional?.nome || '';
+        document.getElementById('resumo-servico').textContent = state.servico?.nome || '';
+
+        const [ano, mes, dia] = state.data.split('-');
+        document.getElementById('resumo-datahora').textContent = `${dia}/${mes}/${ano} às ${state.horario}`;
+
+        const valor = Number(state.servico?.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('resumo-valor').textContent = valor;
+    }
+
+    // Finalização do agendamento
     async function finalizarAgendamento() {
         mostrarLoading(true);
+        const errorMsg = document.getElementById('error-msg');
+        errorMsg.style.display = 'none';
+
         const payload = {
             nome: state.cliente.nome,
             telefone: state.cliente.telefone.replace(/\D/g, ''),
@@ -278,11 +453,16 @@
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error('Erro ao salvar agendamento.');
-            document.getElementById('step-5').classList.remove('active');
-            document.getElementById('step-6').classList.add('active');
+            const data = await response.json();
+
+            if (!response.ok || data.erro) {
+                throw new Error(data.erro || 'Erro ao salvar agendamento.');
+            }
+
+            mostrarStep(6);
         } catch (error) {
-            alert(error.message);
+            errorMsg.textContent = error.message;
+            errorMsg.style.display = 'block';
         } finally {
             mostrarLoading(false);
         }
@@ -295,6 +475,6 @@
 
     // Início da execução
     document.addEventListener('DOMContentLoaded', iniciarSistema);
-</script>
+    </script>
 </body>
 </html>
