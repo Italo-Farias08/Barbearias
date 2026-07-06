@@ -341,18 +341,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
 async function buscarHorarios() {
-    // Pegando os valores dos inputs (ajuste os IDs se os seus no HTML forem diferentes)
     const dataSelecionada = document.getElementById('data').value;
-    const profissionalId = document.getElementById('profissional').value; // se tiver campo de profissional
-    const containerHorarios = document.getElementById('horarios-list'); // a div onde os botões vão aparecer
+    const profissionalId = document.getElementById('profissional').value; 
+    const containerHorarios = document.getElementById('horarios-list'); 
 
     if (!dataSelecionada) return;
 
-    // Limpa a lista e mostra que está carregando
     containerHorarios.innerHTML = '<p>Carregando horários...</p>';
 
     try {
-        // Faz as duas requisições ao mesmo tempo usando a variável API global
+        // Usa a variável API global que o seu script SaaS já cria (ex: https://vtrip.com.br/api/barbearia-diogo)
         const paramsProfissional = profissionalId ? `?profissional_id=${profissionalId}` : '';
         const [horariosRes, ocupadosRes] = await Promise.all([
             fetch(`${API}/horarios`),
@@ -362,17 +360,12 @@ async function buscarHorarios() {
         const configHorarios = await horariosRes.json();
         const agendamentosOcupados = await ocupadosRes.json();
 
-        // Extrai apenas os textos dos horários ocupados para uma lista simples (ex: ["09:00", "10:30"])
         const horariosOcupados = agendamentosOcupados.map(ag => ag.horario.substring(0, 5));
 
-        // Descobre qual é o dia da semana (0 = Domingo, 1 = Segunda...)
-        // Adicionamos T12:00:00 para evitar bugs de fuso horário do navegador
         const dataObj = new Date(dataSelecionada + 'T12:00:00'); 
         const diaDaSemana = dataObj.getDay();
-
         const configDoDia = configHorarios[diaDaSemana];
 
-        // Se a barbearia estiver fechada neste dia
         if (!configDoDia || !configDoDia.aberto) {
             containerHorarios.innerHTML = '<p>Fechado neste dia.</p>';
             return;
@@ -383,10 +376,9 @@ async function buscarHorarios() {
         const pausaInicio = configHorarios.pausa_inicio;
         const pausaFim = configHorarios.pausa_fim;
 
-        containerHorarios.innerHTML = ''; // Limpa o "Carregando"
+        containerHorarios.innerHTML = ''; 
         let temHorarioLivre = false;
 
-        // Funções auxiliares para calcular minutos
         const parseMinutos = (horaStr) => {
             const [h, m] = horaStr.split(':').map(Number);
             return h * 60 + m;
@@ -400,38 +392,27 @@ async function buscarHorarios() {
         let atualMinutos = parseMinutos(hora_inicio);
         const fimMinutos = parseMinutos(hora_fim);
 
-        // Laço de repetição gerando os botões de horário
         while (atualMinutos < fimMinutos) {
             const horaString = formatarHora(atualMinutos);
-
-            // Verifica se este horário cai na pausa do almoço
             const naPausa = pausaInicio && pausaFim && horaString >= pausaInicio && horaString < pausaFim;
-            
-            // Verifica se o horário já foi agendado por outro cliente
             const isOcupado = horariosOcupados.includes(horaString);
 
-            // Só cria o botão se NÃO estiver na pausa e NÃO estiver ocupado
             if (!naPausa && !isOcupado) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'btn-horario'; // Use a classe CSS que você já tem no seu layout
+                btn.className = 'btn-horario'; 
                 btn.textContent = horaString;
                 
-                // Lógica de clicar no horário
                 btn.onclick = () => {
-                    // Remove seleção dos outros
                     document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selecionado'));
-                    // Adiciona neste
                     btn.classList.add('selecionado');
-                    // Salva num input hidden ou variável para o agendamento
                     document.getElementById('horario_selecionado').value = horaString; 
                 };
 
                 containerHorarios.appendChild(btn);
                 temHorarioLivre = true;
             }
-
-            atualMinutos += intervalo; // Pula para o próximo horário (ex: +30 min)
+            atualMinutos += intervalo; 
         }
 
         if (!temHorarioLivre) {
