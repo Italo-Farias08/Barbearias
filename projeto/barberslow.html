@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary-color: #2563eb; /* Será sobrescrito pela cor_primaria do backend */
+            --primary-hover: #1d4ed8;
+            --border-color: #e2e8f0;
+            --radius: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            background-color: var(--surface-color);
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        header { text-align: center; }
+        header h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        header p { color: var(--text-muted); font-size: 0.9rem; }
+
+        .step { display: none; animation: fadeIn 0.3s ease; }
+        .step.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+
+        .input-group { margin-bottom: 1rem; }
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted); }
+        .input-group input {
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: var(--radius); font-size: 1rem; outline: none;
+        }
+        .input-group input:focus { border-color: var(--primary-color); }
+
+        .grid-options {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;
+        }
+
+        .card-option {
+            border: 1px solid var(--border-color); border-radius: var(--radius);
+            padding: 1rem; text-align: center; cursor: pointer; transition: all 0.2s;
+        }
+        .card-option:hover { border-color: var(--primary-color); }
+        .card-option.selected {
+            border-color: var(--primary-color); background-color: rgba(37, 99, 235, 0.05);
+            box-shadow: 0 0 0 1px var(--primary-color);
+        }
+
+        .card-option strong { display: block; font-size: 0.95rem; margin-bottom: 0.25rem; }
+        .card-option span { font-size: 0.85rem; color: var(--text-muted); }
+
+        .btn-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        button {
+            flex: 1; padding: 0.75rem; border: none; border-radius: var(--radius);
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:disabled { background-color: var(--text-muted); cursor: not-allowed; }
+        .btn-secondary { background-color: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--border-color); }
+
+        #error-msg { color: #dc2626; font-size: 0.9rem; text-align: center; display: none; margin-top: 1rem;}
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); display: flex; justify-content: center;
+            align-items: center; z-index: 1000; display: none; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">Carregando...</div>
+
+    <div class="container" id="app-container" style="display: none;">
+        <header>
+            <h1 id="shop-name">Carregando...</h1>
+            <p id="shop-city">SaaS Agendamento</p>
+        </header>
+
+        <div class="step active" id="step-1">
+            <h2 class="step-title">Seus Dados</h2>
+            <div class="input-group">
+                <label for="cliente-nome">Nome Completo</label>
+                <input type="text" id="cliente-nome" placeholder="Ex: João Silva">
+            </div>
+            <div class="input-group">
+                <label for="cliente-telefone">WhatsApp</label>
+                <input type="tel" id="cliente-telefone" placeholder="Ex: 81999999999">
+            </div>
+            <div class="btn-actions">
+                <button class="btn-primary" onclick="nextStep(1)">Continuar</button>
+            </div>
+        </div>
+
+        <div class="step" id="step-2">
+            <h2 class="step-title">Escolha o Profissional</h2>
+            <div class="grid-options" id="grid-profissionais"></div>
+            <div class="btn-actions">
+                <button class="btn-secondary" onclick="prevStep(2)">Voltar</button>
+                <button class="btn-primary" onclick="nextStep(2)" id="btn-next-2" disabled>Continuar</button>
+            </div>
+        </div>
+
+        <div class="step" id="step-3">
+            <h2 class="step-title">Escolha o Serviço</h2>
+            <div class="grid-options" id="grid-servicos"></div>
+            <div class="btn-actions">
+                <button class="btn-secondary" onclick="prevStep(3)">Voltar</button>
+                <button class="btn-primary" onclick="nextStep(3)" id="btn-next-3" disabled>Continuar</button>
+            </div>
+        </div>
+
+        <div class="step" id="step-4">
+            <h2 class="step-title">Data e Horário</h2>
+            <div class="input-group">
+                <label for="data-agendamento">Escolha a data</label>
+                <input type="date" id="data-agendamento" onchange="buscarHorarios()">
+            </div>
+            <div class="grid-options" id="grid-horarios">
+                <span style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem;">
+                    Selecione uma data para ver os horários
+                </span>
+            </div>
+            <div class="btn-actions">
+                <button class="btn-secondary" onclick="prevStep(4)">Voltar</button>
+                <button class="btn-primary" onclick="nextStep(4)" id="btn-next-4" disabled>Resumo</button>
+            </div>
+        </div>
+
+        <div class="step" id="step-5">
+            <h2 class="step-title">Confirmar Agendamento</h2>
+            <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px; font-size: 0.95rem; line-height: 1.6;">
+                <p><strong>Nome:</strong> <span id="resumo-nome"></span></p>
+                <p><strong>Profissional:</strong> <span id="resumo-profissional"></span></p>
+                <p><strong>Serviço:</strong> <span id="resumo-servico"></span></p>
+                <p><strong>Data/Hora:</strong> <span id="resumo-datahora"></span></p>
+                <p><strong>Total:</strong> <span id="resumo-valor"></span></p>
+            </div>
+            <div id="error-msg"></div>
+            <div class="btn-actions">
+                <button class="btn-secondary" onclick="prevStep(5)">Voltar</button>
+                <button class="btn-primary" onclick="finalizarAgendamento()">Confirmar</button>
+            </div>
+        </div>
+        
+        <div class="step" id="step-6" style="text-align: center;">
+            <h2 class="step-title" style="color: #16a34a; font-size: 1.5rem;">Agendamento Confirmado! 🎉</h2>
+            <p style="color: var(--text-muted); margin-top: 1rem;">Seu horário foi reservado com sucesso. Você receberá lembretes no seu WhatsApp.</p>
+            <button class="btn-primary" style="margin-top: 2rem; width: 100%;" onclick="location.reload()">Fazer Novo Agendamento</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÕES DA API BASEADA NO SEU BACKEND MULTI-TENANT
+        const API_BASE_URL = 'http://localhost:3000'; // Substitua pela sua URL real em prod
+        
+        // Extrai o slug da URL (ex: meusaas.com/?loja=barbearia-do-ze)
+        const urlParams = new URLSearchParams(window.location.search);
+        const slug = urlParams.get('loja'); 
+
+        // Estado Global do Agendamento
+        const state = {
+            cliente: { nome: '', telefone: '' },
+            profissional: null,
+            servico: null,
+            data: '',
+            horario: ''
+        };
+
+        // Elementos UI
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const container = document.getElementById('app-container');
+        const errorMsg = document.getElementById('error-msg');
+
+        // INICIALIZAÇÃO
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!slug) {
+                document.body.innerHTML = '<h2 style="text-align:center; margin-top: 2rem;">Erro: Link da barbearia inválido. Informe o ?loja=slug</h2>';
+                return;
+            }
+
+            mostrarLoading(true);
+            try {
+                // Como não vi suas rotas Express exatas, deduzi as mais comuns para esse padrão:
+                const [barbeariaRes, profissionaisRes, servicosRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/barbearia/${slug}`),
+                    fetch(`${API_BASE_URL}/api/barbearia/${slug}/profissionais`),
+                    fetch(`${API_BASE_URL}/api/barbearia/${slug}/servicos`)
+                ]);
+
+                if (!barbeariaRes.ok) throw new Error('Barbearia não encontrada ou inativa');
+
+                const barbearia = await barbeariaRes.json();
+                const profissionais = await profissionaisRes.json();
+                const servicos = await servicosRes.json();
+
+                // Aplica cor customizada se existir no banco
+                if(barbearia.cor_primaria) {
+                    document.documentElement.style.setProperty('--primary-color', barbearia.cor_primaria);
+                }
+
+                document.getElementById('shop-name').innerText = barbearia.nome;
+                document.getElementById('shop-city').innerText = barbearia.cidade || '';
+
+                renderizarProfissionais(profissionais);
+                renderizarServicos(servicos);
+                
+                // Define data mínima como hoje no input
+                document.getElementById('data-agendamento').min = new Date().toISOString().split('T')[0];
+                
+                container.style.display = 'flex';
+            } catch (error) {
+                document.body.innerHTML = `<h2 style="text-align:center; margin-top: 2rem;">Erro: ${error.message}</h2>`;
+            } finally {
+                mostrarLoading(false);
+            }
+        });
+
+        // NAVEGAÇÃO ENTRE PASSOS
+        function nextStep(current) {
+            if (current === 1) {
+                const nome = document.getElementById('cliente-nome').value.trim();
+                const tel = document.getElementById('cliente-telefone').value.trim();
+                if (!nome || !tel) return alert('Preencha nome e WhatsApp.');
+                state.cliente = { nome, telefone: tel };
+            }
+
+            document.getElementById(`step-${current}`).classList.remove('active');
+            document.getElementById(`step-${current + 1}`).classList.add('active');
+
+            if (current === 4) preencherResumo();
+        }
+
+        function prevStep(current) {
+            document.getElementById(`step-${current}`).classList.remove('active');
+            document.getElementById(`step-${current - 1}`).classList.add('active');
+        }
+
+        // RENDERIZAÇÃO
+        function renderizarProfissionais(lista) {
+            const grid = document.getElementById('grid-profissionais');
+            grid.innerHTML = lista.map(p => `
+                <div class="card-option" onclick="selecionarProfissional(${p.id}, '${p.nome}', this)">
+                    <strong>${p.nome}</strong>
+                    <span>${p.especialidade || ''}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderizarServicos(lista) {
+            const grid = document.getElementById('grid-servicos');
+            grid.innerHTML = lista.map(s => {
+                const precoFormatado = Number(s.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                return `
+                <div class="card-option" onclick="selecionarServico(${s.id}, '${s.nome}', ${s.preco}, this)">
+                    <strong>${s.nome}</strong>
+                    <span>${precoFormatado}</span>
+                </div>
+            `}).join('');
+        }
+
+        // SELEÇÕES
+        function selecionarProfissional(id, nome, element) {
+            document.querySelectorAll('#grid-profissionais .card-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            state.profissional = { id, nome };
+            document.getElementById('btn-next-2').disabled = false;
+            
+            // Limpa horários se trocar de profissional
+            state.horario = '';
+            document.getElementById('grid-horarios').innerHTML = '';
+            document.getElementById('data-agendamento').value = '';
+            document.getElementById('btn-next-4').disabled = true;
+        }
+
+        function selecionarServico(id, nome, preco, element) {
+            document.querySelectorAll('#grid-servicos .card-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            state.servico = { id, nome, preco };
+            document.getElementById('btn-next-3').disabled = false;
+        }
+
+        async function buscarHorarios() {
+            const data = document.getElementById('data-agendamento').value;
+            if (!data || !state.profissional) return;
+
+            state.data = data;
+            state.horario = '';
+            document.getElementById('btn-next-4').disabled = true;
+            
+            const grid = document.getElementById('grid-horarios');
+            grid.innerHTML = '<span style="grid-column: 1/-1; text-align:center;">Buscando horários...</span>';
+
+            try {
+                // Rota deduzida com base na lógica do backend que checa disponibilidade
+                const res = await fetch(`${API_BASE_URL}/api/barbearia/${slug}/horarios-livres?data=${data}&profissional_id=${state.profissional.id}`);
+                if (!res.ok) throw new Error('Falha ao buscar horários');
+                
+                const horariosLivres = await res.json(); // Array de strings ["08:00", "08:30"]
+
+                if (horariosLivres.length === 0) {
+                    grid.innerHTML = '<span style="grid-column: 1/-1; text-align:center; color: #dc2626;">Nenhum horário disponível nesta data.</span>';
+                    return;
+                }
+
+                grid.innerHTML = horariosLivres.map(h => `
+                    <div class="card-option" onclick="selecionarHorario('${h}', this)">
+                        <strong>${h}</strong>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                grid.innerHTML = '<span style="grid-column: 1/-1; text-align:center; color: #dc2626;">Erro ao carregar horários.</span>';
+            }
+        }
+
+        function selecionarHorario(horario, element) {
+            document.querySelectorAll('#grid-horarios .card-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            state.horario = horario;
+            document.getElementById('btn-next-4').disabled = false;
+        }
+
+        function preencherResumo() {
+            const [ano, mes, dia] = state.data.split('-');
+            const dataFormatada = `${dia}/${mes}/${ano}`;
+            const precoFormatado = Number(state.servico.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            document.getElementById('resumo-nome').innerText = state.cliente.nome;
+            document.getElementById('resumo-profissional').innerText = state.profissional.nome;
+            document.getElementById('resumo-servico').innerText = state.servico.nome;
+            document.getElementById('resumo-datahora').innerText = `${dataFormatada} às ${state.horario}`;
+            document.getElementById('resumo-valor').innerText = precoFormatado;
+        }
+
+        async function finalizarAgendamento() {
+            mostrarLoading(true);
+            errorMsg.style.display = 'none';
+
+            const payload = {
+                nome: state.cliente.nome,
+                telefone: state.cliente.telefone.replace(/\D/g, ''),
+                data: state.data,
+                horario: state.horario,
+                valor: state.servico.preco,
+                profissional_id: state.profissional.id,
+                servico_id: state.servico.id // Opcional, dependendo da sua tabela
+            };
+
+            try {
+                // Rota deduzida para salvar o agendamento no BD
+                const res = await fetch(`${API_BASE_URL}/api/barbearia/${slug}/agendamentos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.erro || 'Erro ao salvar agendamento.');
+                }
+
+                document.getElementById('step-5').classList.remove('active');
+                document.getElementById('step-6').classList.add('active');
+            } catch (error) {
+                errorMsg.innerText = error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        function mostrarLoading(show) {
+            loadingOverlay.style.display = show ? 'flex' : 'none';
+        }
+    </script>
+</body>
+</html>
