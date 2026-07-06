@@ -79,6 +79,55 @@
         .card-option strong { display: block; font-size: 0.95rem; margin-bottom: 0.25rem; }
         .card-option span { font-size: 0.85rem; color: var(--text-muted); }
 
+        /* ── Caixinhas de dia (novo seletor) ── */
+        .grid-dias {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+        }
+        .dia-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 0.75rem 0.4rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--surface-color);
+        }
+        .dia-card:hover { border-color: var(--primary-color); }
+        .dia-card.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.05);
+            box-shadow: 0 0 0 1px var(--primary-color);
+        }
+        .dia-card small {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+        .dia-card.selected small { color: var(--primary-color); }
+        .dia-card strong {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .dia-card span {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .dia-card.selected span { color: var(--primary-color); }
+
+        .sub-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
         .btn-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
         button {
             flex: 1; padding: 0.75rem; border: none; border-radius: var(--radius);
@@ -143,13 +192,16 @@
 
         <div class="step" id="step-4">
             <h2 class="step-title">Data e Horário</h2>
-            <div class="input-group">
-                <label for="data-agendamento">Escolha a data</label>
-                <input type="date" id="data-agendamento" onchange="buscarHorarios()">
+            <p class="sub-label">Escolha o dia</p>
+            <div class="grid-dias" id="grid-dias">
+                <span style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem;">
+                    Carregando dias disponíveis...
+                </span>
             </div>
+            <p class="sub-label">Escolha o horário</p>
             <div class="grid-options" id="grid-horarios">
                 <span style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem;">
-                    Selecione uma data para ver os horários
+                    Selecione um dia para ver os horários
                 </span>
             </div>
             <div class="btn-actions">
@@ -183,10 +235,7 @@
 
     <!--
       IMPORTANTE:
-      Troque o caminho abaixo pelo caminho real do seu arquivo que define
-      BASE_URL, getSlug(), BARBER_SLUG e API (o script com aplicarConfig()).
-      Ele precisa carregar ANTES do script desta página, senão a variável
-      API não existe e a tela fica em branco.
+      Este script precisa definir a variável API antes do script principal rodar.
     -->
     <script src="Saas.js"></script>
 
@@ -198,9 +247,16 @@
         cliente: { nome: '', telefone: '' },
         profissional: null,
         servico: null,
-        data: '',
+        data: '',        // 'YYYY-MM-DD'
+        dataLabel: '',   // texto pro resumo, ex: "Hoje (Segunda)"
         horario: ''
     };
+
+    let configHorariosGlobal = null;
+
+    const NOMES_DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const NOMES_DIAS_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const MESES_CURTO = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
     // Espera a variável API (definida no config.js) existir antes de iniciar
     function iniciarSistema() {
@@ -211,19 +267,22 @@
         carregarDadosIniciais();
     }
 
-    // Carrega profissionais e serviços
+    // Carrega profissionais, serviços e horários da barbearia
     async function carregarDadosIniciais() {
         try {
-            const [profissionaisRes, servicosRes] = await Promise.all([
+            const [profissionaisRes, servicosRes, horariosRes] = await Promise.all([
                 fetch(`${API}/profissionais`),
-                fetch(`${API}/servicos`)
+                fetch(`${API}/servicos`),
+                fetch(`${API}/horarios`)
             ]);
 
             const profissionais = await profissionaisRes.json();
             const servicos = await servicosRes.json();
+            configHorariosGlobal = await horariosRes.json();
 
             renderizarProfissionais(profissionais);
             renderizarServicos(servicos);
+            gerarDiasDisponiveis();
 
             document.getElementById('app-container').style.display = 'flex';
         } catch (error) {
@@ -290,6 +349,59 @@
         });
     }
 
+    // Gera as caixinhas dos próximos 14 dias, pulando os dias fechados
+    function gerarDiasDisponiveis() {
+        const grid = document.getElementById('grid-dias');
+        grid.innerHTML = '';
+
+        const cfg = configHorariosGlobal || {};
+        const hoje = new Date();
+        let algumDia = false;
+
+        for (let i = 0; i < 14; i++) {
+            const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+            const diaSemana = data.getDay();
+            const cfgDia = cfg[String(diaSemana)];
+
+            if (!cfgDia || !cfgDia.aberto) continue;
+
+            algumDia = true;
+            const dataISO = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+            const label = i === 0 ? `Hoje (${NOMES_DIAS[diaSemana]})`
+                        : i === 1 ? `Amanhã (${NOMES_DIAS[diaSemana]})`
+                        : `${NOMES_DIAS[diaSemana]} ${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}`;
+
+            const card = document.createElement('div');
+            card.className = 'dia-card';
+            card.dataset.data = dataISO;
+            card.dataset.label = label;
+            card.innerHTML = `
+                <small>${i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : NOMES_DIAS_CURTO[diaSemana]}</small>
+                <strong>${data.getDate()}</strong>
+                <span>${MESES_CURTO[data.getMonth()]}</span>
+            `;
+            card.addEventListener('click', () => selecionarDia(card, dataISO, label));
+            grid.appendChild(card);
+        }
+
+        if (!algumDia) {
+            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum dia disponível nos próximos 14 dias.</span>';
+        }
+    }
+
+    // Clique numa caixinha de dia → busca horários daquele dia
+    function selecionarDia(elemento, dataISO, label) {
+        document.querySelectorAll('.dia-card').forEach(c => c.classList.remove('selected'));
+        elemento.classList.add('selected');
+
+        state.data = dataISO;
+        state.dataLabel = label;
+        state.horario = '';
+        document.getElementById('btn-next-4').disabled = true;
+
+        buscarHorarios();
+    }
+
     // Renderiza cards de horários (step 4)
     function renderizarHorarios(lista) {
         const grid = document.getElementById('grid-horarios');
@@ -315,14 +427,13 @@
         });
     }
 
-    // Busca horários disponíveis para a data escolhida (IDs corrigidos)
+    // Busca horários disponíveis para o dia selecionado (state.data)
     async function buscarHorarios() {
-        const dataSelecionada = document.getElementById('data-agendamento').value;
+        const dataSelecionada = state.data;
         const profissionalId = state.profissional?.id;
         const containerHorarios = document.getElementById('grid-horarios');
 
         if (!dataSelecionada) return;
-        state.data = dataSelecionada;
         document.getElementById('btn-next-4').disabled = true;
         containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Carregando horários...</span>';
 
@@ -360,8 +471,16 @@
             const pausaIniMin = pausaInicio ? (() => { const [h, m] = pausaInicio.split(':').map(Number); return h * 60 + m; })() : null;
             const pausaFimMin = pausaFim ? (() => { const [h, m] = pausaFim.split(':').map(Number); return h * 60 + m; })() : null;
 
+            // Se o dia for hoje, esconde horários que já passaram
+            const agora = new Date();
+            const ehHoje = dataObj.getFullYear() === agora.getFullYear() &&
+                           dataObj.getMonth() === agora.getMonth() &&
+                           dataObj.getDate() === agora.getDate();
+            const agoraMin = ehHoje ? agora.getHours() * 60 + agora.getMinutes() : -1;
+
             const horariosLivres = [];
             for (let t = inicioMin; t < fimMin; t += intervalo) {
+                if (ehHoje && t <= agoraMin) continue;
                 if (pausaIniMin !== null && pausaFimMin !== null && t >= pausaIniMin && t < pausaFimMin) continue;
                 const hh = String(Math.floor(t / 60)).padStart(2, '0');
                 const mm = String(t % 60).padStart(2, '0');
@@ -407,7 +526,7 @@
         }
 
         if (atual === 4) {
-            if (!state.data || !state.horario) { alert('Selecione data e horário.'); return; }
+            if (!state.data || !state.horario) { alert('Selecione dia e horário.'); return; }
             preencherResumo();
             mostrarStep(5);
             return;
@@ -422,9 +541,7 @@
         document.getElementById('resumo-nome').textContent = state.cliente.nome;
         document.getElementById('resumo-profissional').textContent = state.profissional?.nome || '';
         document.getElementById('resumo-servico').textContent = state.servico?.nome || '';
-
-        const [ano, mes, dia] = state.data.split('-');
-        document.getElementById('resumo-datahora').textContent = `${dia}/${mes}/${ano} às ${state.horario}`;
+        document.getElementById('resumo-datahora').textContent = `${state.dataLabel} às ${state.horario}`;
 
         const valor = Number(state.servico?.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         document.getElementById('resumo-valor').textContent = valor;
