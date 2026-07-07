@@ -44,8 +44,8 @@
         background-color: var(--surface-color);
         width: 100%;
         max-width: 520px;
-        border: 1px solid var(--ink);
-        box-shadow: 6px 6px 0 var(--ink);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 2px rgba(33,28,23,0.04), 0 16px 40px -20px rgba(33,28,23,0.35);
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -286,8 +286,21 @@
     }
     #step-6 p { color: var(--muted); margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.5; }
 
-    @media (max-width: 400px) {
-        .card-body { padding: 1.5rem 1.25rem 1.25rem; }
+    @media (max-width: 480px) {
+        body { padding: 0; }
+        .container { max-width: 100%; min-height: 100vh; border-left: none; border-right: none; box-shadow: none; }
+        .card-body { padding: 1.5rem 1.25rem 1.5rem; }
+        header h1 { font-size: 1.35rem; }
+        .step-title { font-size: 1.1rem; }
+        .rail { padding: 0.7rem 1.25rem; }
+        .grid-options { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 0.5rem; }
+        .grid-horarios { grid-template-columns: repeat(3, 1fr); }
+        .grid-dias { grid-template-columns: repeat(5, 1fr); }
+        .resumo-box { padding: 0.3rem 1rem; }
+        .resumo-box .linha { flex-direction: column; align-items: flex-start; gap: 0.15rem; padding: 0.7rem 0; }
+        .resumo-box .linha span { text-align: left; }
+        .btn-actions { gap: 0.6rem; }
+        button { padding: 0.85rem 0.6rem; font-size: 0.8rem; }
     }
 </style>
 </head>
@@ -306,7 +319,7 @@
             </svg>
             Barbearia
         </span>
-        <span class="est">Reserva</span>
+    </div>
     </div>
     <div class="card-body">
         <header>
