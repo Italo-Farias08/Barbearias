@@ -1,166 +1,299 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento</title>
-    <style>
-        :root {
-            --bg-color: #f8fafc;
-            --surface-color: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --border-color: #e2e8f0;
-            --radius: 8px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agendamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-color: #F3F5F3;
+        --surface-color: #FFFFFF;
+        --ink: #15201C;
+        --muted: #6E7A74;
+        --accent: #1F6F54;
+        --accent-hover: #16543F;
+        --accent-soft: rgba(31, 111, 84, 0.08);
+        --border-color: #E1E5E2;
+        --danger: #B3402F;
+        --danger-soft: rgba(179, 64, 47, 0.08);
+        --occupied-bg: #EFEFEC;
+        --occupied-text: #A3A9A4;
+        --radius: 10px;
+        --radius-sm: 6px;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-        }
+    html, body {
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
-        .container {
-            background-color: var(--surface-color);
-            width: 100%;
-            max-width: 500px;
-            padding: 2rem;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+    body {
+        background-color: var(--bg-color);
+        color: var(--ink);
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2.5rem 1rem;
+        background-image:
+            radial-gradient(circle at 1px 1px, rgba(21,32,28,0.05) 1px, transparent 0);
+        background-size: 22px 22px;
+    }
 
-        header { text-align: center; }
-        header h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-        header p { color: var(--text-muted); font-size: 0.9rem; }
+    .container {
+        background-color: var(--surface-color);
+        width: 100%;
+        max-width: 460px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 2px rgba(21,32,28,0.04), 0 12px 32px -16px rgba(21,32,28,0.18);
+        overflow: hidden;
+    }
 
-        .step { display: none; animation: fadeIn 0.3s ease; }
-        .step.active { display: block; }
+    /* signature: barber-pole stripe rail at the very top of the card */
+    .rail {
+        height: 6px;
+        width: 100%;
+        background: repeating-linear-gradient(
+            -45deg,
+            var(--accent) 0px, var(--accent) 10px,
+            #C7442E 10px, #C7442E 20px,
+            #F4F1E8 20px, #F4F1E8 30px
+        );
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    .card-body { padding: 2rem 1.75rem 1.75rem; }
 
-        .step-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+    header { margin-bottom: 1.75rem; }
+    header h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 600;
+        font-size: 1.55rem;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+    }
+    header p {
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin-top: 0.2rem;
+        font-family: 'IBM Plex Mono', monospace;
+        letter-spacing: 0.02em;
+    }
 
-        .input-group { margin-bottom: 1rem; }
-        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted); }
-        .input-group input {
-            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
-            border-radius: var(--radius); font-size: 1rem; outline: none;
-        }
-        .input-group input:focus { border-color: var(--primary-color); }
+    /* Step indicator — genuinely sequential, so numbering is justified */
+    .step-track {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 1.75rem;
+    }
+    .step-dot {
+        flex: 1;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--border-color);
+        transition: background 0.25s ease;
+    }
+    .step-dot.done { background: var(--accent); }
+    .step-dot.current { background: var(--ink); }
 
-        .grid-options {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;
-        }
+    .step { display: none; }
+    .step.active { display: block; animation: fadeIn 0.28s ease; }
 
-        .card-option {
-            border: 1px solid var(--border-color); border-radius: var(--radius);
-            padding: 1rem; text-align: center; cursor: pointer; transition: all 0.2s;
-        }
-        .card-option:hover { border-color: var(--primary-color); }
-        .card-option.selected {
-            border-color: var(--primary-color); background-color: rgba(37, 99, 235, 0.05);
-            box-shadow: 0 0 0 1px var(--primary-color);
-        }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-        .card-option strong { display: block; font-size: 0.95rem; margin-bottom: 0.25rem; }
-        .card-option span { font-size: 0.85rem; color: var(--text-muted); }
+    .step-eyebrow {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--accent);
+        margin-bottom: 0.3rem;
+    }
+    .step-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.1rem;
+    }
 
-        /* ── Caixinhas de dia (novo seletor) ── */
-        .grid-dias {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
-            gap: 0.6rem;
-            margin-bottom: 1.25rem;
-        }
-        .dia-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 2px;
-            padding: 0.75rem 0.4rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: all 0.2s;
-            background: var(--surface-color);
-        }
-        .dia-card:hover { border-color: var(--primary-color); }
-        .dia-card.selected {
-            border-color: var(--primary-color);
-            background-color: rgba(37, 99, 235, 0.05);
-            box-shadow: 0 0 0 1px var(--primary-color);
-        }
-        .dia-card small {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-        }
-        .dia-card.selected small { color: var(--primary-color); }
-        .dia-card strong {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-        .dia-card span {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-        .dia-card.selected span { color: var(--primary-color); }
+    .input-group { margin-bottom: 1rem; }
+    .input-group label {
+        display: block; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted); font-weight: 500;
+    }
+    .input-group input {
+        width: 100%; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm); font-size: 0.98rem; outline: none;
+        background: var(--bg-color);
+        transition: border-color 0.15s ease, background 0.15s ease;
+        font-family: inherit;
+    }
+    .input-group input:focus { border-color: var(--accent); background: var(--surface-color); }
 
-        .sub-label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
+    .grid-options {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 0.6rem;
+    }
 
-        .btn-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
-        button {
-            flex: 1; padding: 0.75rem; border: none; border-radius: var(--radius);
-            font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s;
-        }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-primary:disabled { background-color: var(--text-muted); cursor: not-allowed; }
-        .btn-secondary { background-color: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color); }
-        .btn-secondary:hover { background-color: var(--border-color); }
+    .card-option {
+        border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+        padding: 0.85rem 0.9rem; text-align: center; cursor: pointer; transition: all 0.15s;
+        background: var(--surface-color);
+    }
+    .card-option:hover { border-color: var(--accent); }
+    .card-option.selected {
+        border-color: var(--accent); background-color: var(--accent-soft);
+        box-shadow: 0 0 0 1px var(--accent);
+    }
+    .card-option strong { display: block; font-size: 0.92rem; margin-bottom: 0.2rem; }
+    .card-option span { font-size: 0.8rem; color: var(--muted); }
 
-        #error-msg { color: #dc2626; font-size: 0.9rem; text-align: center; display: none; margin-top: 1rem;}
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); display: flex; justify-content: center;
-            align-items: center; z-index: 1000; display: none; font-weight: bold;
-        }
-    </style>
+    /* Occupied time slot — visibly marked, not hidden */
+    .card-option.ocupado {
+        cursor: not-allowed;
+        background: var(--occupied-bg);
+        border-color: var(--border-color);
+        color: var(--occupied-text);
+        position: relative;
+    }
+    .card-option.ocupado:hover { border-color: var(--border-color); }
+    .card-option.ocupado strong {
+        color: var(--occupied-text);
+        text-decoration: line-through;
+        text-decoration-color: rgba(163,169,164,0.9);
+    }
+    .card-option.ocupado span {
+        color: var(--occupied-text);
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .grid-horarios { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+    .grid-horarios .card-option strong { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; }
+
+    .grid-dias {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1.4rem;
+    }
+    .dia-card {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 1px; padding: 0.7rem 0.3rem; border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
+        background: var(--surface-color);
+    }
+    .dia-card:hover { border-color: var(--accent); }
+    .dia-card.selected {
+        border-color: var(--accent); background-color: var(--accent-soft);
+        box-shadow: 0 0 0 1px var(--accent);
+    }
+    .dia-card small {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+    }
+    .dia-card.selected small { color: var(--accent); }
+    .dia-card strong { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 600; }
+    .dia-card span { font-size: 0.68rem; color: var(--muted); }
+    .dia-card.selected span { color: var(--accent); }
+
+    .sub-label {
+        font-size: 0.8rem; color: var(--muted); margin-bottom: 0.55rem; font-weight: 500;
+    }
+
+    .legenda {
+        display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem;
+        font-size: 0.74rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace;
+    }
+    .legenda span { display: inline-flex; align-items: center; gap: 5px; }
+    .legenda i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+    .legenda .i-livre { background: var(--surface-color); border: 1px solid var(--border-color); }
+    .legenda .i-ocupado { background: var(--occupied-bg); border: 1px solid var(--border-color); }
+
+    .btn-actions { display: flex; gap: 0.75rem; margin-top: 1.6rem; }
+    button {
+        flex: 1; padding: 0.8rem; border: none; border-radius: var(--radius-sm);
+        font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: 0.15s;
+        font-family: inherit;
+    }
+    .btn-primary { background-color: var(--accent); color: white; }
+    .btn-primary:hover { background-color: var(--accent-hover); }
+    .btn-primary:disabled { background-color: #C9CEC9; cursor: not-allowed; }
+    .btn-secondary { background-color: var(--surface-color); color: var(--ink); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background-color: var(--bg-color); }
+
+    .resumo-box {
+        background: var(--bg-color); padding: 1.1rem 1.2rem; border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color); font-size: 0.92rem; line-height: 1.9;
+    }
+    .resumo-box .linha { display: flex; justify-content: space-between; gap: 1rem; }
+    .resumo-box .linha strong:first-child { color: var(--muted); font-weight: 500; }
+    .resumo-box .linha:not(:last-child) { border-bottom: 1px dashed var(--border-color); }
+    .resumo-box .total { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+
+    #error-msg {
+        color: var(--danger); font-size: 0.85rem; text-align: left; display: none;
+        margin-top: 1rem; background: var(--danger-soft); padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
+    }
+
+    .whatsapp-note {
+        display: flex; align-items: center; gap: 0.5rem; margin-top: 0.9rem;
+        font-size: 0.78rem; color: var(--muted);
+    }
+
+    #loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(21,32,28,0.35); display: none; justify-content: center;
+        align-items: center; z-index: 1000; color: white; font-weight: 600;
+        font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em;
+    }
+
+    #step-6 { text-align: center; padding-top: 0.5rem; }
+    #step-6 .check-badge {
+        width: 56px; height: 56px; border-radius: 50%; background: var(--accent-soft);
+        display: flex; align-items: center; justify-content: center; margin: 0 auto 1.1rem;
+    }
+    #step-6 h2 {
+        font-family: 'Fraunces', serif; color: var(--ink); font-size: 1.35rem; font-weight: 600;
+    }
+    #step-6 p { color: var(--muted); margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.5; }
+
+    @media (max-width: 400px) {
+        .card-body { padding: 1.5rem 1.25rem 1.25rem; }
+    }
+</style>
 </head>
 <body>
 
-    <div id="loading-overlay">Carregando...</div>
+<div id="loading-overlay">Carregando...</div>
 
-    <div class="container" id="app-container" style="display: none;">
+<div class="container" id="app-container" style="display: none;">
+    <div class="rail"></div>
+    <div class="card-body">
         <header>
             <h1 id="shop-name" data-barber="nome">Carregando...</h1>
             <p id="shop-city" data-barber="cidade">SaaS Agendamento</p>
         </header>
 
+        <div class="step-track" id="step-track">
+            <div class="step-dot current" data-step="1"></div>
+            <div class="step-dot" data-step="2"></div>
+            <div class="step-dot" data-step="3"></div>
+            <div class="step-dot" data-step="4"></div>
+            <div class="step-dot" data-step="5"></div>
+        </div>
+
         <div class="step active" id="step-1">
-            <h2 class="step-title">Seus Dados</h2>
+            <p class="step-eyebrow">Passo 1 de 5</p>
+            <h2 class="step-title">Seus dados</h2>
             <div class="input-group">
-                <label for="cliente-nome">Nome Completo</label>
+                <label for="cliente-nome">Nome completo</label>
                 <input type="text" id="cliente-nome" placeholder="Ex: João Silva">
             </div>
             <div class="input-group">
@@ -173,7 +306,8 @@
         </div>
 
         <div class="step" id="step-2">
-            <h2 class="step-title">Escolha o Profissional</h2>
+            <p class="step-eyebrow">Passo 2 de 5</p>
+            <h2 class="step-title">Escolha o profissional</h2>
             <div class="grid-options" id="grid-profissionais"></div>
             <div class="btn-actions">
                 <button class="btn-secondary" onclick="prevStep(2)">Voltar</button>
@@ -182,7 +316,8 @@
         </div>
 
         <div class="step" id="step-3">
-            <h2 class="step-title">Escolha o Serviço</h2>
+            <p class="step-eyebrow">Passo 3 de 5</p>
+            <h2 class="step-title">Escolha o serviço</h2>
             <div class="grid-options" id="grid-servicos"></div>
             <div class="btn-actions">
                 <button class="btn-secondary" onclick="prevStep(3)">Voltar</button>
@@ -191,34 +326,41 @@
         </div>
 
         <div class="step" id="step-4">
-            <h2 class="step-title">Data e Horário</h2>
+            <p class="step-eyebrow">Passo 4 de 5</p>
+            <h2 class="step-title">Data e horário</h2>
             <p class="sub-label">Escolha o dia</p>
             <div class="grid-dias" id="grid-dias">
-                <span style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem;">
+                <span style="grid-column: 1/-1; text-align:center; color: var(--muted); font-size: 0.9rem;">
                     Carregando dias disponíveis...
                 </span>
             </div>
             <p class="sub-label">Escolha o horário</p>
-            <div class="grid-options" id="grid-horarios">
-                <span style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem;">
+            <div class="grid-options grid-horarios" id="grid-horarios">
+                <span style="grid-column: 1/-1; text-align:center; color: var(--muted); font-size: 0.9rem;">
                     Selecione um dia para ver os horários
                 </span>
             </div>
+            <div class="legenda">
+                <span><i class="i-livre"></i>Livre</span>
+                <span><i class="i-ocupado"></i>Ocupado</span>
+            </div>
             <div class="btn-actions">
                 <button class="btn-secondary" onclick="prevStep(4)">Voltar</button>
-                <button class="btn-primary" onclick="nextStep(4)" id="btn-next-4" disabled>Resumo</button>
+                <button class="btn-primary" onclick="nextStep(4)" id="btn-next-4" disabled>Continuar</button>
             </div>
         </div>
 
         <div class="step" id="step-5">
-            <h2 class="step-title">Confirmar Agendamento</h2>
-            <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px; font-size: 0.95rem; line-height: 1.6;">
-                <p><strong>Nome:</strong> <span id="resumo-nome"></span></p>
-                <p><strong>Profissional:</strong> <span id="resumo-profissional"></span></p>
-                <p><strong>Serviço:</strong> <span id="resumo-servico"></span></p>
-                <p><strong>Data/Hora:</strong> <span id="resumo-datahora"></span></p>
-                <p><strong>Total:</strong> <span id="resumo-valor"></span></p>
+            <p class="step-eyebrow">Passo 5 de 5</p>
+            <h2 class="step-title">Confirmar agendamento</h2>
+            <div class="resumo-box">
+                <p class="linha"><strong>Nome</strong> <span id="resumo-nome"></span></p>
+                <p class="linha"><strong>Profissional</strong> <span id="resumo-profissional"></span></p>
+                <p class="linha"><strong>Serviço</strong> <span id="resumo-servico"></span></p>
+                <p class="linha"><strong>Data/Hora</strong> <span id="resumo-datahora"></span></p>
+                <p class="linha"><strong>Total</strong> <span class="total" id="resumo-valor"></span></p>
             </div>
+            <p class="whatsapp-note">Ao confirmar, abriremos o WhatsApp com os detalhes prontos para envio.</p>
             <div id="error-msg"></div>
             <div class="btn-actions">
                 <button class="btn-secondary" onclick="prevStep(5)">Voltar</button>
@@ -226,372 +368,414 @@
             </div>
         </div>
 
-        <div class="step" id="step-6" style="text-align: center;">
-            <h2 class="step-title" style="color: #16a34a; font-size: 1.5rem;">Agendamento Confirmado! 🎉</h2>
-            <p style="color: var(--text-muted); margin-top: 1rem;">Seu horário foi reservado com sucesso. Você receberá lembretes no seu WhatsApp.</p>
-            <button class="btn-primary" style="margin-top: 2rem; width: 100%;" onclick="location.reload()">Fazer Novo Agendamento</button>
+        <div class="step" id="step-6">
+            <div class="check-badge">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17l-5-5" stroke="#1F6F54" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2>Agendamento confirmado</h2>
+            <p>Seu horário foi reservado com sucesso. Você receberá lembretes no seu WhatsApp.</p>
+            <div class="btn-actions">
+                <button class="btn-primary" style="width: 100%;" onclick="location.reload()">Fazer novo agendamento</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <!--
-      IMPORTANTE:
-      Este script precisa definir a variável API antes do script principal rodar.
-    -->
-    <script src="Saas.js"></script>
+<!--
+  IMPORTANTE:
+  Este script precisa definir a variável API antes do script principal rodar.
+-->
+<script src="Saas.js"></script>
 
-    <script>
-    // ================================
-    // Estado global do fluxo de agendamento
-    // ================================
-    const state = {
-        cliente: { nome: '', telefone: '' },
-        profissional: null,
-        servico: null,
-        data: '',        // 'YYYY-MM-DD'
-        dataLabel: '',   // texto pro resumo, ex: "Hoje (Segunda)"
-        horario: ''
-    };
+<script>
+// ================================
+// Estado global do fluxo de agendamento
+// ================================
+const state = {
+    cliente: { nome: '', telefone: '' },
+    profissional: null,
+    servico: null,
+    data: '',        // 'YYYY-MM-DD'
+    dataLabel: '',   // texto pro resumo, ex: "Hoje (Segunda)"
+    horario: ''
+};
 
-    let configHorariosGlobal = null;
+// Número de WhatsApp da barbearia para onde a mensagem de confirmação é enviada.
+// Defina window.WHATSAPP_BARBEARIA no Saas.js com o número completo (ex: '5581999999999').
+let configHorariosGlobal = null;
 
-    const NOMES_DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-    const NOMES_DIAS_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-    const MESES_CURTO = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const NOMES_DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const NOMES_DIAS_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MESES_CURTO = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-    // Espera a variável API (definida no config.js) existir antes de iniciar
-    function iniciarSistema() {
-        if (typeof API === 'undefined') {
-            setTimeout(iniciarSistema, 100);
-            return;
-        }
-        carregarDadosIniciais();
+// Espera a variável API (definida no config.js) existir antes de iniciar
+function iniciarSistema() {
+    if (typeof API === 'undefined') {
+        setTimeout(iniciarSistema, 100);
+        return;
+    }
+    carregarDadosIniciais();
+}
+
+// Carrega profissionais, serviços e horários da barbearia
+async function carregarDadosIniciais() {
+    try {
+        const [profissionaisRes, servicosRes, horariosRes] = await Promise.all([
+            fetch(`${API}/profissionais`),
+            fetch(`${API}/servicos`),
+            fetch(`${API}/horarios`)
+        ]);
+
+        const profissionais = await profissionaisRes.json();
+        const servicos = await servicosRes.json();
+        configHorariosGlobal = await horariosRes.json();
+
+        renderizarProfissionais(profissionais);
+        renderizarServicos(servicos);
+        gerarDiasDisponiveis();
+
+        document.getElementById('app-container').style.display = 'flex';
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+// Renderiza cards de profissionais (step 2)
+function renderizarProfissionais(lista) {
+    const grid = document.getElementById('grid-profissionais');
+    grid.innerHTML = '';
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Nenhum profissional disponível</span>';
+        return;
     }
 
-    // Carrega profissionais, serviços e horários da barbearia
-    async function carregarDadosIniciais() {
-        try {
-            const [profissionaisRes, servicosRes, horariosRes] = await Promise.all([
-                fetch(`${API}/profissionais`),
-                fetch(`${API}/servicos`),
-                fetch(`${API}/horarios`)
-            ]);
-
-            const profissionais = await profissionaisRes.json();
-            const servicos = await servicosRes.json();
-            configHorariosGlobal = await horariosRes.json();
-
-            renderizarProfissionais(profissionais);
-            renderizarServicos(servicos);
-            gerarDiasDisponiveis();
-
-            document.getElementById('app-container').style.display = 'flex';
-        } catch (error) {
-            console.error('Erro ao carregar dados:', error);
-        } finally {
-            mostrarLoading(false);
-        }
-    }
-
-    // Renderiza cards de profissionais (step 2)
-    function renderizarProfissionais(lista) {
-        const grid = document.getElementById('grid-profissionais');
-        grid.innerHTML = '';
-
-        if (!Array.isArray(lista) || lista.length === 0) {
-            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum profissional disponível</span>';
-            return;
-        }
-
-        lista.forEach(prof => {
-            const card = document.createElement('div');
-            card.className = 'card-option';
-            card.dataset.id = prof.id;
-            card.innerHTML = `
-                <strong>${prof.nome}</strong>
-                ${prof.especialidade ? `<span>${prof.especialidade}</span>` : ''}
-            `;
-            card.addEventListener('click', () => {
-                document.querySelectorAll('#grid-profissionais .card-option').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                state.profissional = prof;
-                document.getElementById('btn-next-2').disabled = false;
-            });
-            grid.appendChild(card);
+    lista.forEach(prof => {
+        const card = document.createElement('div');
+        card.className = 'card-option';
+        card.dataset.id = prof.id;
+        card.innerHTML = `
+            <strong>${prof.nome}</strong>
+            ${prof.especialidade ? `<span>${prof.especialidade}</span>` : ''}
+        `;
+        card.addEventListener('click', () => {
+            document.querySelectorAll('#grid-profissionais .card-option').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            state.profissional = prof;
+            document.getElementById('btn-next-2').disabled = false;
         });
+        grid.appendChild(card);
+    });
+}
+
+// Renderiza cards de serviços (step 3)
+function renderizarServicos(lista) {
+    const grid = document.getElementById('grid-servicos');
+    grid.innerHTML = '';
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Nenhum serviço cadastrado</span>';
+        return;
     }
 
-    // Renderiza cards de serviços (step 3)
-    function renderizarServicos(lista) {
-        const grid = document.getElementById('grid-servicos');
-        grid.innerHTML = '';
-
-        if (!Array.isArray(lista) || lista.length === 0) {
-            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum serviço cadastrado</span>';
-            return;
-        }
-
-        lista.forEach(serv => {
-            const preco = Number(serv.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            const card = document.createElement('div');
-            card.className = 'card-option';
-            card.dataset.id = serv.id;
-            card.innerHTML = `
-                <strong>${serv.nome}</strong>
-                <span>${preco}</span>
-            `;
-            card.addEventListener('click', () => {
-                document.querySelectorAll('#grid-servicos .card-option').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                state.servico = serv;
-                document.getElementById('btn-next-3').disabled = false;
-            });
-            grid.appendChild(card);
+    lista.forEach(serv => {
+        const preco = Number(serv.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const card = document.createElement('div');
+        card.className = 'card-option';
+        card.dataset.id = serv.id;
+        card.innerHTML = `
+            <strong>${serv.nome}</strong>
+            <span>${preco}</span>
+        `;
+        card.addEventListener('click', () => {
+            document.querySelectorAll('#grid-servicos .card-option').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            state.servico = serv;
+            document.getElementById('btn-next-3').disabled = false;
         });
+        grid.appendChild(card);
+    });
+}
+
+// Gera as caixinhas dos próximos 14 dias, pulando os dias fechados
+function gerarDiasDisponiveis() {
+    const grid = document.getElementById('grid-dias');
+    grid.innerHTML = '';
+
+    const cfg = configHorariosGlobal || {};
+    const hoje = new Date();
+    let algumDia = false;
+
+    for (let i = 0; i < 14; i++) {
+        const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+        const diaSemana = data.getDay();
+        const cfgDia = cfg[String(diaSemana)];
+
+        if (!cfgDia || !cfgDia.aberto) continue;
+
+        algumDia = true;
+        const dataISO = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+        const label = i === 0 ? `Hoje (${NOMES_DIAS[diaSemana]})`
+                    : i === 1 ? `Amanhã (${NOMES_DIAS[diaSemana]})`
+                    : `${NOMES_DIAS[diaSemana]} ${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}`;
+
+        const card = document.createElement('div');
+        card.className = 'dia-card';
+        card.dataset.data = dataISO;
+        card.dataset.label = label;
+        card.innerHTML = `
+            <small>${i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : NOMES_DIAS_CURTO[diaSemana]}</small>
+            <strong>${data.getDate()}</strong>
+            <span>${MESES_CURTO[data.getMonth()]}</span>
+        `;
+        card.addEventListener('click', () => selecionarDia(card, dataISO, label));
+        grid.appendChild(card);
     }
 
-    // Gera as caixinhas dos próximos 14 dias, pulando os dias fechados
-    function gerarDiasDisponiveis() {
-        const grid = document.getElementById('grid-dias');
-        grid.innerHTML = '';
-
-        const cfg = configHorariosGlobal || {};
-        const hoje = new Date();
-        let algumDia = false;
-
-        for (let i = 0; i < 14; i++) {
-            const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
-            const diaSemana = data.getDay();
-            const cfgDia = cfg[String(diaSemana)];
-
-            if (!cfgDia || !cfgDia.aberto) continue;
-
-            algumDia = true;
-            const dataISO = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
-            const label = i === 0 ? `Hoje (${NOMES_DIAS[diaSemana]})`
-                        : i === 1 ? `Amanhã (${NOMES_DIAS[diaSemana]})`
-                        : `${NOMES_DIAS[diaSemana]} ${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}`;
-
-            const card = document.createElement('div');
-            card.className = 'dia-card';
-            card.dataset.data = dataISO;
-            card.dataset.label = label;
-            card.innerHTML = `
-                <small>${i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : NOMES_DIAS_CURTO[diaSemana]}</small>
-                <strong>${data.getDate()}</strong>
-                <span>${MESES_CURTO[data.getMonth()]}</span>
-            `;
-            card.addEventListener('click', () => selecionarDia(card, dataISO, label));
-            grid.appendChild(card);
-        }
-
-        if (!algumDia) {
-            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum dia disponível nos próximos 14 dias.</span>';
-        }
+    if (!algumDia) {
+        grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Nenhum dia disponível nos próximos 14 dias.</span>';
     }
+}
 
-    // Clique numa caixinha de dia → busca horários daquele dia
-    function selecionarDia(elemento, dataISO, label) {
-        document.querySelectorAll('.dia-card').forEach(c => c.classList.remove('selected'));
-        elemento.classList.add('selected');
+// Clique numa caixinha de dia → busca horários daquele dia
+function selecionarDia(elemento, dataISO, label) {
+    document.querySelectorAll('.dia-card').forEach(c => c.classList.remove('selected'));
+    elemento.classList.add('selected');
 
-        state.data = dataISO;
-        state.dataLabel = label;
-        state.horario = '';
+    state.data = dataISO;
+    state.dataLabel = label;
+    state.horario = '';
+    document.getElementById('btn-next-4').disabled = true;
+
+    buscarHorarios();
+}
+
+// Renderiza cards de horários (step 4). Horários ocupados aparecem marcados, não escondidos.
+function renderizarHorarios(lista) {
+    const grid = document.getElementById('grid-horarios');
+    grid.innerHTML = '';
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Nenhum horário neste dia</span>';
         document.getElementById('btn-next-4').disabled = true;
-
-        buscarHorarios();
+        return;
     }
 
-    // Renderiza cards de horários (step 4)
-    function renderizarHorarios(lista) {
-        const grid = document.getElementById('grid-horarios');
-        grid.innerHTML = '';
-
-        if (!Array.isArray(lista) || lista.length === 0) {
-            grid.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Nenhum horário disponível neste dia</span>';
-            document.getElementById('btn-next-4').disabled = true;
-            return;
-        }
-
-        lista.forEach(hora => {
-            const card = document.createElement('div');
-            card.className = 'card-option';
-            card.innerHTML = `<strong>${hora}</strong>`;
+    lista.forEach(({ hora, ocupado }) => {
+        const card = document.createElement('div');
+        card.className = 'card-option' + (ocupado ? ' ocupado' : '');
+        card.innerHTML = `
+            <strong>${hora}</strong>
+            ${ocupado ? '<span>Ocupado</span>' : ''}
+        `;
+        if (!ocupado) {
             card.addEventListener('click', () => {
                 document.querySelectorAll('#grid-horarios .card-option').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 state.horario = hora;
                 document.getElementById('btn-next-4').disabled = false;
             });
-            grid.appendChild(card);
+        }
+        grid.appendChild(card);
+    });
+}
+
+// Busca horários do dia selecionado (state.data) e marca quais já estão ocupados
+async function buscarHorarios() {
+    const dataSelecionada = state.data;
+    const profissionalId = state.profissional?.id;
+    const containerHorarios = document.getElementById('grid-horarios');
+
+    if (!dataSelecionada) return;
+    document.getElementById('btn-next-4').disabled = true;
+    containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Carregando horários...</span>';
+
+    try {
+        const paramsProfissional = profissionalId ? `?profissional_id=${profissionalId}` : '';
+        const [horariosRes, ocupadosRes] = await Promise.all([
+            fetch(`${API}/horarios`),
+            fetch(`${API}/agendamentos/data/${dataSelecionada}${paramsProfissional}`)
+        ]);
+
+        const configHorarios = await horariosRes.json();
+        const agendamentosOcupados = await ocupadosRes.json();
+        const horariosOcupados = agendamentosOcupados.map(ag => ag.horario.substring(0, 5));
+
+        const dataObj = new Date(dataSelecionada + 'T12:00:00');
+        const diaSemana = dataObj.getDay();
+        const configDoDia = configHorarios[String(diaSemana)];
+
+        if (!configDoDia || !configDoDia.aberto) {
+            containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Fechado neste dia.</span>';
+            return;
+        }
+
+        const horaInicio = configDoDia.hora_inicio || '08:00';
+        const horaFim = configDoDia.hora_fim || '21:00';
+        const intervalo = Number(configHorarios.intervalo_minutos) || 30;
+        const pausaInicio = configHorarios.pausa_inicio;
+        const pausaFim = configHorarios.pausa_fim;
+
+        const [hIni, mIni] = horaInicio.substring(0, 5).split(':').map(Number);
+        const [hFim, mFim] = horaFim.substring(0, 5).split(':').map(Number);
+        const inicioMin = hIni * 60 + mIni;
+        const fimMin = hFim * 60 + mFim;
+
+        const pausaIniMin = pausaInicio ? (() => { const [h, m] = pausaInicio.split(':').map(Number); return h * 60 + m; })() : null;
+        const pausaFimMin = pausaFim ? (() => { const [h, m] = pausaFim.split(':').map(Number); return h * 60 + m; })() : null;
+
+        // Se o dia for hoje, esconde horários que já passaram (não faz sentido oferecer/marcar o passado)
+        const agora = new Date();
+        const ehHoje = dataObj.getFullYear() === agora.getFullYear() &&
+                       dataObj.getMonth() === agora.getMonth() &&
+                       dataObj.getDate() === agora.getDate();
+        const agoraMin = ehHoje ? agora.getHours() * 60 + agora.getMinutes() : -1;
+
+        const horarios = [];
+        for (let t = inicioMin; t < fimMin; t += intervalo) {
+            if (ehHoje && t <= agoraMin) continue;
+            if (pausaIniMin !== null && pausaFimMin !== null && t >= pausaIniMin && t < pausaFimMin) continue;
+            const hh = String(Math.floor(t / 60)).padStart(2, '0');
+            const mm = String(t % 60).padStart(2, '0');
+            const horaStr = `${hh}:${mm}`;
+            horarios.push({ hora: horaStr, ocupado: horariosOcupados.includes(horaStr) });
+        }
+
+        renderizarHorarios(horarios);
+    } catch (error) {
+        console.error('Erro ao buscar horários:', error);
+        containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:0.9rem;">Erro ao buscar horários.</span>';
+    }
+}
+
+// Navegação entre steps
+function mostrarStep(numero) {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById(`step-${numero}`).classList.add('active');
+    atualizarStepTrack(numero);
+}
+
+function atualizarStepTrack(numero) {
+    document.querySelectorAll('#step-track .step-dot').forEach(dot => {
+        const n = Number(dot.dataset.step);
+        dot.classList.remove('done', 'current');
+        if (n < numero) dot.classList.add('done');
+        else if (n === numero) dot.classList.add('current');
+    });
+}
+
+function nextStep(atual) {
+    if (atual === 1) {
+        const nome = document.getElementById('cliente-nome').value.trim();
+        const telefone = document.getElementById('cliente-telefone').value.trim();
+        if (nome.length < 2) { alert('Digite seu nome completo.'); return; }
+        if (telefone.replace(/\D/g, '').length < 10) { alert('Digite um WhatsApp válido.'); return; }
+        state.cliente.nome = nome;
+        state.cliente.telefone = telefone;
+        mostrarStep(2);
+        return;
+    }
+
+    if (atual === 2) {
+        if (!state.profissional) { alert('Selecione um profissional.'); return; }
+        mostrarStep(3);
+        return;
+    }
+
+    if (atual === 3) {
+        if (!state.servico) { alert('Selecione um serviço.'); return; }
+        mostrarStep(4);
+        return;
+    }
+
+    if (atual === 4) {
+        if (!state.data || !state.horario) { alert('Selecione dia e horário.'); return; }
+        preencherResumo();
+        mostrarStep(5);
+        return;
+    }
+}
+
+function prevStep(atual) {
+    mostrarStep(atual - 1);
+}
+
+function preencherResumo() {
+    document.getElementById('resumo-nome').textContent = state.cliente.nome;
+    document.getElementById('resumo-profissional').textContent = state.profissional?.nome || '';
+    document.getElementById('resumo-servico').textContent = state.servico?.nome || '';
+    document.getElementById('resumo-datahora').textContent = `${state.dataLabel} às ${state.horario}`;
+
+    const valor = Number(state.servico?.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('resumo-valor').textContent = valor;
+}
+
+// Monta o link do WhatsApp com o resumo do agendamento já preenchido
+function montarLinkWhatsapp() {
+    const valor = Number(state.servico?.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const mensagem =
+`Olá! Confirmando meu agendamento:
+Nome: ${state.cliente.nome}
+Profissional: ${state.profissional?.nome || ''}
+Serviço: ${state.servico?.nome || ''}
+Data/Hora: ${state.dataLabel} às ${state.horario}
+Valor: ${valor}`;
+
+    // Número da barbearia definido em Saas.js (window.WHATSAPP_BARBEARIA), com fallback vazio
+    const numeroBarbearia = (typeof WHATSAPP_BARBEARIA !== 'undefined' && WHATSAPP_BARBEARIA) ? WHATSAPP_BARBEARIA : '';
+    const base = numeroBarbearia ? `https://wa.me/${numeroBarbearia}` : 'https://wa.me/';
+    return `${base}?text=${encodeURIComponent(mensagem)}`;
+}
+
+// Finalização do agendamento
+async function finalizarAgendamento() {
+    mostrarLoading(true);
+    const errorMsg = document.getElementById('error-msg');
+    errorMsg.style.display = 'none';
+
+    const payload = {
+        nome: state.cliente.nome,
+        telefone: state.cliente.telefone.replace(/\D/g, ''),
+        data: state.data,
+        horario: state.horario,
+        valor: state.servico.preco,
+        profissional_id: state.profissional.id,
+        servico_id: state.servico.id
+    };
+
+    try {
+        const response = await fetch(`${API}/agendar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
-    }
 
-    // Busca horários disponíveis para o dia selecionado (state.data)
-    async function buscarHorarios() {
-        const dataSelecionada = state.data;
-        const profissionalId = state.profissional?.id;
-        const containerHorarios = document.getElementById('grid-horarios');
+        const data = await response.json();
 
-        if (!dataSelecionada) return;
-        document.getElementById('btn-next-4').disabled = true;
-        containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Carregando horários...</span>';
-
-        try {
-            const paramsProfissional = profissionalId ? `?profissional_id=${profissionalId}` : '';
-            const [horariosRes, ocupadosRes] = await Promise.all([
-                fetch(`${API}/horarios`),
-                fetch(`${API}/agendamentos/data/${dataSelecionada}${paramsProfissional}`)
-            ]);
-
-            const configHorarios = await horariosRes.json();
-            const agendamentosOcupados = await ocupadosRes.json();
-            const horariosOcupados = agendamentosOcupados.map(ag => ag.horario.substring(0, 5));
-
-            const dataObj = new Date(dataSelecionada + 'T12:00:00');
-            const diaSemana = dataObj.getDay();
-            const configDoDia = configHorarios[String(diaSemana)];
-
-            if (!configDoDia || !configDoDia.aberto) {
-                containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Fechado neste dia.</span>';
-                return;
-            }
-
-            const horaInicio = configDoDia.hora_inicio || '08:00';
-            const horaFim = configDoDia.hora_fim || '21:00';
-            const intervalo = Number(configHorarios.intervalo_minutos) || 30;
-            const pausaInicio = configHorarios.pausa_inicio;
-            const pausaFim = configHorarios.pausa_fim;
-
-            const [hIni, mIni] = horaInicio.substring(0, 5).split(':').map(Number);
-            const [hFim, mFim] = horaFim.substring(0, 5).split(':').map(Number);
-            const inicioMin = hIni * 60 + mIni;
-            const fimMin = hFim * 60 + mFim;
-
-            const pausaIniMin = pausaInicio ? (() => { const [h, m] = pausaInicio.split(':').map(Number); return h * 60 + m; })() : null;
-            const pausaFimMin = pausaFim ? (() => { const [h, m] = pausaFim.split(':').map(Number); return h * 60 + m; })() : null;
-
-            // Se o dia for hoje, esconde horários que já passaram
-            const agora = new Date();
-            const ehHoje = dataObj.getFullYear() === agora.getFullYear() &&
-                           dataObj.getMonth() === agora.getMonth() &&
-                           dataObj.getDate() === agora.getDate();
-            const agoraMin = ehHoje ? agora.getHours() * 60 + agora.getMinutes() : -1;
-
-            const horariosLivres = [];
-            for (let t = inicioMin; t < fimMin; t += intervalo) {
-                if (ehHoje && t <= agoraMin) continue;
-                if (pausaIniMin !== null && pausaFimMin !== null && t >= pausaIniMin && t < pausaFimMin) continue;
-                const hh = String(Math.floor(t / 60)).padStart(2, '0');
-                const mm = String(t % 60).padStart(2, '0');
-                const horaStr = `${hh}:${mm}`;
-                if (!horariosOcupados.includes(horaStr)) horariosLivres.push(horaStr);
-            }
-
-            renderizarHorarios(horariosLivres);
-        } catch (error) {
-            console.error('Erro ao buscar horários:', error);
-            containerHorarios.innerHTML = '<span style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.9rem;">Erro ao buscar horários.</span>';
-        }
-    }
-
-    // Navegação entre steps
-    function mostrarStep(numero) {
-        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-        document.getElementById(`step-${numero}`).classList.add('active');
-    }
-
-    function nextStep(atual) {
-        if (atual === 1) {
-            const nome = document.getElementById('cliente-nome').value.trim();
-            const telefone = document.getElementById('cliente-telefone').value.trim();
-            if (nome.length < 2) { alert('Digite seu nome completo.'); return; }
-            if (telefone.replace(/\D/g, '').length < 10) { alert('Digite um WhatsApp válido.'); return; }
-            state.cliente.nome = nome;
-            state.cliente.telefone = telefone;
-            mostrarStep(2);
-            return;
+        if (!response.ok || data.erro) {
+            throw new Error(data.erro || 'Erro ao salvar agendamento.');
         }
 
-        if (atual === 2) {
-            if (!state.profissional) { alert('Selecione um profissional.'); return; }
-            mostrarStep(3);
-            return;
-        }
+        // Abre o WhatsApp com a mensagem de confirmação pronta para envio
+        window.open(montarLinkWhatsapp(), '_blank');
 
-        if (atual === 3) {
-            if (!state.servico) { alert('Selecione um serviço.'); return; }
-            mostrarStep(4);
-            return;
-        }
-
-        if (atual === 4) {
-            if (!state.data || !state.horario) { alert('Selecione dia e horário.'); return; }
-            preencherResumo();
-            mostrarStep(5);
-            return;
-        }
+        mostrarStep(6);
+    } catch (error) {
+        errorMsg.textContent = error.message;
+        errorMsg.style.display = 'block';
+    } finally {
+        mostrarLoading(false);
     }
-
-    function prevStep(atual) {
-        mostrarStep(atual - 1);
-    }
-
-    function preencherResumo() {
-        document.getElementById('resumo-nome').textContent = state.cliente.nome;
-        document.getElementById('resumo-profissional').textContent = state.profissional?.nome || '';
-        document.getElementById('resumo-servico').textContent = state.servico?.nome || '';
-        document.getElementById('resumo-datahora').textContent = `${state.dataLabel} às ${state.horario}`;
-
-        const valor = Number(state.servico?.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        document.getElementById('resumo-valor').textContent = valor;
-    }
-
-    // Finalização do agendamento
-    async function finalizarAgendamento() {
-        mostrarLoading(true);
-        const errorMsg = document.getElementById('error-msg');
-        errorMsg.style.display = 'none';
-
-        const payload = {
-            nome: state.cliente.nome,
-            telefone: state.cliente.telefone.replace(/\D/g, ''),
-            data: state.data,
-            horario: state.horario,
-            valor: state.servico.preco,
-            profissional_id: state.profissional.id,
-            servico_id: state.servico.id
-        };
-
-        try {
-            const response = await fetch(`${API}/agendar`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || data.erro) {
-                throw new Error(data.erro || 'Erro ao salvar agendamento.');
-            }
-
-            mostrarStep(6);
-        } catch (error) {
-            errorMsg.textContent = error.message;
-            errorMsg.style.display = 'block';
-        } finally {
-            mostrarLoading(false);
-        }
-    }
-
-    function mostrarLoading(show) {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = show ? 'flex' : 'none';
-    }
-
-    // Início da execução
-    document.addEventListener('DOMContentLoaded', iniciarSistema);
-    </script>
+}
+function mostrarLoading(show) {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.style.display = show ? 'flex' : 'none';
+}
+document.addEventListener('DOMContentLoaded', iniciarSistema);
+</script>
 </body>
 </html>
