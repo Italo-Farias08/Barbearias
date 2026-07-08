@@ -11,27 +11,11 @@ const path    = require("path");
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(express.json({ limit: "10kb" }));
 
-const rateLimit = require("express-rate-limit");
-const helmet    = require("helmet");
-
-app.use(helmet({ contentSecurityPolicy: false }));
-
-app.use(rateLimit({
-  windowMs: 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { erro: "Muitas requisições. Tente novamente em 1 minuto." }
-}));
-
-const limiterLogin = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
-});
-
+// ── CORS PRIMEIRO DE TUDO ──────────────────────────────────────────────
+// Precisa vir antes de helmet/rate-limit: se algum desses bloquear a
+// requisição antes do CORS rodar, a resposta sai sem os headers de CORS
+// e o navegador acusa "bloqueado por CORS" mesmo o problema sendo outro.
 const ORIGENS_PERMITIDAS = [
   "https://vtrip.com.br",
   "http://vtrip.com.br",
@@ -56,6 +40,27 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+
+app.use(express.json({ limit: "10kb" }));
+
+const rateLimit = require("express-rate-limit");
+const helmet    = require("helmet");
+
+app.use(helmet({ contentSecurityPolicy: false }));
+
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { erro: "Muitas requisições. Tente novamente em 1 minuto." }
+}));
+
+const limiterLogin = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
+});
 
 // ── UTILITÁRIOS DE FUSO HORÁRIO (Brasília = UTC-3) ────────────────────────
 function agoraBrasilia() {
@@ -1701,8 +1706,8 @@ app.post("/cadastro", async (req, res) => {
     return res.status(400).json({ erro: "Nome da barbearia inválido" });
   if (!barbearia.username || barbearia.username.length < 3)
     return res.status(400).json({ erro: "Username deve ter ao menos 3 caracteres" });
-  if (!barbearia.password || barbearia.password.length < 6)
-    return res.status(400).json({ erro: "Senha deve ter ao menos 6 caracteres" });
+  if (!barbearia.password || barbearia.password.length < 4)
+    return res.status(400).json({ erro: "Senha deve ter ao menos 4 caracteres" });
 
   try {
     const usernameCheck = await db.query(
