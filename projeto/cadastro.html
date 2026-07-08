@@ -951,7 +951,7 @@ async function enviar() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-    const r = await fetch(`${API_BASE}/cadastro`, {
+    const r = await fetch(`${API_BASE}/cadastro/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dados),
