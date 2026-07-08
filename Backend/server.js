@@ -1706,8 +1706,8 @@ app.post("/cadastro", async (req, res) => {
     return res.status(400).json({ erro: "Nome da barbearia inválido" });
   if (!barbearia.username || barbearia.username.length < 3)
     return res.status(400).json({ erro: "Username deve ter ao menos 3 caracteres" });
-  if (!barbearia.password || barbearia.password.length < 4)
-    return res.status(400).json({ erro: "Senha deve ter ao menos 4 caracteres" });
+  if (!barbearia.password || barbearia.password.length < 6)
+    return res.status(400).json({ erro: "Senha deve ter ao menos 6 caracteres" });
 
   try {
     const usernameCheck = await db.query(

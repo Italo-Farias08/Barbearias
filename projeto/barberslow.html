@@ -5,60 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agendamento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Special+Elite&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
     :root {
-        --bg-color: #E9E4D8;
-        --surface-color: #FFFFFF;
-        --ink: #211C17;
-        --muted: #7C7365;
-        --accent: #8A3324;
-        --accent-hover: #6E2719;
-        --accent-soft: rgba(138, 51, 36, 0.08);
-        --gold: #A9812F;
-        --border-color: #E1D9C8;
-        --danger: #8A3324;
-        --danger-soft: rgba(138, 51, 36, 0.08);
-        --occupied-bg: #EFEBE1;
-        --occupied-text: #B0A794;
-        --radius: 4px;
-        --radius-sm: 3px;
+        /* ── Ticket de Barbearia — paleta ── */
+        --bg: #1F2B23;            /* verde-caça profundo, fundo da página */
+        --bg-vignette: #16201A;   /* sombra nos cantos */
+        --paper: #F7F1E1;         /* papel do ticket */
+        --paper-2: #EFE6CE;       /* papel levemente mais escuro, para insets */
+        --ink: #221B13;           /* tinta sobre o papel */
+        --muted: #8C8265;
+        --brass: #B08A3E;         /* latão / metal oxidado */
+        --brass-deep: #8A6A2E;
+        --brass-soft: rgba(176, 138, 62, 0.14);
+        --burgundy: #7A2E28;      /* couro / selo de cera */
+        --burgundy-soft: rgba(122, 46, 40, 0.09);
+        --line: #DED0A9;
+        --cream: #F2ECDC;
+        --occupied-bg: #E9E0C7;
+        --occupied-text: #B2A47C;
+        --radius: 2px;
+        --radius-sm: 2px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html, body {
-        font-family: 'Inter', system-ui, sans-serif;
-    }
+    html, body { font-family: 'Inter', system-ui, sans-serif; }
 
     body {
-        background-color: var(--bg-color);
+        background:
+            radial-gradient(ellipse at top, rgba(255,255,255,0.03), transparent 60%),
+            radial-gradient(ellipse at bottom, var(--bg-vignette), var(--bg) 70%);
         color: var(--ink);
         display: flex;
         justify-content: center;
         min-height: 100vh;
-        padding: 2.5rem 1rem;
+        padding: 2.75rem 1rem;
     }
 
     .container {
-        background-color: var(--surface-color);
+        background-color: var(--paper);
         width: 100%;
         max-width: 520px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 1px 2px rgba(33,28,23,0.04), 0 16px 40px -20px rgba(33,28,23,0.35);
+        border-radius: var(--radius);
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.4) inset,
+            0 30px 60px -25px rgba(0,0,0,0.55),
+            0 6px 18px -8px rgba(0,0,0,0.4);
         overflow: hidden;
         display: flex;
         flex-direction: column;
     }
 
-    /* signature: barbershop letterpress badge — a stamped seal instead of a decorative stripe */
+    /* Rail — cabeçalho estampado, como o topo de um talão */
     .rail {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.85rem 1.5rem;
+        padding: 0.95rem 1.5rem;
         background: var(--ink);
-        color: #EFE9DC;
+        color: var(--cream);
     }
     .rail .seal {
         display: flex;
@@ -68,17 +74,27 @@
         font-size: 0.66rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: var(--gold);
+        color: var(--brass);
     }
     .rail .seal svg { flex-shrink: 0; }
-    .rail .est {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.66rem;
-        letter-spacing: 0.08em;
-        color: #7C7365;
+    .rail .ticket-no {
+        font-family: 'Special Elite', 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        color: rgba(242,236,220,0.55);
     }
 
-    .card-body { padding: 2.1rem 2.25rem 2rem; width: 100%; }
+    /* Perfuração — a borda destacável entre o cabeçalho e o corpo do ticket */
+    .perforation {
+        height: 13px;
+        background-color: var(--paper);
+        background-image: radial-gradient(circle at 7px 7px, var(--ink) 6.5px, transparent 7px);
+        background-size: 18px 26px;
+        background-position: -2px -13px;
+        background-repeat: repeat-x;
+    }
+
+    .card-body { padding: 2rem 2.25rem 2rem; width: 100%; }
 
     header { margin-bottom: 1.75rem; border-bottom: 2px solid var(--ink); padding-bottom: 1rem; }
     header h1 {
@@ -92,26 +108,45 @@
     header p {
         color: var(--muted);
         font-size: 0.82rem;
-        margin-top: 0.3rem;
+        margin-top: 0.35rem;
         font-family: 'IBM Plex Mono', monospace;
         letter-spacing: 0.04em;
     }
 
-    /* Step indicator — genuinely sequential, so numbering is justified */
+    /* Trilha de etapas — furos de talão de fila, não uma barra genérica */
     .step-track {
+        position: relative;
         display: flex;
         align-items: center;
-        gap: 6px;
-        margin-bottom: 1.75rem;
+        justify-content: space-between;
+        margin-bottom: 1.85rem;
+        padding: 0 2px;
+    }
+    .step-track::before {
+        content: "";
+        position: absolute;
+        left: 7px; right: 7px; top: 50%;
+        height: 1px;
+        background: var(--line);
+        transform: translateY(-50%);
+        z-index: 0;
     }
     .step-dot {
-        flex: 1;
-        height: 4px;
-        background: var(--border-color);
-        transition: background 0.25s ease;
+        position: relative;
+        z-index: 1;
+        width: 13px; height: 13px;
+        border-radius: 50%;
+        border: 1.5px solid var(--line);
+        background: var(--paper);
+        transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
     }
-    .step-dot.done { background: var(--gold); }
-    .step-dot.current { background: var(--accent); }
+    .step-dot.done { background: var(--brass); border-color: var(--brass); }
+    .step-dot.current {
+        background: var(--ink);
+        border-color: var(--ink);
+        transform: scale(1.25);
+        box-shadow: 0 0 0 3px var(--brass-soft);
+    }
 
     .step { display: none; }
     .step.active { display: block; animation: fadeIn 0.28s ease; }
@@ -122,11 +157,11 @@
     }
 
     .step-eyebrow {
-        font-family: 'IBM Plex Mono', monospace;
+        font-family: 'Special Elite', 'IBM Plex Mono', monospace;
         font-size: 0.72rem;
         text-transform: uppercase;
-        letter-spacing: 0.09em;
-        color: var(--accent);
+        letter-spacing: 0.08em;
+        color: var(--burgundy);
         margin-bottom: 0.3rem;
     }
     .step-title {
@@ -141,44 +176,46 @@
         display: block; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted); font-weight: 500;
     }
     .input-group input {
-        width: 100%; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color);
+        width: 100%; padding: 0.75rem 0.85rem; border: 1px solid var(--line);
         border-radius: var(--radius-sm); font-size: 0.98rem; outline: none;
-        background: var(--bg-color);
+        background: var(--paper-2);
         transition: border-color 0.15s ease, background 0.15s ease;
         font-family: inherit;
+        color: var(--ink);
     }
-    .input-group input:focus { border-color: var(--accent); background: var(--surface-color); }
+    .input-group input::placeholder { color: var(--muted); opacity: 0.7; }
+    .input-group input:focus { border-color: var(--brass-deep); background: var(--paper); }
 
     .grid-options {
         display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 0.6rem;
     }
 
     .card-option {
-        border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+        border: 1px solid var(--line); border-radius: var(--radius-sm);
         padding: 0.85rem 0.9rem; text-align: center; cursor: pointer; transition: all 0.15s;
-        background: var(--surface-color);
+        background: var(--paper-2);
     }
-    .card-option:hover { border-color: var(--accent); }
+    .card-option:hover { border-color: var(--brass-deep); background: var(--paper); }
     .card-option.selected {
-        border-color: var(--accent); background-color: var(--accent-soft);
-        box-shadow: 0 0 0 1px var(--accent);
+        border-color: var(--brass-deep); background-color: var(--brass-soft);
+        box-shadow: 0 0 0 1px var(--brass-deep);
     }
     .card-option strong { display: block; font-size: 0.92rem; margin-bottom: 0.2rem; }
     .card-option span { font-size: 0.8rem; color: var(--muted); }
 
-    /* Occupied time slot — visibly marked, not hidden */
+    /* Horário ocupado — marcado, não escondido */
     .card-option.ocupado {
         cursor: not-allowed;
         background: var(--occupied-bg);
-        border-color: var(--border-color);
+        border-color: var(--line);
         color: var(--occupied-text);
         position: relative;
     }
-    .card-option.ocupado:hover { border-color: var(--border-color); }
+    .card-option.ocupado:hover { border-color: var(--line); background: var(--occupied-bg); }
     .card-option.ocupado strong {
         color: var(--occupied-text);
         text-decoration: line-through;
-        text-decoration-color: rgba(176,167,148,0.9);
+        text-decoration-color: rgba(178,164,124,0.9);
     }
     .card-option.ocupado span {
         color: var(--occupied-text);
@@ -199,23 +236,23 @@
     }
     .dia-card {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 1px; padding: 0.7rem 0.3rem; border: 1px solid var(--border-color);
+        gap: 1px; padding: 0.7rem 0.3rem; border: 1px solid var(--line);
         border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
-        background: var(--surface-color);
+        background: var(--paper-2);
     }
-    .dia-card:hover { border-color: var(--accent); }
+    .dia-card:hover { border-color: var(--brass-deep); background: var(--paper); }
     .dia-card.selected {
-        border-color: var(--accent); background-color: var(--accent-soft);
-        box-shadow: 0 0 0 1px var(--accent);
+        border-color: var(--brass-deep); background-color: var(--brass-soft);
+        box-shadow: 0 0 0 1px var(--brass-deep);
     }
     .dia-card small {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
     }
-    .dia-card.selected small { color: var(--accent); }
+    .dia-card.selected small { color: var(--burgundy); }
     .dia-card strong { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 700; }
     .dia-card span { font-size: 0.68rem; color: var(--muted); }
-    .dia-card.selected span { color: var(--accent); }
+    .dia-card.selected span { color: var(--burgundy); }
 
     .sub-label {
         font-size: 0.8rem; color: var(--muted); margin-bottom: 0.55rem; font-weight: 500;
@@ -226,41 +263,47 @@
         font-size: 0.74rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace;
     }
     .legenda span { display: inline-flex; align-items: center; gap: 5px; }
-    .legenda i { width: 9px; height: 9px; display: inline-block; }
-    .legenda .i-livre { background: var(--surface-color); border: 1px solid var(--border-color); }
-    .legenda .i-ocupado { background: var(--occupied-bg); border: 1px solid var(--border-color); }
+    .legenda i { width: 9px; height: 9px; display: inline-block; border-radius: 50%; }
+    .legenda .i-livre { background: var(--paper-2); border: 1px solid var(--line); }
+    .legenda .i-ocupado { background: var(--occupied-bg); border: 1px solid var(--line); }
 
     .btn-actions { display: flex; gap: 0.75rem; margin-top: 1.6rem; }
     button {
         flex: 1; padding: 0.8rem; border: 1px solid var(--ink); border-radius: var(--radius-sm);
-        font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: 0.15s;
-        font-family: inherit; text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.85rem;
+        cursor: pointer; transition: 0.15s;
+        font-family: inherit; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.82rem;
+        font-weight: 700;
     }
-    .btn-primary { background-color: var(--ink); color: #EFE9DC; }
-    .btn-primary:hover { background-color: var(--accent); border-color: var(--accent); }
-    .btn-primary:disabled { background-color: #C9C2B2; border-color: #C9C2B2; cursor: not-allowed; }
-    .btn-secondary { background-color: var(--surface-color); color: var(--ink); border: 1px solid var(--border-color); }
-    .btn-secondary:hover { background-color: var(--bg-color); }
+    .btn-primary { background-color: var(--ink); color: var(--cream); }
+    .btn-primary:hover { background-color: var(--burgundy); border-color: var(--burgundy); }
+    .btn-primary:disabled { background-color: #C7BE9F; border-color: #C7BE9F; color: #8C8265; cursor: not-allowed; }
+    .btn-secondary { background-color: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+    .btn-secondary:hover { background-color: var(--paper-2); border-color: var(--brass-deep); }
+
+    button:focus-visible { outline: 2px solid var(--brass-deep); outline-offset: 2px; }
+    .card-option:focus-visible, .dia-card:focus-visible { outline: 2px solid var(--brass-deep); outline-offset: 1px; }
 
     .resumo-box {
-        background: var(--bg-color); padding: 0.4rem 1.3rem; border-radius: var(--radius-sm);
-        border: 1px solid var(--border-color); font-size: 0.95rem;
+        background: var(--paper-2); padding: 0.4rem 1.3rem; border-radius: var(--radius-sm);
+        border: 1px solid var(--line); font-size: 0.95rem;
     }
     .resumo-box .linha {
         display: flex; justify-content: space-between; align-items: baseline;
         gap: 1.5rem; padding: 0.85rem 0;
     }
     .resumo-box .linha strong:first-child {
-        color: var(--muted); font-weight: 500; font-size: 0.82rem;
+        color: var(--muted); font-weight: 500; font-size: 0.78rem;
+        text-transform: uppercase; letter-spacing: 0.04em;
         white-space: nowrap; flex-shrink: 0;
     }
     .resumo-box .linha span { text-align: right; }
-    .resumo-box .linha:not(:last-child) { border-bottom: 1px dashed var(--border-color); }
-    .resumo-box .total { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1.05rem; }
+    .resumo-box .linha:not(:last-child) { border-bottom: 1px dashed var(--line); }
+    .resumo-box .total { color: var(--burgundy); font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1.05rem; }
 
     #error-msg {
-        color: var(--danger); font-size: 0.85rem; text-align: left; display: none;
-        margin-top: 1rem; background: var(--danger-soft); padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
+        color: var(--burgundy); font-size: 0.85rem; text-align: left; display: none;
+        margin-top: 1rem; background: var(--burgundy-soft); padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
+        border: 1px solid rgba(122,46,40,0.2);
     }
 
     .whatsapp-note {
@@ -270,29 +313,40 @@
 
     #loading-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(33,28,23,0.5); display: none; justify-content: center;
-        align-items: center; z-index: 1000; color: #EFE9DC; font-weight: 600;
-        font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em;
+        background: rgba(23,20,16,0.6); display: none; justify-content: center;
+        align-items: center; z-index: 1000; color: var(--cream); font-weight: 600;
+        font-family: 'Special Elite', 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
     }
 
     #step-6 { text-align: center; padding-top: 0.5rem; }
     #step-6 .check-badge {
-        width: 56px; height: 56px; border: 1px solid var(--ink); background: var(--bg-color);
+        width: 58px; height: 58px; border-radius: 50%;
+        border: 1.5px solid var(--brass); background: var(--brass-soft);
         display: flex; align-items: center; justify-content: center; margin: 0 auto 1.1rem;
     }
     #step-6 h2 {
         font-family: 'Fraunces', serif; color: var(--ink); font-size: 1.4rem; font-weight: 700;
         text-transform: uppercase;
     }
-    #step-6 p { color: var(--muted); margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.5; }
+    #step-6 p { color: var(--muted); margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.55; }
+    #step-6 .stub-note {
+        margin-top: 1.4rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+        color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+        border-top: 1px dashed var(--line); padding-top: 1rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .step { animation: none !important; }
+        * { transition-duration: 0.001ms !important; }
+    }
 
     @media (max-width: 480px) {
         body { padding: 0; }
-        .container { max-width: 100%; min-height: 100vh; border-left: none; border-right: none; box-shadow: none; }
+        .container { max-width: 100%; min-height: 100vh; border-radius: 0; box-shadow: none; }
         .card-body { padding: 1.5rem 1.25rem 1.5rem; }
         header h1 { font-size: 1.35rem; }
         .step-title { font-size: 1.1rem; }
-        .rail { padding: 0.7rem 1.25rem; }
+        .rail { padding: 0.75rem 1.25rem; }
         .grid-options { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 0.5rem; }
         .grid-horarios { grid-template-columns: repeat(3, 1fr); }
         .grid-dias { grid-template-columns: repeat(5, 1fr); }
@@ -300,13 +354,13 @@
         .resumo-box .linha { flex-direction: column; align-items: flex-start; gap: 0.15rem; padding: 0.7rem 0; }
         .resumo-box .linha span { text-align: left; }
         .btn-actions { gap: 0.6rem; }
-        button { padding: 0.85rem 0.6rem; font-size: 0.8rem; }
+        button { padding: 0.85rem 0.6rem; font-size: 0.78rem; }
     }
 </style>
 </head>
 <body>
 
-<div id="loading-overlay">Carregando...</div>
+<div id="loading-overlay">Carregando…</div>
 
 <div class="container" id="app-container" style="display: none;">
     <div class="rail">
@@ -319,7 +373,9 @@
             </svg>
             Barbearia
         </span>
+        <span class="ticket-no">Ticket Nº 0427</span>
     </div>
+    <div class="perforation" aria-hidden="true"></div>
     <div class="card-body">
         <header>
             <h1 id="shop-name" data-barber="nome">Carregando...</h1>
@@ -416,11 +472,12 @@
         <div class="step" id="step-6">
             <div class="check-badge">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 6L9 17l-5-5" stroke="#8A3324" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M20 6L9 17l-5-5" stroke="#7A2E28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <h2>Agendamento confirmado</h2>
             <p>Seu horário foi reservado com sucesso. Você receberá lembretes no seu WhatsApp.</p>
+            <p class="stub-note">Guarde este ticket até o dia do seu corte</p>
             <div class="btn-actions">
                 <button class="btn-primary" style="width: 100%;" onclick="location.reload()">Fazer novo agendamento</button>
             </div>
