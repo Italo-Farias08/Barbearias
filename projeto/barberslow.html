@@ -5,27 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agendamento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Special+Elite&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
     :root {
-        /* ── Ticket de Barbearia — paleta ── */
-        --bg: #1F2B23;            /* verde-caça profundo, fundo da página */
-        --bg-vignette: #16201A;   /* sombra nos cantos */
-        --paper: #F7F1E1;         /* papel do ticket */
-        --paper-2: #EFE6CE;       /* papel levemente mais escuro, para insets */
-        --ink: #221B13;           /* tinta sobre o papel */
-        --muted: #8C8265;
-        --brass: #B08A3E;         /* latão / metal oxidado */
-        --brass-deep: #8A6A2E;
-        --brass-soft: rgba(176, 138, 62, 0.14);
-        --burgundy: #7A2E28;      /* couro / selo de cera */
-        --burgundy-soft: rgba(122, 46, 40, 0.09);
-        --line: #DED0A9;
-        --cream: #F2ECDC;
-        --occupied-bg: #E9E0C7;
-        --occupied-text: #B2A47C;
-        --radius: 2px;
-        --radius-sm: 2px;
+        /* ── Barber Pole Editorial ── */
+        --bg: #F1F0EC;           /* fundo neutro, quase papel de jornal */
+        --card: #FFFFFF;
+        --ink: #141414;
+        --muted: #767267;
+        --red: #C22A2E;          /* vermelho do barber pole */
+        --red-soft: rgba(194, 42, 46, 0.07);
+        --navy: #1E3350;         /* azul-marinho do barber pole */
+        --navy-soft: rgba(30, 51, 80, 0.06);
+        --line: #E4E1D9;
+        --occupied-bg: #ECEAE4;
+        --occupied-text: #ACA89C;
+        --radius: 3px;
+        --radius-sm: 3px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,9 +29,7 @@
     html, body { font-family: 'Inter', system-ui, sans-serif; }
 
     body {
-        background:
-            radial-gradient(ellipse at top, rgba(255,255,255,0.03), transparent 60%),
-            radial-gradient(ellipse at bottom, var(--bg-vignette), var(--bg) 70%);
+        background: var(--bg);
         color: var(--ink);
         display: flex;
         justify-content: center;
@@ -44,27 +38,42 @@
     }
 
     .container {
-        background-color: var(--paper);
+        background-color: var(--card);
         width: 100%;
         max-width: 520px;
         border-radius: var(--radius);
-        box-shadow:
-            0 1px 0 rgba(255,255,255,0.4) inset,
-            0 30px 60px -25px rgba(0,0,0,0.55),
-            0 6px 18px -8px rgba(0,0,0,0.4);
+        box-shadow: 0 1px 2px rgba(20,20,20,0.04), 0 24px 48px -24px rgba(20,20,20,0.28);
         overflow: hidden;
         display: flex;
         flex-direction: column;
     }
 
-    /* Rail — cabeçalho estampado, como o topo de um talão */
+    /* ── Listra do barber pole — a única assinatura gráfica da página ── */
+    .barber-stripe {
+        height: 7px;
+        background: repeating-linear-gradient(
+            -45deg,
+            var(--red) 0px, var(--red) 14px,
+            #FFFFFF 14px, #FFFFFF 28px,
+            var(--navy) 28px, var(--navy) 42px,
+            #FFFFFF 42px, #FFFFFF 56px
+        );
+        background-size: 79px 100%;
+        animation: rotar-listra 3.5s linear infinite;
+    }
+    @keyframes rotar-listra {
+        from { background-position: 0 0; }
+        to   { background-position: 79px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .barber-stripe { animation: none; }
+    }
+
     .rail {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.95rem 1.5rem;
-        background: var(--ink);
-        color: var(--cream);
+        padding: 1.1rem 1.75rem 0.9rem;
     }
     .rail .seal {
         display: flex;
@@ -72,81 +81,47 @@
         gap: 0.5rem;
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.66rem;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: var(--brass);
+        color: var(--muted);
     }
-    .rail .seal svg { flex-shrink: 0; }
-    .rail .ticket-no {
-        font-family: 'Special Elite', 'IBM Plex Mono', monospace;
-        font-size: 0.7rem;
-        letter-spacing: 0.05em;
-        color: rgba(242,236,220,0.55);
-    }
+    .rail .seal svg { flex-shrink: 0; color: var(--red); }
 
-    /* Perfuração — a borda destacável entre o cabeçalho e o corpo do ticket */
-    .perforation {
-        height: 13px;
-        background-color: var(--paper);
-        background-image: radial-gradient(circle at 7px 7px, var(--ink) 6.5px, transparent 7px);
-        background-size: 18px 26px;
-        background-position: -2px -13px;
-        background-repeat: repeat-x;
-    }
+    .card-body { padding: 0.25rem 2.1rem 2rem; width: 100%; }
 
-    .card-body { padding: 2rem 2.25rem 2rem; width: 100%; }
-
-    header { margin-bottom: 1.75rem; border-bottom: 2px solid var(--ink); padding-bottom: 1rem; }
+    header { margin-bottom: 1.85rem; }
     header h1 {
-        font-family: 'Fraunces', serif;
-        font-weight: 700;
-        font-size: 1.7rem;
-        letter-spacing: -0.01em;
-        line-height: 1.1;
+        font-family: 'Anton', 'Inter', sans-serif;
+        font-weight: 400;
+        font-size: 2.1rem;
+        letter-spacing: 0.005em;
+        line-height: 0.98;
         text-transform: uppercase;
     }
     header p {
         color: var(--muted);
         font-size: 0.82rem;
-        margin-top: 0.35rem;
+        margin-top: 0.45rem;
         font-family: 'IBM Plex Mono', monospace;
         letter-spacing: 0.04em;
     }
 
-    /* Trilha de etapas — furos de talão de fila, não uma barra genérica */
+    /* Trilha de etapas — blocos numerados, porque a ordem aqui é real (fluxo sequencial) */
     .step-track {
-        position: relative;
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.85rem;
-        padding: 0 2px;
-    }
-    .step-track::before {
-        content: "";
-        position: absolute;
-        left: 7px; right: 7px; top: 50%;
-        height: 1px;
-        background: var(--line);
-        transform: translateY(-50%);
-        z-index: 0;
+        align-items: stretch;
+        gap: 3px;
+        margin-bottom: 1.9rem;
     }
     .step-dot {
-        position: relative;
-        z-index: 1;
-        width: 13px; height: 13px;
-        border-radius: 50%;
-        border: 1.5px solid var(--line);
-        background: var(--paper);
-        transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+        flex: 1;
+        height: 5px;
+        background: var(--line);
+        border-radius: 1px;
+        transition: background 0.25s ease;
     }
-    .step-dot.done { background: var(--brass); border-color: var(--brass); }
-    .step-dot.current {
-        background: var(--ink);
-        border-color: var(--ink);
-        transform: scale(1.25);
-        box-shadow: 0 0 0 3px var(--brass-soft);
-    }
+    .step-dot.done { background: var(--navy); }
+    .step-dot.current { background: var(--red); }
 
     .step { display: none; }
     .step.active { display: block; animation: fadeIn 0.28s ease; }
@@ -157,18 +132,21 @@
     }
 
     .step-eyebrow {
-        font-family: 'Special Elite', 'IBM Plex Mono', monospace;
+        font-family: 'IBM Plex Mono', monospace;
         font-size: 0.72rem;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--burgundy);
-        margin-bottom: 0.3rem;
+        letter-spacing: 0.1em;
+        color: var(--red);
+        margin-bottom: 0.35rem;
+        font-weight: 600;
     }
     .step-title {
-        font-family: 'Fraunces', serif;
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin-bottom: 1.1rem;
+        font-family: 'Anton', 'Inter', sans-serif;
+        font-weight: 400;
+        font-size: 1.5rem;
+        letter-spacing: 0.005em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
     }
 
     .input-group { margin-bottom: 1rem; }
@@ -176,29 +154,27 @@
         display: block; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted); font-weight: 500;
     }
     .input-group input {
-        width: 100%; padding: 0.75rem 0.85rem; border: 1px solid var(--line);
+        width: 100%; padding: 0.75rem 0.85rem; border: 1.5px solid var(--line);
         border-radius: var(--radius-sm); font-size: 0.98rem; outline: none;
-        background: var(--paper-2);
-        transition: border-color 0.15s ease, background 0.15s ease;
+        background: var(--card);
+        transition: border-color 0.15s ease;
         font-family: inherit;
         color: var(--ink);
     }
-    .input-group input::placeholder { color: var(--muted); opacity: 0.7; }
-    .input-group input:focus { border-color: var(--brass-deep); background: var(--paper); }
+    .input-group input:focus { border-color: var(--navy); }
 
     .grid-options {
         display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 0.6rem;
     }
 
     .card-option {
-        border: 1px solid var(--line); border-radius: var(--radius-sm);
+        border: 1.5px solid var(--line); border-radius: var(--radius-sm);
         padding: 0.85rem 0.9rem; text-align: center; cursor: pointer; transition: all 0.15s;
-        background: var(--paper-2);
+        background: var(--card);
     }
-    .card-option:hover { border-color: var(--brass-deep); background: var(--paper); }
+    .card-option:hover { border-color: var(--navy); }
     .card-option.selected {
-        border-color: var(--brass-deep); background-color: var(--brass-soft);
-        box-shadow: 0 0 0 1px var(--brass-deep);
+        border-color: var(--red); background-color: var(--red-soft);
     }
     .card-option strong { display: block; font-size: 0.92rem; margin-bottom: 0.2rem; }
     .card-option span { font-size: 0.8rem; color: var(--muted); }
@@ -211,11 +187,11 @@
         color: var(--occupied-text);
         position: relative;
     }
-    .card-option.ocupado:hover { border-color: var(--line); background: var(--occupied-bg); }
+    .card-option.ocupado:hover { border-color: var(--line); }
     .card-option.ocupado strong {
         color: var(--occupied-text);
         text-decoration: line-through;
-        text-decoration-color: rgba(178,164,124,0.9);
+        text-decoration-color: rgba(172,168,156,0.9);
     }
     .card-option.ocupado span {
         color: var(--occupied-text);
@@ -236,23 +212,22 @@
     }
     .dia-card {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 1px; padding: 0.7rem 0.3rem; border: 1px solid var(--line);
+        gap: 1px; padding: 0.7rem 0.3rem; border: 1.5px solid var(--line);
         border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
-        background: var(--paper-2);
+        background: var(--card);
     }
-    .dia-card:hover { border-color: var(--brass-deep); background: var(--paper); }
+    .dia-card:hover { border-color: var(--navy); }
     .dia-card.selected {
-        border-color: var(--brass-deep); background-color: var(--brass-soft);
-        box-shadow: 0 0 0 1px var(--brass-deep);
+        border-color: var(--red); background-color: var(--red-soft);
     }
     .dia-card small {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
     }
-    .dia-card.selected small { color: var(--burgundy); }
-    .dia-card strong { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 700; }
+    .dia-card.selected small { color: var(--red); }
+    .dia-card strong { font-family: 'Anton', sans-serif; font-weight: 400; font-size: 1.3rem; }
     .dia-card span { font-size: 0.68rem; color: var(--muted); }
-    .dia-card.selected span { color: var(--burgundy); }
+    .dia-card.selected span { color: var(--red); }
 
     .sub-label {
         font-size: 0.8rem; color: var(--muted); margin-bottom: 0.55rem; font-weight: 500;
@@ -263,47 +238,47 @@
         font-size: 0.74rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace;
     }
     .legenda span { display: inline-flex; align-items: center; gap: 5px; }
-    .legenda i { width: 9px; height: 9px; display: inline-block; border-radius: 50%; }
-    .legenda .i-livre { background: var(--paper-2); border: 1px solid var(--line); }
-    .legenda .i-ocupado { background: var(--occupied-bg); border: 1px solid var(--line); }
+    .legenda i { width: 9px; height: 9px; display: inline-block; }
+    .legenda .i-livre { background: var(--card); border: 1.5px solid var(--line); }
+    .legenda .i-ocupado { background: var(--occupied-bg); border: 1.5px solid var(--line); }
 
     .btn-actions { display: flex; gap: 0.75rem; margin-top: 1.6rem; }
     button {
-        flex: 1; padding: 0.8rem; border: 1px solid var(--ink); border-radius: var(--radius-sm);
+        flex: 1; padding: 0.85rem; border: 1.5px solid var(--ink); border-radius: var(--radius-sm);
         cursor: pointer; transition: 0.15s;
-        font-family: inherit; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.82rem;
+        font-family: inherit; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.83rem;
         font-weight: 700;
     }
-    .btn-primary { background-color: var(--ink); color: var(--cream); }
-    .btn-primary:hover { background-color: var(--burgundy); border-color: var(--burgundy); }
-    .btn-primary:disabled { background-color: #C7BE9F; border-color: #C7BE9F; color: #8C8265; cursor: not-allowed; }
-    .btn-secondary { background-color: var(--paper); color: var(--ink); border: 1px solid var(--line); }
-    .btn-secondary:hover { background-color: var(--paper-2); border-color: var(--brass-deep); }
+    .btn-primary { background-color: var(--ink); color: #FFFFFF; }
+    .btn-primary:hover { background-color: var(--red); border-color: var(--red); }
+    .btn-primary:disabled { background-color: #D3D0C6; border-color: #D3D0C6; color: #9A9585; cursor: not-allowed; }
+    .btn-secondary { background-color: var(--card); color: var(--ink); border: 1.5px solid var(--line); }
+    .btn-secondary:hover { border-color: var(--ink); }
 
-    button:focus-visible { outline: 2px solid var(--brass-deep); outline-offset: 2px; }
-    .card-option:focus-visible, .dia-card:focus-visible { outline: 2px solid var(--brass-deep); outline-offset: 1px; }
+    button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+    .card-option:focus-visible, .dia-card:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
 
     .resumo-box {
-        background: var(--paper-2); padding: 0.4rem 1.3rem; border-radius: var(--radius-sm);
-        border: 1px solid var(--line); font-size: 0.95rem;
+        background: var(--bg); padding: 0.4rem 1.3rem; border-radius: var(--radius-sm);
+        border: 1.5px solid var(--line); font-size: 0.95rem;
     }
     .resumo-box .linha {
         display: flex; justify-content: space-between; align-items: baseline;
         gap: 1.5rem; padding: 0.85rem 0;
     }
     .resumo-box .linha strong:first-child {
-        color: var(--muted); font-weight: 500; font-size: 0.78rem;
-        text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--muted); font-weight: 600; font-size: 0.76rem;
+        text-transform: uppercase; letter-spacing: 0.05em;
         white-space: nowrap; flex-shrink: 0;
     }
     .resumo-box .linha span { text-align: right; }
     .resumo-box .linha:not(:last-child) { border-bottom: 1px dashed var(--line); }
-    .resumo-box .total { color: var(--burgundy); font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1.05rem; }
+    .resumo-box .total { color: var(--red); font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1.05rem; }
 
     #error-msg {
-        color: var(--burgundy); font-size: 0.85rem; text-align: left; display: none;
-        margin-top: 1rem; background: var(--burgundy-soft); padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
-        border: 1px solid rgba(122,46,40,0.2);
+        color: var(--red); font-size: 0.85rem; text-align: left; display: none;
+        margin-top: 1rem; background: var(--red-soft); padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
+        border: 1px solid rgba(194,42,46,0.18);
     }
 
     .whatsapp-note {
@@ -313,40 +288,30 @@
 
     #loading-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(23,20,16,0.6); display: none; justify-content: center;
-        align-items: center; z-index: 1000; color: var(--cream); font-weight: 600;
-        font-family: 'Special Elite', 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
+        background: rgba(20,20,20,0.55); display: none; justify-content: center;
+        align-items: center; z-index: 1000; color: #FFFFFF; font-weight: 700;
+        font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em;
     }
 
     #step-6 { text-align: center; padding-top: 0.5rem; }
     #step-6 .check-badge {
         width: 58px; height: 58px; border-radius: 50%;
-        border: 1.5px solid var(--brass); background: var(--brass-soft);
+        border: 2px solid var(--red); background: var(--red-soft);
         display: flex; align-items: center; justify-content: center; margin: 0 auto 1.1rem;
     }
     #step-6 h2 {
-        font-family: 'Fraunces', serif; color: var(--ink); font-size: 1.4rem; font-weight: 700;
-        text-transform: uppercase;
+        font-family: 'Anton', sans-serif; font-weight: 400; color: var(--ink); font-size: 1.6rem;
+        text-transform: uppercase; letter-spacing: 0.005em;
     }
     #step-6 p { color: var(--muted); margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.55; }
-    #step-6 .stub-note {
-        margin-top: 1.4rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-        color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
-        border-top: 1px dashed var(--line); padding-top: 1rem;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .step { animation: none !important; }
-        * { transition-duration: 0.001ms !important; }
-    }
 
     @media (max-width: 480px) {
         body { padding: 0; }
         .container { max-width: 100%; min-height: 100vh; border-radius: 0; box-shadow: none; }
-        .card-body { padding: 1.5rem 1.25rem 1.5rem; }
-        header h1 { font-size: 1.35rem; }
-        .step-title { font-size: 1.1rem; }
-        .rail { padding: 0.75rem 1.25rem; }
+        .card-body { padding: 0.25rem 1.25rem 1.5rem; }
+        header h1 { font-size: 1.7rem; }
+        .step-title { font-size: 1.25rem; }
+        .rail { padding: 0.9rem 1.25rem 0.7rem; }
         .grid-options { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 0.5rem; }
         .grid-horarios { grid-template-columns: repeat(3, 1fr); }
         .grid-dias { grid-template-columns: repeat(5, 1fr); }
@@ -360,12 +325,13 @@
 </head>
 <body>
 
-<div id="loading-overlay">Carregando…</div>
+<div id="loading-overlay">Carregando...</div>
 
 <div class="container" id="app-container" style="display: none;">
+    <div class="barber-stripe"></div>
     <div class="rail">
         <span class="seal">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <circle cx="6" cy="6" r="3"></circle>
                 <circle cx="6" cy="18" r="3"></circle>
                 <line x1="8.5" y1="8" x2="19" y2="19"></line>
@@ -373,9 +339,7 @@
             </svg>
             Barbearia
         </span>
-        <span class="ticket-no">Ticket Nº 0427</span>
     </div>
-    <div class="perforation" aria-hidden="true"></div>
     <div class="card-body">
         <header>
             <h1 id="shop-name" data-barber="nome">Carregando...</h1>
@@ -472,12 +436,11 @@
         <div class="step" id="step-6">
             <div class="check-badge">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 6L9 17l-5-5" stroke="#7A2E28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M20 6L9 17l-5-5" stroke="#C22A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <h2>Agendamento confirmado</h2>
             <p>Seu horário foi reservado com sucesso. Você receberá lembretes no seu WhatsApp.</p>
-            <p class="stub-note">Guarde este ticket até o dia do seu corte</p>
             <div class="btn-actions">
                 <button class="btn-primary" style="width: 100%;" onclick="location.reload()">Fazer novo agendamento</button>
             </div>
@@ -816,7 +779,19 @@ function preencherResumo() {
     document.getElementById('resumo-valor').textContent = valor;
 }
 
-// Monta o link do WhatsApp com o resumo do agendamento já preenchido
+// Monta o link do WhatsApp com o resumo do agendamento já preenchido.
+// CORREÇÃO: normaliza o número (só dígitos, com código do país) antes de montar
+// o link. Números com espaço, +, -, parênteses ou sem "55" na frente fazem o
+// wa.me não reconhecer um contato específico e cair na tela de "encaminhar".
+function normalizarNumeroWhatsapp(numero) {
+    if (!numero) return '';
+    let digits = String(numero).replace(/\D/g, '');       // só dígitos
+    if (digits.length === 10 || digits.length === 11) {    // DDD + número, sem país
+        digits = '55' + digits;
+    }
+    return digits;
+}
+
 function montarLinkWhatsapp() {
     const valor = Number(state.servico?.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const mensagem =
@@ -827,8 +802,14 @@ Serviço: ${state.servico?.nome || ''}
 Data/Hora: ${state.dataLabel} às ${state.horario}
 Valor: ${valor}`;
 
-    // Número da barbearia definido em Saas.js (window.WHATSAPP_BARBEARIA), com fallback vazio
-    const numeroBarbearia = (typeof WHATSAPP_BARBEARIA !== 'undefined' && WHATSAPP_BARBEARIA) ? WHATSAPP_BARBEARIA : '';
+    // Número da barbearia definido em Saas.js (window.WHATSAPP_BARBEARIA), normalizado
+    const numeroBruto = (typeof WHATSAPP_BARBEARIA !== 'undefined') ? WHATSAPP_BARBEARIA : '';
+    const numeroBarbearia = normalizarNumeroWhatsapp(numeroBruto);
+
+    if (!numeroBarbearia) {
+        console.warn('WHATSAPP_BARBEARIA não definido ou inválido — o WhatsApp abrirá sem um contato específico.');
+    }
+
     const base = numeroBarbearia ? `https://wa.me/${numeroBarbearia}` : 'https://wa.me/';
     return `${base}?text=${encodeURIComponent(mensagem)}`;
 }
