@@ -4386,17 +4386,6 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
     res.json({ ok: false, logs, erro: err.message });
   }
 });
-
-// ── ARQUIVOS ESTÁTICOS ────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, '..', 'projeto')));
-
-// ── BANCO + START ─────────────────────────────────────────────────────────
-db.query("SELECT NOW()")
-  .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
-  .catch(e => console.log("❌ Erro conexão banco:", e.message));
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor multi-tenant na porta ${PORT}`));
 // ── ARQUIVOS ESTÁTICOS ────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
