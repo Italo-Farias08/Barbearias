@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin — Barbearias</title>
+<style>
+  :root{
+    --bg:#0e0c08; --card:#1a160e; --card2:#221c11; --line:#3a2f1a;
+    --text:#f3ead8; --muted:#a9977a; --accent:#d4af37; --accent2:#f4e5a1;
+    --danger:#e5555a; --ok:#43b581;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:
+      radial-gradient(circle at 15% 0%, rgba(212,175,55,.08), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:24px;
+  }
+  h1{
+    font-size:22px; margin:0 0 4px; letter-spacing:.03em;
+    background:linear-gradient(120deg, var(--accent2), var(--accent) 60%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:700;
+  }
+  .sub{color:var(--muted); font-size:13px; margin-bottom:20px;}
+  .marca{
+    display:flex; align-items:center; gap:10px; margin-bottom:22px;
+  }
+  .marca .selo{
+    width:38px; height:38px; border-radius:50%;
+    background:linear-gradient(135deg, var(--accent2), var(--accent) 55%, #8a6d1f);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:#1a1206; font-size:15px; letter-spacing:-0.02em;
+    box-shadow:0 0 0 1px rgba(212,175,55,.4), 0 4px 14px rgba(212,175,55,.15);
+  }
+  .marca .txt{line-height:1.1;}
+  .marca .txt b{
+    font-size:16px; letter-spacing:.14em; color:var(--accent2);
+  }
+  .marca .txt span{font-size:10px; color:var(--muted); letter-spacing:.1em;}
+
+  .barra-topo{
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    margin-bottom:20px; background:var(--card); padding:12px; border-radius:10px;
+    border:1px solid var(--line);
+  }
+  .barra-topo input{
+    flex:1; min-width:180px; background:var(--card2); border:1px solid var(--line);
+    color:var(--text); padding:9px 10px; border-radius:6px; font-size:13px;
+  }
+  button{
+    cursor:pointer; border:none; border-radius:6px; font-size:13px; padding:9px 14px;
+    background:linear-gradient(135deg, var(--accent2), var(--accent));
+    color:#1a1206; font-weight:700;
+  }
+  button.secundario{ background:var(--card2); color:var(--text); border:1px solid var(--line); font-weight:600; }
+  button.perigo{ background:var(--danger); }
+  button.ok{ background:var(--ok); }
+  button:disabled{opacity:.5; cursor:not-allowed;}
+
+  #lista{display:flex; flex-direction:column; gap:12px;}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 16px; cursor:pointer; gap:10px;
+  }
+  .card-head:hover{background:var(--card2);}
+  .card-head .info h3{margin:0; font-size:15px;}
+  .card-head .info span{color:var(--muted); font-size:12px;}
+  .badge{
+    font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600;
+    display:inline-block; margin-left:8px;
+  }
+  .badge.ativo{background:rgba(67,181,129,.15); color:var(--ok);}
+  .badge.inativo{background:rgba(229,85,90,.15); color:var(--danger);}
+  a{color:var(--accent2);}
+
+  .card-body{
+    display:none; padding:0 16px 16px; border-top:1px solid var(--line);
+  }
+  .card-body.aberto{display:block;}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr));
+    gap:10px; margin:14px 0;
+  }
+  label{font-size:11px; color:var(--muted); display:block; margin-bottom:3px;}
+  input[type=text], input[type=password], input[type=date]{
+    width:100%; background:var(--card2); border:1px solid var(--line); color:var(--text);
+    padding:7px 8px; border-radius:6px; font-size:13px;
+  }
+  .campo{margin-bottom:2px;}
+
+  .secao-titulo{
+    font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    margin:16px 0 8px; border-bottom:1px solid var(--line); padding-bottom:4px;
+  }
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th,td{text-align:left; padding:6px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--muted); font-weight:500; font-size:11px; text-transform:uppercase;}
+
+  .acoes{display:flex; gap:8px; margin-top:14px;}
+  .msg{
+    font-size:13px; padding:10px; border-radius:6px; margin-bottom:14px; display:none;
+  }
+  .msg.erro{background:rgba(229,85,90,.15); color:var(--danger); display:block;}
+  .msg.sucesso{background:rgba(67,181,129,.15); color:var(--ok); display:block;}
+  .vazio{color:var(--muted); text-align:center; padding:40px; font-size:14px;}
+  .chave-box{
+    max-width:420px; margin:80px auto; background:var(--card); border:1px solid var(--line);
+    padding:24px; border-radius:10px;
+  }
+  .chave-box h2{margin-top:0; font-size:16px;}
+  .chave-box p{color:var(--muted); font-size:13px;}
+</style>
+</head>
+<body>
+
+<div id="telaChave" class="chave-box">
+  <div class="marca" style="justify-content:center; margin-bottom:18px;">
+    <div class="selo">GL</div>
+    <div class="txt"><b>GOLD LINE</b><br><span>PAINEL ADMINISTRATIVO</span></div>
+  </div>
+  <label>URL do servidor (ex: https://seuservidor.com)</label>
+  <input type="text" id="inputApiUrl" placeholder="https://seuservidor.com" style="margin-bottom:10px;">
+  <label>Senha</label>
+  <input type="password" id="inputChave" placeholder="Senha de acesso">
+  <div class="msg erro" id="msgChave"></div>
+  <button style="margin-top:12px; width:100%;" onclick="entrar()">Entrar</button>
+</div>
+
+<div id="telaPrincipal" style="display:none;">
+  <div class="marca">
+    <div class="selo">GL</div>
+    <div class="txt"><b>GOLD LINE</b><br><span>PAINEL ADMINISTRATIVO</span></div>
+  </div>
+  <h1>Barbearias cadastradas</h1>
+  <div class="sub">Visualize, edite e apague os cadastros das barbearias</div>
+
+  <div class="barra-topo">
+    <input type="text" id="busca" placeholder="Buscar por nome, cidade ou slug..." oninput="renderizar()">
+    <button class="secundario" onclick="carregar()">↻ Atualizar</button>
+    <span id="contador" style="color:var(--muted); font-size:12px;"></span>
+  </div>
+
+  <div class="msg" id="msgGlobal"></div>
+  <div id="lista"></div>
+</div>
+
+<script>
+const SENHA_PAINEL = "ZinksggZ2";
+
+let API = "";
+let CHAVE = SENHA_PAINEL;
+let dados = [];
+
+function entrar(){
+  const url = document.getElementById("inputApiUrl").value.trim().replace(/\/$/, "");
+  const senha = document.getElementById("inputChave").value;
+
+  if(!url){
+    mostrarMsg("msgChave", "Preencha a URL do servidor.", true);
+    return;
+  }
+  if(senha !== SENHA_PAINEL){
+    mostrarMsg("msgChave", "Senha incorreta.", true);
+    return;
+  }
+
+  API = url;
+  localStorage.setItem("painel_api_url", API);
+  document.getElementById("telaChave").style.display = "none";
+  document.getElementById("telaPrincipal").style.display = "block";
+  carregar();
+}
+
+function mostrarMsg(id, texto, erro){
+  const el = document.getElementById(id);
+  el.textContent = texto;
+  el.className = "msg " + (erro ? "erro" : "sucesso");
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 4000);
+}
+
+async function chamarApi(caminho, opcoes = {}){
+  const resp = await fetch(API + caminho, {
+    ...opcoes,
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-key": CHAVE,
+      ...(opcoes.headers || {})
+    }
+  });
+  const json = await resp.json().catch(() => ({}));
+  if(!resp.ok) throw new Error(json.erro || "Erro na requisição");
+  return json;
+}
+
+async function carregar(){
+  document.getElementById("lista").innerHTML = '<div class="vazio">Carregando...</div>';
+  try{
+    dados = await chamarApi("/admin/barbearias");
+    renderizar();
+  }catch(err){
+    mostrarMsg("msgGlobal", err.message, true);
+    document.getElementById("lista").innerHTML = '<div class="vazio">Não foi possível carregar. Verifique a URL e a chave.</div>';
+  }
+}
+
+function renderizar(){
+  const termo = document.getElementById("busca").value.toLowerCase();
+  const filtrados = dados.filter(b =>
+    (b.nome||"").toLowerCase().includes(termo) ||
+    (b.cidade||"").toLowerCase().includes(termo) ||
+    (b.slug||"").toLowerCase().includes(termo)
+  );
+  document.getElementById("contador").textContent = `${filtrados.length} barbearia(s)`;
+
+  const lista = document.getElementById("lista");
+  if(filtrados.length === 0){
+    lista.innerHTML = '<div class="vazio">Nenhuma barbearia encontrada.</div>';
+    return;
+  }
+
+  lista.innerHTML = filtrados.map(b => cardHtml(b)).join("");
+}
+
+function cardHtml(b){
+  const venc = b.vencimento ? new Date(b.vencimento).toLocaleDateString("pt-BR") : "—";
+  return `
+  <div class="card" id="card-${b.id}">
+    <div class="card-head" onclick="toggleCard(${b.id})">
+      <div class="info">
+        <h3>${escapeHtml(b.nome)} <span class="badge ${b.ativo ? 'ativo':'inativo'}">${b.ativo ? 'ativo':'inativo'}</span></h3>
+        <span>/${escapeHtml(b.slug)} · ${escapeHtml(b.cidade||"sem cidade")} · vence em ${venc} · ${b.total_agendamentos} agendamentos · ${b.total_assinantes} assinantes</span>
+      </div>
+      <button class="secundario" type="button">Detalhes</button>
+    </div>
+    <div class="card-body" id="body-${b.id}">
+      ${formularioHtml(b)}
+      ${tabelaSimples("Serviços", b.servicos, ["nome","preco"])}
+      ${tabelaSimples("Profissionais", b.profissionais, ["nome","especialidade","whatsapp","disponivel"])}
+      ${tabelaSimples("Planos", b.planos, ["nome","cortes_mes","valor","ativo"])}
+      <div class="acoes">
+        <button class="ok" onclick="salvar(${b.id})">Salvar alterações</button>
+        <button class="perigo" onclick="apagar(${b.id}, '${escapeHtml(b.nome)}')">Apagar barbearia</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function formularioHtml(b){
+  return `
+  <div class="secao-titulo">Dados gerais</div>
+  <div class="grid">
+    <div class="campo"><label>Nome</label><input type="text" id="nome-${b.id}" value="${escapeAttr(b.nome)}"></div>
+    <div class="campo"><label>Cidade</label><input type="text" id="cidade-${b.id}" value="${escapeAttr(b.cidade||"")}"></div>
+    <div class="campo"><label>WhatsApp</label><input type="text" id="whatsapp-${b.id}" value="${escapeAttr(b.whatsapp||"")}"></div>
+    <div class="campo"><label>Username (login)</label><input type="text" id="username-${b.id}" value="${escapeAttr(b.username||"")}"></div>
+    <div class="campo"><label>Nova senha (deixe em branco p/ manter)</label><input type="password" id="password-${b.id}" placeholder="••••••"></div>
+    <div class="campo"><label>Chave PIX</label><input type="text" id="pix-${b.id}" value="${escapeAttr(b.pix_chave||"")}"></div>
+    <div class="campo"><label>Cor primária</label><input type="text" id="cor-${b.id}" value="${escapeAttr(b.cor_primaria||"#c8a96e")}"></div>
+    <div class="campo"><label>Vencimento</label><input type="date" id="vencimento-${b.id}" value="${b.vencimento ? new Date(b.vencimento).toISOString().substring(0,10) : ""}"></div>
+    <div class="campo">
+      <label>Status</label>
+      <select id="ativo-${b.id}" style="width:100%; background:var(--card2); border:1px solid var(--line); color:var(--text); padding:7px 8px; border-radius:6px; font-size:13px;">
+        <option value="true" ${b.ativo ? "selected":""}>Ativo</option>
+        <option value="false" ${!b.ativo ? "selected":""}>Inativo</option>
+      </select>
+    </div>
+  </div>
+  <div class="campo">
+    <label>Sobre</label>
+    <input type="text" id="sobre-${b.id}" value="${escapeAttr(b.sobre||"")}">
+  </div>`;
+}
+
+function tabelaSimples(titulo, linhas, colunas){
+  if(!linhas || linhas.length === 0){
+    return `<div class="secao-titulo">${titulo}</div><div style="color:var(--muted); font-size:13px; margin-bottom:8px;">Nenhum registro.</div>`;
+  }
+  return `
+  <div class="secao-titulo">${titulo} (${linhas.length})</div>
+  <table>
+    <thead><tr>${colunas.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+    <tbody>
+      ${linhas.map(l => `<tr>${colunas.map(c => `<td>${formatarValor(l[c])}</td>`).join("")}</tr>`).join("")}
+    </tbody>
+  </table>`;
+}
+
+function formatarValor(v){
+  if(v === null || v === undefined) return "—";
+  if(typeof v === "boolean") return v ? "sim" : "não";
+  return escapeHtml(String(v));
+}
+
+function toggleCard(id){
+  const body = document.getElementById(`body-${id}`);
+  body.classList.toggle("aberto");
+}
+
+async function salvar(id){
+  const dadosEnviar = {
+    nome: document.getElementById(`nome-${id}`).value,
+    cidade: document.getElementById(`cidade-${id}`).value,
+    whatsapp: document.getElementById(`whatsapp-${id}`).value,
+    username: document.getElementById(`username-${id}`).value,
+    password: document.getElementById(`password-${id}`).value,
+    pix_chave: document.getElementById(`pix-${id}`).value,
+    cor_primaria: document.getElementById(`cor-${id}`).value,
+    sobre: document.getElementById(`sobre-${id}`).value,
+    ativo: document.getElementById(`ativo-${id}`).value === "true",
+    vencimento: document.getElementById(`vencimento-${id}`).value || null
+  };
+  try{
+    await chamarApi(`/admin/barbearias/${id}`, { method:"PUT", body: JSON.stringify(dadosEnviar) });
+    mostrarMsg("msgGlobal", "Alterações salvas com sucesso.", false);
+    carregar();
+  }catch(err){
+    mostrarMsg("msgGlobal", err.message, true);
+  }
+}
+
+async function apagar(id, nome){
+  if(!confirm(`Tem certeza que deseja apagar "${nome}"? Isso remove TODOS os dados dessa barbearia (agendamentos, serviços, profissionais, planos, assinantes). Essa ação não pode ser desfeita.`)) return;
+  try{
+    await chamarApi(`/admin/barbearias/${id}`, { method:"DELETE" });
+    mostrarMsg("msgGlobal", "Barbearia apagada.", false);
+    carregar();
+  }catch(err){
+    mostrarMsg("msgGlobal", err.message, true);
+  }
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+
+// Preenche a URL salva anteriormente, se houver
+window.onload = () => {
+  const salva = localStorage.getItem("painel_api_url");
+  if(salva) document.getElementById("inputApiUrl").value = salva;
+};
+</script>
+</body>
+</html>
