@@ -164,7 +164,12 @@ async function iniciarWhatsAppSlug(slug) {
         if (msg.key.remoteJid === "status@broadcast") continue;
 
         const jid  = msg.key.remoteJid;
+
+        // captura clique em lista (listResponseMessage) ou texto normal
+        const listReply = msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
+
         const body = (
+          listReply ||
           msg.message?.conversation ||
           msg.message?.extendedTextMessage?.text ||
           msg.message?.imageMessage?.caption ||
@@ -251,7 +256,7 @@ async function getHorariosConfig(slug, profissional_id) {
   return hrGlobal.rows[0] || null;
 }
 
-// ── HELPERS DE LINGUAGEM NATURAL ──────────────────────────────────────────
+// ── HELPERS DE LINGUAGEM NATURAL (mantidos como fallback interno) ─────────
 function normalizar(str) {
   return str
     .toLowerCase()
@@ -275,97 +280,24 @@ function matchItem(body, lista, campoNome) {
   return parcial || null;
 }
 
-function matchHorario(body, lista) {
-  const n = normalizar(body);
-
-  const comDoisPontos = body.match(/(\d{1,2}):(\d{2})/);
-  if (comDoisPontos) {
-    const candidato = `${comDoisPontos[1].padStart(2,"0")}:${comDoisPontos[2]}`;
-    const found = lista.find(h => h === candidato);
-    if (found) return found;
+// ── HELPER: ENVIAR LISTA (BOTÃO) NO WHATSAPP ──────────────────────────────
+async function enviarLista(sock, jid, texto, tituloBotao, tituloSecao, linhas) {
+  // linhas = [{ title, description, rowId }]
+  try {
+    await sock.sendMessage(jid, {
+      text: texto,
+      footer: "Toque em 'Ver opções' para escolher 👇",
+      title: "",
+      buttonText: tituloBotao,
+      sections: [{ title: tituloSecao, rows: linhas }]
+    });
+    console.log(`[LISTA ENVIADA] para ${jid}`);
+  } catch (err) {
+    console.error(`[ERRO ENVIO LISTA]`, err.message);
+    // fallback: se a lista falhar, manda texto simples pra não travar o cliente
+    const opcoesTxt = linhas.map((l, i) => `${i + 1}. ${l.title}`).join("\n");
+    await sock.sendMessage(jid, { text: `${texto}\n\n${opcoesTxt}` });
   }
-
-  const comH = n.match(/^(\d{1,2})h(\d{2})$/);
-  if (comH) {
-    const candidato = `${comH[1].padStart(2,"0")}:${comH[2]}`;
-    const found = lista.find(h => h === candidato);
-    if (found) return found;
-  }
-
-  const digits = n.replace(/\D/g, "");
-  if (!digits) return null;
-
-  const comoIdx = parseInt(digits) - 1;
-  if (!isNaN(comoIdx) && comoIdx >= 0 && comoIdx < lista.length && parseInt(digits) <= 30) {
-    if (parseInt(digits) > 23) return lista[comoIdx];
-  }
-
-  let hh, mm;
-  if      (digits.length <= 2) { hh = digits;             mm = "00"; }
-  else if (digits.length === 3) { hh = digits[0];          mm = digits.slice(1); }
-  else                          { hh = digits.slice(0, 2); mm = digits.slice(2, 4); }
-
-  const horaNum = parseInt(hh);
-  if (horaNum < 0 || horaNum > 23) return null;
-
-  const candidato = `${String(horaNum).padStart(2,"0")}:${mm.padStart(2,"0")}`;
-  return lista.find(h => h === candidato) || null;
-}
-
-function matchDia(body, lista) {
-  const n = normalizar(body);
-
-  if (/^\d+$/.test(n)) {
-    const idx = parseInt(n) - 1;
-    if (!isNaN(idx) && idx >= 0 && idx < lista.length) return lista[idx];
-  }
-
-  const comBarra = n.match(/(\d{1,2})[\/\-](\d{1,2})/);
-  if (comBarra) {
-    const dd = comBarra[1].padStart(2,"0");
-    const mm = comBarra[2].padStart(2,"0");
-    const found = lista.find(d => d.dataISO.slice(5,7) === mm && d.dataISO.slice(8,10) === dd);
-    if (found) return found;
-  }
-
-  const numNoTexto = n.match(/\b(\d{1,2})\b/);
-  const ddTexto    = numNoTexto ? numNoTexto[1].padStart(2,"0") : null;
-
-  const semanas = [
-    { syns: ["segunda", "seg"]       },
-    { syns: ["terca", "terca feira"] },
-    { syns: ["quarta", "qua"]        },
-    { syns: ["quinta", "qui"]        },
-    { syns: ["sexta", "sex"]         },
-    { syns: ["sabado", "sab"]        },
-    { syns: ["domingo", "dom"]       },
-  ];
-
-  for (const { syns } of semanas) {
-    const temDiaSemana = syns.some(s => n.includes(s));
-    if (!temDiaSemana) continue;
-
-    if (ddTexto) {
-      const comDia = lista.find(d =>
-        syns.some(s => normalizar(d.label).includes(s)) &&
-        d.dataISO.slice(8,10) === ddTexto
-      );
-      if (comDia) return comDia;
-    }
-
-    const maisProximo = lista.find(d => syns.some(s => normalizar(d.label).includes(s)));
-    if (maisProximo) return maisProximo;
-  }
-
-  if (["hoje"].includes(n))             return lista.find(d => normalizar(d.label).startsWith("hoje")) || null;
-  if (["amanha","amanhã"].includes(n))  return lista.find(d => normalizar(d.label).startsWith("amanha")) || null;
-
-  if (ddTexto && !n.replace(/\d/g,"").trim()) {
-    const porDia = lista.find(d => d.dataISO.slice(8,10) === ddTexto);
-    if (porDia) return porDia;
-  }
-
-  return lista.find(d => normalizar(d.label).includes(n)) || null;
 }
 
 // ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
@@ -454,25 +386,39 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._profissionais = profs.rows;
-    let txt = `Prazer, *${estado.nome}*! 😊\n\nCom qual barbeiro você quer ser atendido?\n\n`;
-    profs.rows.forEach((p, i) => {
-      txt += `${i + 1}. ${p.nome}`;
-      if (p.especialidade) txt += ` _(${p.especialidade})_`;
-      txt += `\n`;
-    });
-    txt += `\nPode digitar o nome ou o número 😊`;
-    await enviar(txt);
+
+    await enviarLista(
+      sock, jid,
+      `Prazer, *${estado.nome}*! 😊\n\nCom qual barbeiro você quer ser atendido? Toque no botão abaixo e escolha uma opção 👇`,
+      "Ver profissionais",
+      "Profissionais disponíveis",
+      profs.rows.map(p => ({
+        title: p.nome,
+        description: p.especialidade || "",
+        rowId: `prof_${p.id}`
+      }))
+    );
     return;
   }
 
   // ── PROFISSIONAL ──────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_profissional") {
-    const lista     = estado._profissionais || [];
-    const escolhido = matchItem(body, lista, "nome");
+    const lista = estado._profissionais || [];
+
+    let escolhido = null;
+    if (body.startsWith("prof_")) {
+      const id = Number(body.replace("prof_", ""));
+      escolhido = lista.find(p => p.id === id) || null;
+    }
 
     if (!escolhido) {
-      const opcoes = lista.map((p, i) => `${i + 1}. ${p.nome}${p.especialidade ? ` (${p.especialidade})` : ""}`).join("\n");
-      await enviar(`Não encontrei esse barbeiro 😅 Pode escolher da lista:\n\n${opcoes}\n\nDigita o nome ou o número.`);
+      await enviarLista(
+        sock, jid,
+        `Não entendi 😅 Toque no botão abaixo e escolha um dos profissionais na lista.`,
+        "Ver profissionais",
+        "Profissionais disponíveis",
+        lista.map(p => ({ title: p.nome, description: p.especialidade || "", rowId: `prof_${p.id}` }))
+      );
       return;
     }
 
@@ -494,27 +440,43 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._servicos = servs.rows;
-    let txt = `Ótimo! Você escolheu *${estado.profissional_nome}* ✅\n\nQue serviço você quer?\n\n`;
-    servs.rows.forEach((s, i) => {
-      const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-      txt += `${i + 1}. ${s.nome} — ${preco}\n`;
-    });
-    txt += `\nPode digitar o nome do serviço ou o número 😊`;
-    await enviar(txt);
+
+    await enviarLista(
+      sock, jid,
+      `Ótimo! Você escolheu *${estado.profissional_nome}* ✅\n\nAgora toque no botão abaixo e escolha o serviço 👇`,
+      "Ver serviços",
+      "Serviços disponíveis",
+      servs.rows.map(s => ({
+        title: s.nome,
+        description: Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+        rowId: `serv_${s.id}`
+      }))
+    );
     return;
   }
 
   // ── SERVIÇO ───────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_servico") {
-    const lista     = estado._servicos || [];
-    const escolhido = matchItem(body, lista, "nome");
+    const lista = estado._servicos || [];
+
+    let escolhido = null;
+    if (body.startsWith("serv_")) {
+      const id = Number(body.replace("serv_", ""));
+      escolhido = lista.find(s => s.id === id) || null;
+    }
 
     if (!escolhido) {
-      const opcoes = lista.map((s, i) => {
-        const preco = Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        return `${i + 1}. ${s.nome} — ${preco}`;
-      }).join("\n");
-      await enviar(`Não reconheci esse serviço 😅 Pode escolher:\n\n${opcoes}`);
+      await enviarLista(
+        sock, jid,
+        `Não entendi 😅 Toque no botão abaixo e escolha um dos serviços na lista.`,
+        "Ver serviços",
+        "Serviços disponíveis",
+        lista.map(s => ({
+          title: s.nome,
+          description: Number(s.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+          rowId: `serv_${s.id}`
+        }))
+      );
       return;
     }
 
@@ -573,21 +535,39 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     estado._dias = diasDisponiveis;
-    let txt2 = `Serviço: *${estado.servico}* ✅\n\nQual dia você prefere?\n\n`;
-    diasDisponiveis.forEach((d, i) => { txt2 += `${i + 1}. ${d.label}\n`; });
-    txt2 += `\nPode digitar o dia, como "amanhã", "sexta" ou "15/06" 😊`;
-    await enviar(txt2);
+
+    await enviarLista(
+      sock, jid,
+      `Serviço: *${estado.servico}* ✅\n\nToque no botão abaixo e escolha o dia 👇`,
+      "Ver dias",
+      "Dias disponíveis",
+      diasDisponiveis.map(d => ({
+        title: d.label,
+        description: d.dataFormatada,
+        rowId: `dia_${d.dataISO}`
+      }))
+    );
     return;
   }
 
   // ── DIA ───────────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_dia") {
-    const lista        = estado._dias || [];
-    const diaEscolhido = matchDia(body, lista);
+    const lista = estado._dias || [];
+
+    let diaEscolhido = null;
+    if (body.startsWith("dia_")) {
+      const dataISO = body.replace("dia_", "");
+      diaEscolhido = lista.find(d => d.dataISO === dataISO) || null;
+    }
 
     if (!diaEscolhido) {
-      const opcoes = lista.map((d, i) => `${i + 1}. ${d.label}`).join("\n");
-      await enviar(`Não entendi o dia 😅 Pode escolher:\n\n${opcoes}\n\nEx: "amanhã", "sexta", "15/06" ou só o número.`);
+      await enviarLista(
+        sock, jid,
+        `Não entendi 😅 Toque no botão abaixo e escolha um dos dias na lista.`,
+        "Ver dias",
+        "Dias disponíveis",
+        lista.map(d => ({ title: d.label, description: d.dataFormatada, rowId: `dia_${d.dataISO}` }))
+      );
       return;
     }
 
@@ -650,27 +630,67 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     if (horariosLivres.length === 0) {
-      await enviar(`Não há horários disponíveis para *${diaEscolhido.label}* 😕 Quer escolher outro dia?`);
+      await enviar(`Não há horários disponíveis para *${diaEscolhido.label}* 😕 Quer escolher outro dia? Manda "oi" pra recomeçar.`);
       estado.etapa = "aguardando_dia";
       return;
     }
 
     estado._horarios = horariosLivres;
-    let txt = `Dia: *${diaEscolhido.label}* ✅\n\nHorários disponíveis:\n\n`;
-    horariosLivres.forEach((h, i) => { txt += `${i + 1}. ${h}\n`; });
-    txt += `\nPode digitar o horário (ex: "10h", "14:30") ou o número 😊`;
-    await enviar(txt);
+
+    // WhatsApp listMessage aceita no máximo 10 linhas por seção — dividimos em seções se precisar
+    const secoes = [];
+    for (let i = 0; i < horariosLivres.length; i += 10) {
+      const bloco = horariosLivres.slice(i, i + 10);
+      secoes.push({
+        title: i === 0 ? "Horários disponíveis" : `Mais horários`,
+        rows: bloco.map(h => ({ title: h, rowId: `hora_${h}` }))
+      });
+    }
+
+    try {
+      await sock.sendMessage(jid, {
+        text: `Dia: *${diaEscolhido.label}* ✅\n\nToque no botão abaixo e escolha o horário 👇`,
+        footer: "Toque em 'Ver horários' para escolher 👇",
+        title: "",
+        buttonText: "Ver horários",
+        sections: secoes
+      });
+    } catch (err) {
+      console.error(`[ERRO ENVIO LISTA HORARIO]`, err.message);
+      const opcoesTxt = horariosLivres.map((h, i) => `${i + 1}. ${h}`).join("\n");
+      await enviar(`Dia: *${diaEscolhido.label}* ✅\n\nHorários disponíveis:\n\n${opcoesTxt}`);
+    }
     return;
   }
 
   // ── HORÁRIO ───────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_horario") {
-    const lista            = estado._horarios || [];
-    const horarioEscolhido = matchHorario(body, lista);
+    const lista = estado._horarios || [];
+
+    let horarioEscolhido = null;
+    if (body.startsWith("hora_")) {
+      const h = body.replace("hora_", "");
+      horarioEscolhido = lista.find(x => x === h) || null;
+    }
 
     if (!horarioEscolhido) {
-      const opcoes = lista.map((h, i) => `${i + 1}. ${h}`).join("\n");
-      await enviar(`Esse horário não está disponível 😅\n\n${opcoes}\n\nDigita o horário (ex: "10h", "14:30") ou o número.`);
+      const secoes = [];
+      for (let i = 0; i < lista.length; i += 10) {
+        const bloco = lista.slice(i, i + 10);
+        secoes.push({
+          title: i === 0 ? "Horários disponíveis" : "Mais horários",
+          rows: bloco.map(h => ({ title: h, rowId: `hora_${h}` }))
+        });
+      }
+      try {
+        await sock.sendMessage(jid, {
+          text: `Não entendi 😅 Toque no botão abaixo e escolha um horário da lista.`,
+          buttonText: "Ver horários",
+          sections: secoes
+        });
+      } catch {
+        await enviar(`Não entendi 😅 Escolha um horário válido.`);
+      }
       return;
     }
 
@@ -678,22 +698,30 @@ async function processarMensagemBot(sock, jid, body, slug) {
     estado.etapa   = "aguardando_confirmacao";
 
     const preco = Number(estado.servico_preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    await enviar(
+
+    await enviarLista(
+      sock, jid,
       `Confere aí o seu agendamento:\n\n` +
       `👤 *Nome:* ${estado.nome}\n` +
       `✂️ *Barbeiro:* ${estado.profissional_nome}\n` +
       `💈 *Serviço:* ${estado.servico} — ${preco}\n` +
       `📅 *Data:* ${estado.dataFormatada}\n` +
       `🕐 *Horário:* ${estado.horario}\n\n` +
-      `Confirma? Manda *sim* pra confirmar ou *não* pra cancelar 😊`
+      `Toque no botão abaixo para confirmar ou cancelar 👇`,
+      "Confirmar / Cancelar",
+      "O que você deseja?",
+      [
+        { title: "✅ Confirmar", rowId: "confirmar_sim" },
+        { title: "❌ Cancelar",  rowId: "confirmar_nao" }
+      ]
     );
     return;
   }
 
   // ── CONFIRMAÇÃO ───────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_confirmacao") {
-    const confirmar = ["1","sim","s","confirmar","ok","pode","fechou","beleza","isso","claro","certo"].includes(bodyNorm);
-    const recusar   = ["2","nao","n","cancelar","nope","negativo","nã"].includes(bodyNorm);
+    const confirmar = body === "confirmar_sim";
+    const recusar   = body === "confirmar_nao";
 
     if (recusar) {
       resetarEstado(slug, jid);
@@ -702,7 +730,16 @@ async function processarMensagemBot(sock, jid, body, slug) {
     }
 
     if (!confirmar) {
-      await enviar(`Manda *sim* pra confirmar ou *não* pra cancelar 😊`);
+      await enviarLista(
+        sock, jid,
+        `Toque no botão abaixo para confirmar ou cancelar 👇`,
+        "Confirmar / Cancelar",
+        "O que você deseja?",
+        [
+          { title: "✅ Confirmar", rowId: "confirmar_sim" },
+          { title: "❌ Cancelar",  rowId: "confirmar_nao" }
+        ]
+      );
       return;
     }
 
