@@ -802,16 +802,18 @@ Serviço: ${state.servico?.nome || ''}
 Data/Hora: ${state.dataLabel} às ${state.horario}
 Valor: ${valor}`;
 
-    // Número da barbearia definido em Saas.js (window.WHATSAPP_BARBEARIA), normalizado
-    const numeroBruto = (typeof WHATSAPP_BARBEARIA !== 'undefined') ? WHATSAPP_BARBEARIA : '';
-    const numeroBarbearia = normalizarNumeroWhatsapp(numeroBruto);
+    const numeroBruto = state.profissional?.whatsapp
+    || localStorage.getItem(`barber_wa_${BARBER_SLUG}`)
+    || localStorage.getItem('barber_wa')
+    || '';
+const numeroBarbearia = normalizarNumeroWhatsapp(numeroBruto);
 
-    if (!numeroBarbearia) {
-        console.warn('WHATSAPP_BARBEARIA não definido ou inválido — o WhatsApp abrirá sem um contato específico.');
-    }
+if (!numeroBarbearia) {
+    console.warn('Nenhum WhatsApp encontrado — o link abrirá sem um contato específico.');
+}
 
-    const base = numeroBarbearia ? `https://wa.me/${numeroBarbearia}` : 'https://wa.me/';
-    return `${base}?text=${encodeURIComponent(mensagem)}`;
+const base = numeroBarbearia ? `https://api.whatsapp.com/send?phone=${numeroBarbearia}` : 'https://wa.me/';
+return `${base}&text=${encodeURIComponent(mensagem)}`;
 }
 
 // Finalização do agendamento
