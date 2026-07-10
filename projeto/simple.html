@@ -20,32 +20,44 @@
         --line: #E4E1D9;
         --occupied-bg: #ECEAE4;
         --occupied-text: #ACA89C;
-        --radius: 3px;
-        --radius-sm: 3px;
+        --radius: 4px;
+        --radius-sm: 4px;
+        --shadow-sm: 0 1px 2px rgba(20,20,20,0.05);
+        --shadow-lg: 0 32px 64px -28px rgba(20,20,20,0.32);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body { font-family: 'Inter', system-ui, sans-serif; }
 
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
     body {
         background: var(--bg);
+        background-image:
+            radial-gradient(circle at 15% 8%, rgba(30,51,80,0.035), transparent 40%),
+            radial-gradient(circle at 85% 92%, rgba(194,42,46,0.035), transparent 40%);
         color: var(--ink);
         display: flex;
         justify-content: center;
         min-height: 100vh;
         padding: 2.75rem 1rem;
+        -webkit-font-smoothing: antialiased;
     }
 
     .container {
         background-color: var(--card);
         width: 100%;
         max-width: 520px;
-        border-radius: var(--radius);
-        box-shadow: 0 1px 2px rgba(20,20,20,0.04), 0 24px 48px -24px rgba(20,20,20,0.28);
+        border-radius: 6px;
+        box-shadow: var(--shadow-sm), var(--shadow-lg);
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        border: 1px solid rgba(20,20,20,0.04);
     }
 
     /* ── Listra do barber pole — a única assinatura gráfica da página ── */
@@ -60,6 +72,7 @@
         );
         background-size: 79px 100%;
         animation: rotar-listra 3.5s linear infinite;
+        flex-shrink: 0;
     }
     @keyframes rotar-listra {
         from { background-position: 0 0; }
@@ -155,13 +168,17 @@
     }
     .input-group input {
         width: 100%; padding: 0.75rem 0.85rem; border: 1.5px solid var(--line);
-        border-radius: var(--radius-sm); font-size: 0.98rem; outline: none;
+        border-radius: var(--radius-sm); font-size: 1rem; outline: none;
         background: var(--card);
-        transition: border-color 0.15s ease;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
         font-family: inherit;
         color: var(--ink);
     }
-    .input-group input:focus { border-color: var(--navy); }
+    .input-group input::placeholder { color: #B9B6AC; }
+    .input-group input:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px var(--navy-soft);
+    }
 
     .grid-options {
         display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 0.6rem;
@@ -172,9 +189,9 @@
         padding: 0.85rem 0.9rem; text-align: center; cursor: pointer; transition: all 0.15s;
         background: var(--card);
     }
-    .card-option:hover { border-color: var(--navy); }
+    .card-option:hover { border-color: var(--navy); box-shadow: var(--shadow-sm); }
     .card-option.selected {
-        border-color: var(--red); background-color: var(--red-soft);
+        border-color: var(--red); background-color: var(--red-soft); box-shadow: 0 0 0 1px var(--red) inset;
     }
     .card-option strong { display: block; font-size: 0.92rem; margin-bottom: 0.2rem; }
     .card-option span { font-size: 0.8rem; color: var(--muted); }
@@ -187,7 +204,7 @@
         color: var(--occupied-text);
         position: relative;
     }
-    .card-option.ocupado:hover { border-color: var(--line); }
+    .card-option.ocupado:hover { border-color: var(--line); box-shadow: none; }
     .card-option.ocupado strong {
         color: var(--occupied-text);
         text-decoration: line-through;
@@ -216,9 +233,9 @@
         border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
         background: var(--card);
     }
-    .dia-card:hover { border-color: var(--navy); }
+    .dia-card:hover { border-color: var(--navy); box-shadow: var(--shadow-sm); }
     .dia-card.selected {
-        border-color: var(--red); background-color: var(--red-soft);
+        border-color: var(--red); background-color: var(--red-soft); box-shadow: 0 0 0 1px var(--red) inset;
     }
     .dia-card small {
         font-family: 'IBM Plex Mono', monospace;
@@ -238,7 +255,7 @@
         font-size: 0.74rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace;
     }
     .legenda span { display: inline-flex; align-items: center; gap: 5px; }
-    .legenda i { width: 9px; height: 9px; display: inline-block; }
+    .legenda i { width: 9px; height: 9px; display: inline-block; border-radius: 2px; }
     .legenda .i-livre { background: var(--card); border: 1.5px solid var(--line); }
     .legenda .i-ocupado { background: var(--occupied-bg); border: 1.5px solid var(--line); }
 
@@ -251,7 +268,8 @@
     }
     .btn-primary { background-color: var(--ink); color: #FFFFFF; }
     .btn-primary:hover { background-color: var(--red); border-color: var(--red); }
-    .btn-primary:disabled { background-color: #D3D0C6; border-color: #D3D0C6; color: #9A9585; cursor: not-allowed; }
+    .btn-primary:active { transform: translateY(1px); }
+    .btn-primary:disabled { background-color: #D3D0C6; border-color: #D3D0C6; color: #9A9585; cursor: not-allowed; transform: none; }
     .btn-secondary { background-color: var(--card); color: var(--ink); border: 1.5px solid var(--line); }
     .btn-secondary:hover { border-color: var(--ink); }
 
@@ -291,6 +309,7 @@
         background: rgba(20,20,20,0.55); display: none; justify-content: center;
         align-items: center; z-index: 1000; color: #FFFFFF; font-weight: 700;
         font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em;
+        backdrop-filter: blur(2px);
     }
 
     #step-6 { text-align: center; padding-top: 0.5rem; }
@@ -305,9 +324,12 @@
     }
     #step-6 p { color: var(--muted); margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.55; }
 
+    /* ══════════════════════════════════════════════════════
+       TABLET / MOBILE GRANDE (até 480px)
+    ══════════════════════════════════════════════════════ */
     @media (max-width: 480px) {
         body { padding: 0; }
-        .container { max-width: 100%; min-height: 100vh; border-radius: 0; box-shadow: none; }
+        .container { max-width: 100%; min-height: 100vh; border-radius: 0; box-shadow: none; border: none; }
         .card-body { padding: 0.25rem 1.25rem 1.5rem; }
         header h1 { font-size: 1.7rem; }
         .step-title { font-size: 1.25rem; }
@@ -320,90 +342,21 @@
         .resumo-box .linha span { text-align: left; }
         .btn-actions { gap: 0.6rem; }
         button { padding: 0.85rem 0.6rem; font-size: 0.78rem; }
-        /* ── Trava overflow horizontal em qualquer tela ── */
-html, body {
-  overflow-x: hidden;
-  max-width: 100%;
-}
+    }
 
-/* ── MOBILE (até 480px) ── */
-@media (max-width: 480px) {
-
-  /* Elimina o "AGENDE" gigante de fundo que empurra a página pros lados */
-  .page-hero::after {
-    font-size: 70px;
-    right: -4px;
-    opacity: 0.02;
-  }
-
-  header { padding: 14px 16px; }
-  .step-tag { font-size: 8px; gap: 5px; }
-  .page-hero { padding: 32px 16px 28px; }
-  .page-title { font-size: 34px; }
-  .servico-badge { font-size: 9px; padding: 6px 12px; flex-wrap: wrap; gap: 6px; }
-  .main-wrap { padding: 0 16px 48px; }
-  .sec-label { margin: 32px 0 14px; font-size: 9px; }
-
-  /* Profissionais: para de forçar largura fixa, deixa fluido em grid */
-  #profissionais {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-  .prof-card { width: 100%; padding: 14px 8px; }
-  .prof-anel { width: 56px; height: 56px; }
-  .prof-nome { font-size: 11px; }
-  .prof-especialidade { font-size: 8px; }
-
-  /* Dias: grid fluido em vez de largura fixa de 68px */
-  #dias {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-  }
-  .dia { width: 100%; height: 64px; }
-  .dia strong { font-size: 18px; }
-
-  /* Horários: 3 colunas, sem estourar largura */
-  #horarios {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-  .horario { padding: 12px 6px; font-size: 12px; }
-
-  .resumo { padding: 20px 18px; margin-top: 28px; }
-  .resumo-linha { font-size: 12px; flex-wrap: wrap; gap: 4px; }
-  .resumo-val { font-size: 15px; }
-
-  .btn-confirmar { padding: 16px; font-size: 10px; gap: 10px; }
-
-  footer { padding: 20px 16px; }
-
-  /* ── MODAL: vira bottom-sheet full width, sem padding gigante ── */
-  #modalNome {
-    align-items: flex-end;
-  }
-  .modal-box {
-    max-width: 100%;
-    width: 100%;
-    padding: 28px 20px calc(20px + env(safe-area-inset-bottom));
-    max-height: 90vh;
-    overflow-y: auto;
-    border-radius: 16px 16px 0 0;
-    margin: 0;
-    box-sizing: border-box;
-  }
-  .modal-box::before { display: none; }
-  .modal-box h3 { font-size: 24px; }
-  .modal-box p { font-size: 12px; margin-bottom: 18px; }
-  .modal-prof-banner { padding: 10px 12px; margin-bottom: 20px; gap: 10px; }
-  .modal-prof-foto { width: 42px; height: 42px; }
-  .modal-prof-nome { font-size: 15px; }
-  .modal-field { margin-bottom: 18px; }
-  .modal-input { font-size: 16px; } /* 16px evita zoom automático no iOS */
-  .modal-actions { gap: 8px; }
-  #confirmarNome, .modal-cancel { padding: 14px 12px; font-size: 10px; }
-}
+    /* ══════════════════════════════════════════════════════
+       MOBILE PEQUENO (até 360px) — telas mais apertadas
+    ══════════════════════════════════════════════════════ */
+    @media (max-width: 360px) {
+        .card-body { padding: 0.25rem 1rem 1.25rem; }
+        header h1 { font-size: 1.5rem; }
+        .step-title { font-size: 1.1rem; }
+        .grid-options { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
+        .grid-dias { grid-template-columns: repeat(4, 1fr); }
+        .card-option { padding: 0.7rem 0.6rem; }
+        .card-option strong { font-size: 0.85rem; }
+        .dia-card { padding: 0.6rem 0.2rem; }
+        .dia-card strong { font-size: 1.1rem; }
     }
 </style>
 </head>
@@ -551,15 +504,13 @@ const state = {
     horario: ''
 };
 
-// Número de WhatsApp da barbearia para onde a mensagem de confirmação é enviada.
-// Defina window.WHATSAPP_BARBEARIA no Saas.js com o número completo (ex: '5581999999999').
 let configHorariosGlobal = null;
 
 const NOMES_DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const NOMES_DIAS_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const MESES_CURTO = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-// Espera a variável API (definida no config.js) existir antes de iniciar
+// Espera a variável API (definida no Saas.js) existir antes de iniciar
 function iniciarSistema() {
     if (typeof API === 'undefined') {
         setTimeout(iniciarSistema, 100);
@@ -864,7 +815,7 @@ function preencherResumo() {
 }
 
 // Monta o link do WhatsApp com o resumo do agendamento já preenchido.
-// CORREÇÃO: normaliza o número (só dígitos, com código do país) antes de montar
+// Normaliza o número (só dígitos, com código do país) antes de montar
 // o link. Números com espaço, +, -, parênteses ou sem "55" na frente fazem o
 // wa.me não reconhecer um contato específico e cair na tela de "encaminhar".
 function normalizarNumeroWhatsapp(numero) {
@@ -887,19 +838,20 @@ Data/Hora: ${state.dataLabel} às ${state.horario}
 Valor: ${valor}`;
 
     const numeroBruto = state.profissional?.whatsapp
-    || localStorage.getItem(`barber_wa_${BARBER_SLUG}`)
-    || localStorage.getItem('barber_wa')
-    || '';
-const numeroBarbearia = normalizarNumeroWhatsapp(numeroBruto);
+        || localStorage.getItem(`barber_wa_${BARBER_SLUG}`)
+        || localStorage.getItem('barber_wa')
+        || '';
+    const numeroBarbearia = normalizarNumeroWhatsapp(numeroBruto);
 
-if (!numeroBarbearia) {
-    console.warn('Nenhum WhatsApp encontrado — o link abrirá sem um contato específico.');
+    if (!numeroBarbearia) {
+        console.warn('Nenhum WhatsApp encontrado — o link abrirá sem um contato específico.');
+    }
+
+    const base = numeroBarbearia ? `https://api.whatsapp.com/send?phone=${numeroBarbearia}` : 'https://wa.me/';
+    return `${base}&text=${encodeURIComponent(mensagem)}`;
 }
 
-const base = numeroBarbearia ? `https://api.whatsapp.com/send?phone=${numeroBarbearia}` : 'https://wa.me/';
-return `${base}&text=${encodeURIComponent(mensagem)}`;
-}
-
+// Finalização do agendamento
 async function finalizarAgendamento() {
     mostrarLoading(true);
     const errorMsg = document.getElementById('error-msg');
