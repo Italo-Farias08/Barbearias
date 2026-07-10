@@ -320,6 +320,90 @@
         .resumo-box .linha span { text-align: left; }
         .btn-actions { gap: 0.6rem; }
         button { padding: 0.85rem 0.6rem; font-size: 0.78rem; }
+        /* ── Trava overflow horizontal em qualquer tela ── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ── MOBILE (até 480px) ── */
+@media (max-width: 480px) {
+
+  /* Elimina o "AGENDE" gigante de fundo que empurra a página pros lados */
+  .page-hero::after {
+    font-size: 70px;
+    right: -4px;
+    opacity: 0.02;
+  }
+
+  header { padding: 14px 16px; }
+  .step-tag { font-size: 8px; gap: 5px; }
+  .page-hero { padding: 32px 16px 28px; }
+  .page-title { font-size: 34px; }
+  .servico-badge { font-size: 9px; padding: 6px 12px; flex-wrap: wrap; gap: 6px; }
+  .main-wrap { padding: 0 16px 48px; }
+  .sec-label { margin: 32px 0 14px; font-size: 9px; }
+
+  /* Profissionais: para de forçar largura fixa, deixa fluido em grid */
+  #profissionais {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .prof-card { width: 100%; padding: 14px 8px; }
+  .prof-anel { width: 56px; height: 56px; }
+  .prof-nome { font-size: 11px; }
+  .prof-especialidade { font-size: 8px; }
+
+  /* Dias: grid fluido em vez de largura fixa de 68px */
+  #dias {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .dia { width: 100%; height: 64px; }
+  .dia strong { font-size: 18px; }
+
+  /* Horários: 3 colunas, sem estourar largura */
+  #horarios {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .horario { padding: 12px 6px; font-size: 12px; }
+
+  .resumo { padding: 20px 18px; margin-top: 28px; }
+  .resumo-linha { font-size: 12px; flex-wrap: wrap; gap: 4px; }
+  .resumo-val { font-size: 15px; }
+
+  .btn-confirmar { padding: 16px; font-size: 10px; gap: 10px; }
+
+  footer { padding: 20px 16px; }
+
+  /* ── MODAL: vira bottom-sheet full width, sem padding gigante ── */
+  #modalNome {
+    align-items: flex-end;
+  }
+  .modal-box {
+    max-width: 100%;
+    width: 100%;
+    padding: 28px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  .modal-box::before { display: none; }
+  .modal-box h3 { font-size: 24px; }
+  .modal-box p { font-size: 12px; margin-bottom: 18px; }
+  .modal-prof-banner { padding: 10px 12px; margin-bottom: 20px; gap: 10px; }
+  .modal-prof-foto { width: 42px; height: 42px; }
+  .modal-prof-nome { font-size: 15px; }
+  .modal-field { margin-bottom: 18px; }
+  .modal-input { font-size: 16px; } /* 16px evita zoom automático no iOS */
+  .modal-actions { gap: 8px; }
+  #confirmarNome, .modal-cancel { padding: 14px 12px; font-size: 10px; }
+}
     }
 </style>
 </head>
@@ -816,7 +900,6 @@ const base = numeroBarbearia ? `https://api.whatsapp.com/send?phone=${numeroBarb
 return `${base}&text=${encodeURIComponent(mensagem)}`;
 }
 
-// Finalização do agendamento
 async function finalizarAgendamento() {
     mostrarLoading(true);
     const errorMsg = document.getElementById('error-msg');
