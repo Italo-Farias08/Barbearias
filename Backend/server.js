@@ -12,7 +12,6 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// ── CORS PRIMEIRO DE TUDO ──────────────────────────────────────────────
 const ORIGENS_PERMITIDAS = [
   "https://vtrip.com.br",
   "http://vtrip.com.br",
@@ -59,7 +58,6 @@ const limiterLogin = rateLimit({
   message: { erro: "Muitas tentativas de login. Aguarde 1 minuto." }
 });
 
-// ── UTILITÁRIOS DE FUSO HORÁRIO (Brasília = UTC-3) ────────────────────────
 function agoraBrasilia() {
   return new Date(Date.now() - 3 * 60 * 60 * 1000);
 }
@@ -83,7 +81,6 @@ function ehHojeBrasilia(dataObj) {
   );
 }
 
-// ── WHATSAPP MULTI-TENANT ─────────────────────────────────────────────────
 const waSessoes = {};
 
 async function iniciarWhatsAppSlug(slug) {
@@ -157,37 +154,36 @@ async function iniciarWhatsAppSlug(slug) {
     });
 
     sock.ev.on("creds.update", saveCreds);
-sock.ev.on("messages.upsert", async ({ messages, type }) => {
-  if (type !== "notify") return;
+    sock.ev.on("messages.upsert", async ({ messages, type }) => {
+      if (type !== "notify") return;
 
-  const barb = await getDadosBarbearia(slug);
-  if (barb.bot_ativo === false) return;
+      const barb = await getDadosBarbearia(slug);
+      if (barb.bot_ativo === false) return;
 
-  for (const msg of messages) {
-    if (msg.key.fromMe)                           continue;
-    if (msg.key.remoteJid?.endsWith("@g.us"))    continue;
-    if (msg.key.remoteJid === "status@broadcast") continue;
+      for (const msg of messages) {
+        if (msg.key.fromMe)                           continue;
+        if (msg.key.remoteJid?.endsWith("@g.us"))    continue;
+        if (msg.key.remoteJid === "status@broadcast") continue;
 
-    const jid  = msg.key.remoteJid;
-    const listReply = msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
-    const body = (
-      listReply ||
-      msg.message?.conversation ||
-      msg.message?.extendedTextMessage?.text ||
-      msg.message?.imageMessage?.caption ||
-      ""
-    ).trim().toLowerCase();
+        const jid  = msg.key.remoteJid;
+        const listReply = msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
+        const body = (
+          listReply ||
+          msg.message?.conversation ||
+          msg.message?.extendedTextMessage?.text ||
+          msg.message?.imageMessage?.caption ||
+          ""
+        ).trim().toLowerCase();
 
-    if (!body) continue;
+        if (!body) continue;
 
-    try {
-      await processarMensagemBot(sock, jid, body, slug);
-    } catch (err) {
-      console.error(`Erro no bot (${slug}):`, err.message);
-    }
-  }
-});
-
+        try {
+          await processarMensagemBot(sock, jid, body, slug);
+        } catch (err) {
+          console.error(`Erro no bot (${slug}):`, err.message);
+        }
+      }
+    });
 
   } catch (err) {
     if (err.code === "MODULE_NOT_FOUND") {
@@ -198,6 +194,7 @@ sock.ev.on("messages.upsert", async ({ messages, type }) => {
     }
   }
 }
+
 app.get("/ver-logs-wa", (req, res) => {
   try {
     const conteudo = fs.existsSync("./log-wa.txt") ? fs.readFileSync("./log-wa.txt", "utf-8") : "Nenhum log ainda.";
@@ -206,7 +203,6 @@ app.get("/ver-logs-wa", (req, res) => {
     res.type("text/plain").send("Erro ao ler log: " + err.message);
   }
 });
-
 
 const botEstados = {};
 
@@ -244,7 +240,6 @@ async function getDadosBarbearia(slug) {
   return r.rows[0] || {};
 }
 
-
 async function getHorariosConfig(slug, profissional_id) {
   const hrProf = await db.query(
     `SELECT ph.dias_semana, ph.pausa_inicio, ph.pausa_fim,
@@ -266,7 +261,6 @@ async function getHorariosConfig(slug, profissional_id) {
   return hrGlobal.rows[0] || null;
 }
 
-// ── HELPERS DE LINGUAGEM NATURAL ──────────────────────────────────────────
 function normalizar(str) {
   return str
     .toLowerCase()
@@ -290,7 +284,6 @@ function matchItem(body, lista, campoNome) {
   return parcial || null;
 }
 
-// helper específico para casar o horário digitado (lista de strings "HH:MM")
 function matchHorario(body, lista) {
   const idx = parseInt(body) - 1;
   if (!isNaN(idx) && idx >= 0 && idx < lista.length) return lista[idx];
@@ -301,13 +294,11 @@ function matchHorario(body, lista) {
   const soDigitos = bruto.replace(/\D/g, "");
   if (!soDigitos) return null;
 
-  // "14:00" digitado como "1400" ou "14.00"
   const comDoisPontos = soDigitos.length >= 3
     ? `${soDigitos.slice(0, -2).padStart(2, "0")}:${soDigitos.slice(-2)}`
     : null;
   if (comDoisPontos && lista.includes(comDoisPontos)) return comDoisPontos;
 
-  // só a hora, tipo "14" ou "14h" — casa se houver exatamente 1 horário nessa hora
   const horaAlvo = soDigitos.padStart(2, "0").slice(0, 2);
   const porHora   = lista.filter(h => h.split(":")[0] === horaAlvo);
   if (porHora.length === 1) return porHora[0];
@@ -315,9 +306,7 @@ function matchHorario(body, lista) {
   return null;
 }
 
-// ── HELPER: ENVIAR LISTA DE OPÇÕES (TEXTO NUMERADO) ───────────────────────
 async function enviarLista(sock, jid, texto, tituloBotao, tituloSecao, linhas) {
-  // linhas = [{ title, description }]
   const opcoesTxt = linhas
     .map((l, i) => `*${i + 1}.* ${l.title}${l.description ? ` — ${l.description}` : ""}`)
     .join("\n");
@@ -332,7 +321,6 @@ async function enviarLista(sock, jid, texto, tituloBotao, tituloSecao, linhas) {
   }
 }
 
-// ── PROCESSADOR PRINCIPAL DO BOT ──────────────────────────────────────────
 async function processarMensagemBot(sock, jid, body, slug) {
   const estado = getEstado(slug, jid);
   const agora  = Date.now();
@@ -365,7 +353,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── INICIO ────────────────────────────────────────────────────────────
   if (estado.etapa === "inicio") {
     estado.etapa = "aguardando_nome";
     const barb = await getDadosBarbearia(slug);
@@ -379,7 +366,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── SAUDAÇÃO EM QUALQUER ETAPA ────────────────────────────────────────
   if (ehSaudacao && estado.etapa !== "aguardando_nome") {
     resetarEstado(slug, jid);
     estado.etapa = "aguardando_nome";
@@ -394,7 +380,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── NOME ──────────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_nome") {
     if (body.trim().length < 2) {
       await enviar(`Me diz seu nome pra eu te chamar direitinho 😊`);
@@ -429,7 +414,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── PROFISSIONAL ──────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_profissional") {
     const lista = estado._profissionais || [];
 
@@ -478,7 +462,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── SERVIÇO ───────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_servico") {
     const lista = estado._servicos || [];
 
@@ -564,7 +547,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── DIA ───────────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_dia") {
     const lista = estado._dias || [];
 
@@ -657,7 +639,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── HORÁRIO ───────────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_horario") {
     const lista = estado._horarios || [];
 
@@ -698,7 +679,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
     return;
   }
 
-  // ── CONFIRMAÇÃO ───────────────────────────────────────────────────────
   if (estado.etapa === "aguardando_confirmacao") {
     const confirmar = ["confirmar_sim", "confirmar", "sim", "confirmo", "confirmado", "1", "ok", "certo", "isso", "isso mesmo", "pode confirmar"]
       .some(s => bodyNorm === normalizar(s));
@@ -762,7 +742,6 @@ async function processarMensagemBot(sock, jid, body, slug) {
   await enviar(`Não entendi 😅 Manda *"oi"* pra começar o agendamento ou *"cancelar"* pra sair.`);
 }
 
-// ── RECONECTAR SESSÕES SALVAS ─────────────────────────────────────────────
 async function reconectarSessoesSalvas() {
   const AUTH_ROOT = "./auth_wa";
   if (!fs.existsSync(AUTH_ROOT)) return;
@@ -778,7 +757,6 @@ async function reconectarSessoesSalvas() {
 
 reconectarSessoesSalvas();
 
-// ── ENVIO DE LEMBRETE ─────────────────────────────────────────────────────
 async function enviarLembrete(ag) {
   const sessao = waSessoes[ag.slug];
   if (!sessao?.conectado || !sessao.socket) {
@@ -819,7 +797,7 @@ async function verificarLembretes() {
         AND (a.lembrete_enviado IS NULL OR a.lembrete_enviado = FALSE)
     `);
 
-      for (const ag of result.rows) {
+    for (const ag of result.rows) {
       const dataStr = ag.data instanceof Date
         ? ag.data.toISOString().split("T")[0]
         : ag.data;
@@ -929,7 +907,6 @@ async function gerarSlug(nome) {
   }
 }
 
-// ── MIDDLEWARES ───────────────────────────────────────────────────────────
 async function resolveBarbearia(req, res, next) {
   const { slug } = req.params;
   if (!slugValido(slug)) return res.status(400).json({ erro: "Slug inválido" });
@@ -967,7 +944,6 @@ app.get("/api/:slug/config", async (req, res) => {
   } catch (err) { console.error(err); res.json({}); }
 });
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────
 app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password || typeof username !== "string" || typeof password !== "string")
@@ -992,7 +968,6 @@ app.post("/api/:slug/login", limiterLogin, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro no login" }); }
 });
 
-// ── AGENDAR ───────────────────────────────────────────────────────────────
 function validarAgendamento({ nome, data, horario, valor }) {
   if (!nome || typeof nome !== "string" || nome.trim().length < 2) return "Nome inválido";
   if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "Data inválida";
@@ -1063,7 +1038,6 @@ app.post("/api/:slug/agendar", verificarAssinatura, async (req, res) => {
   } catch (err) { console.error(err); res.json({ erro: "Erro ao agendar" }); }
 });
 
-// ── LISTAR AGENDAMENTOS ───────────────────────────────────────────────────
 app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1078,7 +1052,6 @@ app.get("/api/:slug/agendamentos", verificarAssinatura, async (req, res) => {
   } catch { res.json([]); }
 });
 
-// ── HORÁRIOS OCUPADOS POR DATA ────────────────────────────────────────────
 app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   const { data } = req.params;
   const { profissional_id } = req.query;
@@ -1097,7 +1070,6 @@ app.get("/api/:slug/agendamentos/data/:data", async (req, res) => {
   } catch { res.json([]); }
 });
 
-// ── HORÁRIOS DA BARBEARIA ─────────────────────────────────────────────────
 app.get("/api/:slug/horarios", async (req, res) => {
   try {
     const result = await db.query(
@@ -1130,7 +1102,6 @@ app.get("/api/:slug/horarios", async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao buscar horários" }); }
 });
 
-// ── SALVAR HORÁRIOS ───────────────────────────────────────────────────────
 app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   const { pausa_inicio, pausa_fim, ...diasConfig } = req.body;
   if (!diasConfig || typeof diasConfig !== "object")
@@ -1147,7 +1118,6 @@ app.post("/api/:slug/horarios", verificarAssinatura, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar horários" }); }
 });
 
-// ── CONCLUIR AGENDAMENTO (manual) ─────────────────────────────────────────
 app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1161,7 +1131,6 @@ app.put("/api/:slug/agendamentos/concluir/:id", verificarAssinatura, async (req,
   } catch (err) { console.error(err); res.json({ erro: "Erro ao concluir" }); }
 });
 
-// ── MARCAR FALTA ──────────────────────────────────────────────────────────
 app.put("/api/:slug/agendamentos/falta/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1178,7 +1147,6 @@ app.put("/api/:slug/agendamentos/falta/:id", verificarAssinatura, async (req, re
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao registrar falta" }); }
 });
 
-// ── APAGAR CONCLUÍDOS ─────────────────────────────────────────────────────
 app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req, res) => {
   try {
     const r = await db.query(
@@ -1190,7 +1158,6 @@ app.delete("/api/:slug/agendamentos/concluidos", verificarAssinatura, async (req
   } catch (err) { console.error(err); res.json({ erro: "Erro ao apagar" }); }
 });
 
-// ── CANCELAR AGENDAMENTO ──────────────────────────────────────────────────
 app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1203,7 +1170,6 @@ app.delete("/api/:slug/agendamentos/:id", verificarAssinatura, async (req, res) 
   } catch { res.json({ erro: "Erro ao cancelar" }); }
 });
 
-// ── GASTOS ────────────────────────────────────────────────────────────────
 app.post("/api/:slug/gastos", verificarAssinatura, async (req, res) => {
   const { descricao, valor } = req.body;
   if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0)
@@ -1238,7 +1204,6 @@ app.delete("/api/:slug/gastos/:id", verificarAssinatura, async (req, res) => {
   } catch { res.json({ erro: "Erro ao deletar" }); }
 });
 
-// ── LUCRO REAL ────────────────────────────────────────────────────────────
 app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   try {
     const ganhos = await db.query(
@@ -1256,7 +1221,6 @@ app.get("/api/:slug/lucro-real", verificarAssinatura, async (req, res) => {
   } catch (err) { console.error(err); res.json({ ganhos: 0, gastos: 0, lucro: 0 }); }
 });
 
-// ── SERVIÇOS ──────────────────────────────────────────────────────────────
 app.get("/api/:slug/servicos", async (req, res) => {
   try {
     const result = await db.query(
@@ -1267,7 +1231,6 @@ app.get("/api/:slug/servicos", async (req, res) => {
   } catch (err) { console.error(err); res.json([]); }
 });
 
-// ── PROFISSIONAIS ─────────────────────────────────────────────────────────
 app.get("/api/:slug/profissionais", async (req, res) => {
   try {
     const result = await db.query(
@@ -1301,7 +1264,6 @@ app.get("/api/:slug/profissionais", async (req, res) => {
   } catch (err) { console.error(err); res.json([]); }
 });
 
-// ── DISPONIBILIDADE DO PROFISSIONAL ──────────────────────────────────────
 app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1319,7 +1281,6 @@ app.put("/api/:slug/profissionais/:id/disponibilidade", verificarAssinatura, asy
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao atualizar disponibilidade" }); }
 });
 
-// ── PAUSAS DO PROFISSIONAL ────────────────────────────────────────────────
 app.get("/api/:slug/profissionais/:id/pausas", verificarAssinatura, async (req, res) => {
   const profId = Number(req.params.id);
   if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -1381,7 +1342,6 @@ app.delete("/api/:slug/profissionais/:profId/pausas/:pausaId", verificarAssinatu
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao remover pausa" }); }
 });
 
-// ── PLANOS ────────────────────────────────────────────────────────────────
 app.get("/api/:slug/planos", async (req, res) => {
   try {
     const result = await db.query(
@@ -1393,7 +1353,6 @@ app.get("/api/:slug/planos", async (req, res) => {
   } catch (err) { console.error(err); res.json([]); }
 });
 
-// ── ASSINAR ───────────────────────────────────────────────────────────────
 app.post("/api/:slug/assinar", async (req, res) => {
   const { nome, telefone, plano_id } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1414,7 +1373,6 @@ app.post("/api/:slug/assinar", async (req, res) => {
   } catch (err) { console.error(err); res.json({ erro: "Erro ao registrar assinatura" }); }
 });
 
-// ── LISTAR ASSINANTES ─────────────────────────────────────────────────────
 app.get("/api/:slug/assinantes", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1438,7 +1396,6 @@ app.delete("/api/:slug/assinantes/cancelados", verificarAssinatura, async (req, 
   } catch (err) { console.error(err); res.json({ erro: "Erro ao apagar cancelados" }); }
 });
 
-// ── AÇÕES DO ASSINANTE ────────────────────────────────────────────────────
 app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res) => {
   const id   = Number(req.params.id);
   const acao = req.params.acao;
@@ -1486,7 +1443,6 @@ app.put("/api/:slug/assinantes/:id/:acao", verificarAssinatura, async (req, res)
   } catch (err) { console.error(err); res.json({ erro: "Erro ao executar ação" }); }
 });
 
-// ── SERVIÇOS DESTAQUE ─────────────────────────────────────────────────────
 app.get("/api/:slug/servicos-destaque", async (req, res) => {
   try {
     const result = await db.query(
@@ -1536,7 +1492,6 @@ app.put("/api/:slug/servicos-destaque/:id", verificarAssinatura, async (req, res
   } catch (err) { console.error(err); res.json({ erro: "Erro ao atualizar" }); }
 });
 
-// ── COMISSÕES ─────────────────────────────────────────────────────────────
 app.get("/api/:slug/comissoes/config", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1689,7 +1644,6 @@ app.delete("/api/:slug/comissoes/ajuste/:id", verificarAssinatura, async (req, r
   } catch (err) { console.error(err); res.json({ erro: "Erro ao deletar ajuste" }); }
 });
 
-// ── ONBOARDING PÚBLICO ────────────────────────────────────────────────────
 app.get("/cadastro/check-username", async (req, res) => {
   const { u } = req.query;
   if (!u || u.length < 3) return res.json({ disponivel: false });
@@ -1810,14 +1764,12 @@ app.post("/cadastro", async (req, res) => {
   }
 });
 
-// ── DEBUG ─────────────────────────────────────────────────────────────────
 app.get("/debug-path", (req, res) => {
   const dir    = path.join(__dirname, '..', 'projeto');
   const existe = fs.existsSync(dir);
   res.json({ dir, existe, arquivos: existe ? fs.readdirSync(dir) : [] });
 });
 
-// ── CONFIG (salvar) ───────────────────────────────────────────────────────
 app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
   const { nome, cidade, whatsapp, pix_chave, cor_primaria, sobre } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1833,7 +1785,6 @@ app.put("/api/:slug/config", verificarAssinatura, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar configurações" }); }
 });
 
-// ── PROFISSIONAIS CRUD ────────────────────────────────────────────────────
 app.post("/api/:slug/profissionais", verificarAssinatura, async (req, res) => {
   const { nome, especialidade, whatsapp, ordem, foto_url, disponivel } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length < 2)
@@ -1880,7 +1831,6 @@ app.delete("/api/:slug/profissionais/:id", verificarAssinatura, async (req, res)
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao remover profissional" }); }
 });
 
-// ── SERVIÇOS ADMIN CRUD ───────────────────────────────────────────────────
 app.get("/api/:slug/servicos/admin", verificarAssinatura, async (req, res) => {
   try {
     const result = await db.query(
@@ -1933,7 +1883,6 @@ app.delete("/api/:slug/servicos/:id", verificarAssinatura, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao deletar serviço" }); }
 });
 
-// ── PLANOS CRUD ───────────────────────────────────────────────────────────
 app.post("/api/:slug/planos", verificarAssinatura, async (req, res) => {
   const { nome, valor, cortes_mes, descricao, ordem, ativo } = req.body;
   if (!nome || typeof nome !== "string" || nome.trim().length === 0)
@@ -1985,7 +1934,6 @@ app.delete("/api/:slug/planos/:id", verificarAssinatura, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao deletar plano" }); }
 });
 
-// ── HORÁRIOS POR PROFISSIONAL ─────────────────────────────────────────────
 app.get("/api/:slug/profissionais/:id/horarios", async (req, res) => {
   const profId = Number(req.params.id);
   if (!Number.isInteger(profId) || profId <= 0) return res.status(400).json({ erro: "ID inválido" });
@@ -2051,7 +1999,6 @@ app.post("/api/:slug/profissionais/:id/horarios", verificarAssinatura, async (re
   } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao salvar horários do profissional" }); }
 });
 
-// ── ROTAS WHATSAPP POR SLUG ───────────────────────────────────────────────
 app.get("/api/:slug/whatsapp-status", (req, res) => {
   const sessao = waSessoes[req.params.slug];
   res.json({
@@ -2108,7 +2055,6 @@ app.post("/api/:slug/whatsapp/desconectar", verificarAssinatura, async (req, res
   res.json({ sucesso: true });
 });
 
-// ── ROTAS DE DIAGNÓSTICO ──────────────────────────────────────────────────
 app.get("/testar-wa/:slug", async (req, res) => {
   try {
     const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
@@ -2323,10 +2269,8 @@ app.delete("/admin/barbearias/:id", checarChaveAdmin, async (req, res) => {
   }
 });
 
-// ── ARQUIVOS ESTÁTICOS ────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '..', 'projeto')));
 
-// ── BANCO + START ─────────────────────────────────────────────────────────
 db.query("SELECT NOW()")
   .then(r => console.log("✅ PostgreSQL conectado:", r.rows[0].now))
   .catch(e => console.log("❌ Erro conexão banco:", e.message));
