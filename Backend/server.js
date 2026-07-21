@@ -155,36 +155,37 @@ async function iniciarWhatsAppSlug(slug) {
     });
 
     sock.ev.on("creds.update", saveCreds);
+sock.ev.on("messages.upsert", async ({ messages, type }) => {
+  if (type !== "notify") return;
 
-    sock.ev.on("messages.upsert", async ({ messages, type }) => {
-      if (type !== "notify") return;
-      for (const msg of messages) {
-        if (msg.key.fromMe)                           continue;
-        if (msg.key.remoteJid?.endsWith("@g.us"))    continue;
-        if (msg.key.remoteJid === "status@broadcast") continue;
+  const barb = await getDadosBarbearia(slug);
+  if (barb.bot_ativo === false) return;
 
-        const jid  = msg.key.remoteJid;
+  for (const msg of messages) {
+    if (msg.key.fromMe)                           continue;
+    if (msg.key.remoteJid?.endsWith("@g.us"))    continue;
+    if (msg.key.remoteJid === "status@broadcast") continue;
 
-        // captura clique em lista (listResponseMessage) ou texto normal
-        const listReply = msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
+    const jid  = msg.key.remoteJid;
+    const listReply = msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
+    const body = (
+      listReply ||
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      msg.message?.imageMessage?.caption ||
+      ""
+    ).trim().toLowerCase();
 
-        const body = (
-          listReply ||
-          msg.message?.conversation ||
-          msg.message?.extendedTextMessage?.text ||
-          msg.message?.imageMessage?.caption ||
-          ""
-        ).trim().toLowerCase();
+    if (!body) continue;
 
-        if (!body) continue;
+    try {
+      await processarMensagemBot(sock, jid, body, slug);
+    } catch (err) {
+      console.error(`Erro no bot (${slug}):`, err.message);
+    }
+  }
+});
 
-        try {
-          await processarMensagemBot(sock, jid, body, slug);
-        } catch (err) {
-          console.error(`Erro no bot (${slug}):`, err.message);
-        }
-      }
-    });
 
   } catch (err) {
     if (err.code === "MODULE_NOT_FOUND") {
@@ -224,17 +225,16 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
-// ── BUSCAR DADOS DA BARBEARIA ─────────────────────────────────────────────
 async function getDadosBarbearia(slug) {
   const r = await db.query(
-    `SELECT nome, cidade, whatsapp, horario_func, pix_chave, sobre, cor_primaria
+    `SELECT nome, cidade, whatsapp, horario_func, pix_chave, sobre, cor_primaria, bot_ativo
      FROM barbearias WHERE slug = $1`,
     [slug]
   );
   return r.rows[0] || {};
 }
 
-// ── HELPER: config de horários (individual ou global) ─────────────────────
+
 async function getHorariosConfig(slug, profissional_id) {
   const hrProf = await db.query(
     `SELECT ph.dias_semana, ph.pausa_inicio, ph.pausa_fim,
@@ -795,7 +795,6 @@ async function enviarLembrete(ag) {
   }
 }
 
-// ── JOB DE LEMBRETES ──────────────────────────────────────────────────────
 async function verificarLembretes() {
   try {
     const agora  = agoraBrasilia();
@@ -815,14 +814,9 @@ async function verificarLembretes() {
         ? ag.data.toISOString().split("T")[0]
         : ag.data;
 
-      const [ano, mes, dia] = dataStr.split("-");
-      const [hora, min]     = ag.horario.substring(0, 5).split(":");
-      const dataHorario     = new Date(+ano, +mes - 1, +dia, +hora, +min, 0);
+      
 
-      const agoraMs = agora.getTime() + 3 * 60 * 60 * 1000;
-      const diffMin = (dataHorario.getTime() - agoraMs) / 60000;
-
-      if (diffMin >= 55 && diffMin <= 65) {
+      if (diffMin >= 1 && diffMin <= 3) {
         await enviarLembrete(ag);
         await db.query(
           `UPDATE agendamentos SET lembrete_enviado = TRUE WHERE id = $1`,
@@ -838,7 +832,6 @@ async function verificarLembretes() {
 setInterval(verificarLembretes, 60 * 1000);
 verificarLembretes();
 
-// ── JOB DE CONCLUSÃO AUTOMÁTICA (20 min após o horário) ──────────────────
 async function verificarAutoConcluir() {
   try {
     const agora  = agoraBrasilia();
@@ -863,7 +856,6 @@ async function verificarAutoConcluir() {
       const agoraMs       = agora.getTime() + 3 * 60 * 60 * 1000;
       const diffMin       = (agoraMs - agendamentoMs) / 60000;
 
-      // Conclui entre 20 e 80 min após o horário marcado
       if (diffMin >= 20 && diffMin <= 80) {
         await db.query(
           `UPDATE agendamentos
@@ -882,7 +874,6 @@ async function verificarAutoConcluir() {
 setInterval(verificarAutoConcluir, 60 * 1000);
 verificarAutoConcluir();
 
-// ── ROTAS WHATSAPP GLOBAIS ────────────────────────────────────────────────
 app.get("/whatsapp-status", (req, res) => {
   const algumConectado = Object.values(waSessoes).some(s => s.conectado);
   res.json({ conectado: algumConectado });
@@ -890,7 +881,6 @@ app.get("/whatsapp-status", (req, res) => {
 
 app.get("/teste", (req, res) => res.json({ ok: true, modo: "multi-tenant" }));
 
-// ── HELPERS ───────────────────────────────────────────────────────────────
 function slugValido(slug) {
   return /^[a-z0-9-]+$/.test(slug);
 }
@@ -951,14 +941,12 @@ async function verificarAssinatura(req, res, next) {
 
 app.use("/api/:slug", resolveBarbearia);
 
-// ── CONFIG PÚBLICA ────────────────────────────────────────────────────────
 app.get("/api/:slug/config", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT slug, nome, cidade, horario_func, whatsapp,
-              pix_chave, cor_primaria, logo_url, sobre
-       FROM barbearias WHERE slug = $1`,
-      [req.params.slug]
+              pix_chave, cor_primaria, logo_url, sobre, bot_ativo
+       FROM barbearias WHERE slug = $1`,      [req.params.slug]
     );
     res.json(result.rows[0] || {});
   } catch (err) { console.error(err); res.json({}); }
@@ -2190,9 +2178,6 @@ app.get("/debug-wa-socket/:slug", async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════
-// ROTAS DE ADMIN MASTER (painel que lista TODAS as barbearias)
-// ═══════════════════════════════════════════════════════════════════════
 const SENHA_PAINEL_ADMIN = "ZinksggZ2";
 
 function checarChaveAdmin(req, res, next) {
@@ -2234,6 +2219,14 @@ app.get("/admin/barbearias", checarChaveAdmin, async (req, res) => {
     console.error("Erro ao listar barbearias (admin):", err.message);
     res.status(500).json({ erro: "Erro ao listar barbearias" });
   }
+});
+app.put("/api/:slug/bot-ativo", verificarAssinatura, async (req, res) => {
+  const { ativo } = req.body;
+  if (typeof ativo !== "boolean") return res.status(400).json({ erro: "Campo 'ativo' deve ser boolean" });
+  try {
+    await db.query(`UPDATE barbearias SET bot_ativo = $1 WHERE slug = $2`, [ativo, req.params.slug]);
+    res.json({ sucesso: true, bot_ativo: ativo });
+  } catch (err) { console.error(err); res.status(500).json({ erro: "Erro ao atualizar" }); }
 });
 
 app.put("/admin/barbearias/:id", checarChaveAdmin, async (req, res) => {

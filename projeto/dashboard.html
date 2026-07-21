@@ -1483,9 +1483,17 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
             <div class="info-row"><span class="label">Painel admin</span><a id="lk-adm" target="_blank" style="color:var(--gold);font-size:12px;word-break:break-all">—</a></div>
             <div class="info-row"><span class="label">Slug</span><span id="lk-slug" class="value" style="font-size:12px">—</span></div>
             <hr class="divider">
-            <div class="card-title" style="margin-bottom:12px;font-size:14px">WhatsApp / Lembretes</div>
-            <div class="info-row"><span class="label">Status</span><span id="cfg-wa-status">—</span></div>
-            <p style="font-size:12px;color:var(--text3);margin-top:10px">Lembrete automático ~1h antes via WhatsApp.</p>
+<div class="card-title" style="margin-bottom:12px;font-size:14px">WhatsApp / Lembretes</div>
+<div class="info-row"><span class="label">Status</span><span id="cfg-wa-status">—</span></div>
+<p style="font-size:12px;color:var(--text3);margin-top:10px">Lembrete automático ~1h antes via WhatsApp.</p>
+
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-top:14px;display:flex;align-items:center;gap:12px">
+  <div class="toggle on" id="cfg-bot-tog" onclick="toggleBotAtivo()"></div>
+  <div>
+    <div style="font-size:13.5px;font-weight:500">Chatbot responde mensagens</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-top:2px">Se desativado, o WhatsApp fica conectado só para enviar lembretes — não responde quem manda mensagem.</div>
+  </div>
+</div>
           </div>
         </div>
       </div>
@@ -1739,9 +1747,7 @@ input[type="date"], input[type="time"], input[type="month"] { color-scheme: dark
 <div id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
+
 let SLUG = '', TOKEN = '';
 let _profissionais = [], _planos = [], _servicos = [];
 
@@ -1757,9 +1763,6 @@ const fmtData = d => {
   return `${dia}/${m}/${a}`;
 };
 
-// ══════════════════════════════════════════
-// SIDEBAR MOBILE
-// ══════════════════════════════════════════
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebar-overlay').classList.add('open');
@@ -1769,9 +1772,7 @@ function closeSidebar() {
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
-// ══════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════
+
 function toast(msg, tipo = 'success') {
   const t = document.getElementById('toast');
   t.className = tipo;
@@ -2681,9 +2682,6 @@ async function apagarCancelados() {
   });
 }
 
-// ══════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════
 
 async function carregarConfig() {
   try {
@@ -2694,6 +2692,11 @@ async function carregarConfig() {
     document.getElementById('cfg-pix').value      = d.pix_chave  || '';
     document.getElementById('cfg-cor').value      = d.cor_primaria || '#c9a84c';
     document.getElementById('cfg-sobre').value    = d.sobre      || '';
+
+    d.bot_ativo !== false
+      ? document.getElementById('cfg-bot-tog').classList.add('on')
+      : document.getElementById('cfg-bot-tog').classList.remove('on');
+
     verificarWA();
   } catch {}
 }
@@ -2705,6 +2708,19 @@ async function salvarConfig() {
     if (r.sucesso) { toast('Configurações salvas!'); carregarConfigSilent(); }
     else toast(r.erro || 'Erro', 'danger');
   } catch { toast('Erro de conexão', 'danger'); }
+}
+async function toggleBotAtivo() {
+  const tog  = document.getElementById('cfg-bot-tog');
+  const novo = !tog.classList.contains('on');
+  tog.classList.toggle('on');
+  try {
+    const r = await fetch(API('/bot-ativo'), {
+      method: 'PUT', headers: H(),
+      body: JSON.stringify({ ativo: novo })
+    }).then(r => r.json());
+    if (r.sucesso) toast(novo ? 'Chatbot ativado' : 'Chatbot desativado — só lembretes automáticos', novo ? 'success' : 'info');
+    else { tog.classList.toggle('on'); toast(r.erro || 'Erro', 'danger'); }
+  } catch { tog.classList.toggle('on'); toast('Erro de conexão', 'danger'); }
 }
 let _waPollInterval = null;
 
