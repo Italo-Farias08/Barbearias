@@ -140,7 +140,9 @@ async function iniciarWhatsAppSlug(slug) {
         sessao.conectado = false;
         const codigo         = lastDisconnect?.error?.output?.statusCode;
         const deveReconectar = codigo !== DisconnectReason.loggedOut;
+        const linhaLog = `[${new Date().toISOString()}] Desconectado (${slug}). Código: ${codigo}. Motivo: ${lastDisconnect?.error?.message || "desconhecido"}\n`;
         console.log(`⚠️  WhatsApp desconectado (${slug}). Código: ${codigo}`);
+        try { fs.appendFileSync("./log-wa.txt", linhaLog); } catch (e) {}
         if (deveReconectar) {
           sessao.status = "aguardando_qr";
           setTimeout(() => iniciarWhatsAppSlug(slug), 5000);
@@ -196,8 +198,15 @@ sock.ev.on("messages.upsert", async ({ messages, type }) => {
     }
   }
 }
+app.get("/ver-logs-wa", (req, res) => {
+  try {
+    const conteudo = fs.existsSync("./log-wa.txt") ? fs.readFileSync("./log-wa.txt", "utf-8") : "Nenhum log ainda.";
+    res.type("text/plain").send(conteudo);
+  } catch (err) {
+    res.type("text/plain").send("Erro ao ler log: " + err.message);
+  }
+});
 
-// ── ESTADO DO BOT POR USUÁRIO ─────────────────────────────────────────────
 const botEstados = {};
 
 function getEstado(slug, jid) {
