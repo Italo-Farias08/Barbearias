@@ -821,7 +821,7 @@ async function verificarLembretes() {
       const agoraMs        = Date.now();
       const diffMin        = (agendamentoMs - agoraMs) / 60000;
 
-      if (diffMin >= 1 && diffMin <= 3) {
+      if (diffMin >= 55 && diffMin <= 65) {
         await enviarLembrete(ag);
         await db.query(
           `UPDATE agendamentos SET lembrete_enviado = TRUE WHERE id = $1`,
