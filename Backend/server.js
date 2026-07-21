@@ -761,7 +761,7 @@ async function enviarLembrete(ag) {
   const sessao = waSessoes[ag.slug];
   if (!sessao?.conectado || !sessao.socket) {
     console.log(`⚠️  WA offline (${ag.slug}) — lembrete não enviado para ${ag.nome}`);
-    return;
+    return false; // <- agora retorna falha
   }
 
   const telefone      = ag.telefone.replace(/\D/g, "");
@@ -778,8 +778,10 @@ async function enviarLembrete(ag) {
   try {
     await sessao.socket.sendMessage(jid, { text: mensagem });
     console.log(`✅ Lembrete enviado (${ag.slug}) → ${ag.nome} (${telefone})`);
+    return true; // <- sucesso
   } catch (err) {
     console.error(`❌ Erro lembrete (${ag.slug}) → ${ag.nome}:`, err.message);
+    return false; // <- falha
   }
 }
 
@@ -810,12 +812,14 @@ async function verificarLembretes() {
       const diffMin        = (agendamentoMs - agoraMs) / 60000;
 
       if (diffMin >= 55 && diffMin <= 65) {
-        await enviarLembrete(ag);
-        await db.query(
-          `UPDATE agendamentos SET lembrete_enviado = TRUE WHERE id = $1`,
-          [ag.id]
-        );
-      }
+  const enviado = await enviarLembrete(ag);
+  if (enviado) {
+    await db.query(
+      `UPDATE agendamentos SET lembrete_enviado = TRUE WHERE id = $1`,
+      [ag.id]
+    );
+  }
+}
     }
   } catch (err) {
     console.error("Erro no job de lembretes:", err.message);
