@@ -207,6 +207,7 @@ app.get("/ver-logs-wa", (req, res) => {
   }
 });
 
+
 const botEstados = {};
 
 function getEstado(slug, jid) {
