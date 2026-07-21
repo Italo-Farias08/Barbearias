@@ -809,12 +809,17 @@ async function verificarLembretes() {
         AND (a.lembrete_enviado IS NULL OR a.lembrete_enviado = FALSE)
     `);
 
-    for (const ag of result.rows) {
+      for (const ag of result.rows) {
       const dataStr = ag.data instanceof Date
         ? ag.data.toISOString().split("T")[0]
         : ag.data;
 
-      
+      const [ano, mes, dia] = dataStr.split("-").map(Number);
+      const [hora, min]     = ag.horario.substring(0, 5).split(":").map(Number);
+
+      const agendamentoMs = Date.UTC(ano, mes - 1, dia, hora + 3, min, 0);
+      const agoraMs        = Date.now();
+      const diffMin        = (agendamentoMs - agoraMs) / 60000;
 
       if (diffMin >= 1 && diffMin <= 3) {
         await enviarLembrete(ag);
