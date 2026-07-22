@@ -820,6 +820,7 @@ async function verificarLembretes() {
     );
   }
 }
+
     }
   } catch (err) {
     console.error("Erro no job de lembretes:", err.message);
